@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Voice capture confirm</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap">
+<style>
+body{margin:0}
+a{color:#29241F}a:hover{color:#9D532C}
+</style>
+</helmet>
+<div role="dialog" aria-labelledby="cap-title" style="width: 390px; height: 844px; overflow: hidden; display: flex; flex-direction: column; background: #F7F4EE; color: #29241F; font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 14px; line-height: 1.4">
+
+<header style="flex: none; display: flex; align-items: center; gap: 4px; height: 52px; box-sizing: border-box; padding: 0 16px 0 4px">
+<a href="TodayPhone.dc.html" aria-label="Close and keep the recording" style="display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; color: #29241F"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></a>
+<div style="flex: 1 1 auto; min-width: 0">
+<h1 id="cap-title" style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2">Here&#8217;s what I heard</h1>
+<div style="font-size: 12px; color: #746C63; margin-top: 2px">Nothing is saved until you confirm.</div>
+</div>
+<span style="font-size: 13px; color: #746C63">4 cards</span>
+</header>
+
+<div style="flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 16px 8px; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px">
+
+<section aria-label="Heard" style="padding: 8px 12px 8px; background: #FBF8F2; border: 1px solid #E3D9CB; border-radius: 15px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 24px">
+<span style="font-size: 12px; font-weight: 600; color: #746C63; text-transform: uppercase; letter-spacing: 0.04em">Heard · 0:40 · 9:12am</span>
+<button type="button" style="display: inline-flex; align-items: center; gap: 4px; height: 44px; margin: -10px -12px -10px 0; padding: 0 12px; background: transparent; border: 0; font: inherit; font-size: 13px; font-weight: 600; color: #9D532C; cursor: pointer"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"></path></svg>Play back</button>
+</div>
+<p style="margin: 2px 0 0; font-size: 13px; color: #29241F; line-height: 1.45">&#8220;&#8230;put her down for fifteen thousand, probably December. I owe her the site-visit dates by Friday&#8230;&#8221;</p>
+</section>
+
+<sc-for list="{{cards}}" as="c" hint-placeholder-count="4">
+<article aria-label="{{c.kind}}" style="padding: 12px 12px 12px 16px; background: #FFFDF9; border: 1px solid #E3D9CB; border-radius: 15px; display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+<span style="font-size: 13px; font-weight: 600">{{c.kind}}</span>
+<span style="display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 999px; background: #F5E5DB; color: #7D4223; font-size: 12px; font-weight: 600">Drafted by AI</span>
+</div>
+<div style="font-size: 14px; font-weight: 500">{{c.main}}</div>
+<sc-if value="{{c.isGift}}" hint-placeholder-val="{{false}}">
+<button type="button" aria-label="Amount 15,000 dollars. Check this: heard fifteen. Tap to change" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; height: 44px; padding: 0 12px; background: #F5EAD6; border: 1px solid #965C1C; border-radius: 9px; font: inherit; color: #29241F; text-align: left; cursor: pointer"><span style="font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums">$15,000</span><span style="font-size: 12px; color: #965C1C; font-weight: 600">Check this · heard &#8220;fifteen&#8221;</span></button>
+<label style="display: flex; align-items: center; gap: 8px; min-height: 44px; margin: -4px 0 -8px; font-size: 13px; cursor: pointer"><input type="checkbox" checked style="width: 18px; height: 18px; margin: 0; accent-color: #9D532C">Prepare thank-you for me to sign</label>
+</sc-if>
+<sc-if value="{{c.isStory}}" hint-placeholder-val="{{false}}">
+<div style="font-size: 13px; color: #746C63">{{c.sentence}}</div>
+<div><span style="display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 8px; border-radius: 999px; background: #F5EAD6; color: #965C1C; font-size: 12px; font-weight: 600">Needs consent before it can be used</span></div>
+</sc-if>
+<div style="display: flex; align-items: center; gap: 8px">
+<div style="flex: 1 1 auto; min-width: 0; font-size: 12px; color: #746C63; line-height: 1.4">
+<sc-if value="{{c.hasDetail}}" hint-placeholder-val="{{true}}">
+<div style="font-size: 13px">{{c.detail}}</div>
+</sc-if>
+<div style="display: flex; align-items: center; gap: 4px"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg><span>Files to <span style="color: #29241F; font-weight: 600">{{c.filedTo}}</span></span></div>
+</div>
+<button type="button" aria-label="{{c.editLabel}}" style="flex: none; height: 44px; padding: 0 12px; background: transparent; border: 0; font: inherit; font-weight: 600; color: #29241F; text-decoration: underline; cursor: pointer">Edit</button>
+<button type="button" aria-label="{{c.confirmLabel}}" style="flex: none; height: 44px; padding: 0 16px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; font: inherit; font-weight: 600; color: #29241F; cursor: pointer">Confirm</button>
+</div>
+</article>
+</sc-for>
+
+</div>
+
+<footer style="flex: none; padding: 8px 16px 12px; background: #FFFDF9; border-top: 1px solid #E3D9CB">
+<div style="display: flex; align-items: center; gap: 8px">
+<button type="button" style="flex: none; height: 48px; padding: 0 12px; background: transparent; border: 0; font: inherit; font-weight: 600; color: #AE4339; cursor: pointer">Discard recording</button>
+<button type="button" style="flex: 1 1 auto; height: 48px; background: #9D532C; color: #FFFFFF; border: 0; border-radius: 9px; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer">Confirm all 4</button>
+</div>
+</footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+const card = (kind, main, detail, filedTo, extra) => Object.assign({
+kind, main, detail, filedTo,
+hasDetail: detail !== '',
+isGift: false,
+isStory: false,
+editLabel: 'Edit ' + kind.toLowerCase(),
+confirmLabel: 'Confirm ' + kind.toLowerCase()
+}, extra || {});
+const cards = [
+card('Donor conversation', 'Wants to see the spring cohort first', 'Coffee, Mon Nov 23', 'Dana Whitfield'),
+card('To-do', 'Send Dana the spring site-visit dates', 'Owner: you · Due Fri, Nov 27', 'your Work list'),
+card('Gift or pledge', 'Dana Whitfield · pledge, expected December', '', 'Dana’s gifts', { isGift: true }),
+card('Story', 'The tour guide who started a club', '', 'Comms, story bank', { isStory: true, sentence: 'Her student tour guide went on to start a robotics club.' })
+];
+return { cards };
+}
+}
+</script>
+</body>
+</html>

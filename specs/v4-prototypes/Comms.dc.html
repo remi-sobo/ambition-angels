@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Comms home</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap">
+<style>
+body{margin:0}
+a{color:#29241F}a:hover{color:#9D532C}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 1000px; background: #1C1814; color: #29241F; font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 14px; line-height: 1.4">
+
+<nav aria-label="Main" style="flex: 1 1 248px; max-width: 248px; box-sizing: border-box; background: #1C1814; color: #F3EDE4; padding: 20px 12px; display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; gap: 10px; padding: 4px 10px 16px">
+<span aria-hidden="true" style="width: 26px; height: 26px; border-radius: 8px; background: #C96B38; display: inline-block"></span>
+<span style="font-weight: 700; font-size: 16px; letter-spacing: -0.01em">BloomOS</span>
+</div>
+<button type="button" style="display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 44px; box-sizing: border-box; padding: 0 12px; margin-bottom: 12px; background: #2A241E; color: #A89B8D; border: 1px solid #3A322A; border-radius: 9px; font: inherit; text-align: left; cursor: pointer"><span>Search</span><span style="font-size: 12px; border: 1px solid #4A4037; border-radius: 5px; padding: 1px 6px">/</span></button>
+<sc-for list="{{nav}}" as="item" hint-placeholder-count="8">
+<a href="#" style="{{item.style}}">{{item.label}}</a>
+</sc-for>
+<div style="flex-grow: 1; min-height: 24px"></div>
+<a href="#" style="display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #F3EDE4; text-decoration: none">Inbox<span style="background: #C96B38; color: #1C1814; font-weight: 700; font-size: 12px; border-radius: 999px; padding: 1px 8px">3</span></a>
+<a href="#" style="display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #A89B8D; text-decoration: none">Settings</a>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; margin: 10px 10px 10px 0; border-radius: 18px; background: #F7F4EE; padding: 0 32px 32px">
+
+<div role="tablist" aria-label="Comms" style="display: flex; flex-wrap: wrap; gap: 24px; border-bottom: 1px solid #E3D9CB; padding-top: 14px">
+<a href="#" aria-current="page" style="padding: 10px 0; color: #29241F; font-weight: 600; text-decoration: none; box-shadow: inset 0 -2px 0 #C96B38">Home</a>
+<a href="#" style="padding: 10px 0; color: #746C63; text-decoration: none">Stories</a>
+<a href="#" style="padding: 10px 0; color: #746C63; text-decoration: none">Editions</a>
+<a href="#" style="padding: 10px 0; color: #746C63; text-decoration: none">Emails</a>
+<a href="#" style="padding: 10px 0; color: #746C63; text-decoration: none">Automations</a>
+<a href="#" style="padding: 10px 0; color: #746C63; text-decoration: none">Settings</a>
+</div>
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 24px 0 16px">
+<div>
+<h1 style="margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.02em">Comms</h1>
+<div style="margin-top: 4px; color: #746C63">Sending from hello@ambitionangels.example through your Gmail · 1,800 a day limit, 38 used today</div>
+</div>
+<div style="display: flex; gap: 8px">
+<button type="button" aria-label="More actions" style="width: 44px; height: 44px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; color: #29241F; font-size: 18px; cursor: pointer">&#8942;</button>
+<a href="StoryPhone.dc.html" style="display: inline-flex; align-items: center; height: 44px; padding: 0 16px; box-sizing: border-box; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; font-weight: 600; color: #29241F; text-decoration: none">Add a story</a>
+<button type="button" style="height: 44px; padding: 0 18px; background: #9D532C; color: #FFFFFF; border: 0; border-radius: 9px; font: inherit; font-weight: 600; cursor: pointer">New email</button>
+</div>
+</header>
+
+<section aria-label="From story to sent" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); background: #FFFDF9; border: 1px solid #E3D9CB; border-radius: 15px; margin-bottom: 16px">
+<sc-for list="{{flow}}" as="f" hint-placeholder-count="4">
+<div style="{{f.cellStyle}}">
+<div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #746C63"><span aria-hidden="true" style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 999px; border: 1px solid #CDBEAA; font-size: 11px; font-weight: 700; color: #746C63">{{f.step}}</span>{{f.label}}</div>
+<div style="font-size: 24px; font-weight: 600; letter-spacing: -0.02em; margin-top: 4px">{{f.value}}</div>
+<div style="font-size: 12px; color: #746C63; margin-top: 2px">{{f.note}}</div>
+<a href="#" style="display: inline-block; margin-top: 8px; font-size: 13px; font-weight: 600">{{f.link}}</a>
+<sc-if value="{{f.arrow}}" hint-placeholder-val="{{true}}"><span aria-hidden="true" style="position: absolute; top: 50%; right: -12px; margin-top: -12px; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; background: #FFFDF9; border: 1px solid #E3D9CB; z-index: 1"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#746C63" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 2.5 L8 6 L4.5 9.5"></path></svg></span></sc-if>
+</div>
+</sc-for>
+</section>
+
+<section aria-label="Needs you" style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; background: #FFFDF9; border: 1px solid #E3D9CB; border-left: 4px solid #AE4339; border-radius: 15px; padding: 16px 20px; margin-bottom: 24px">
+<div style="flex: 1 1 480px; min-width: 0">
+<div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #AE4339">Needs you</div>
+<div style="font-size: 15px; font-weight: 600; margin-top: 2px">1 send needs a decision: we could not confirm 3 emails went out.</div>
+<div style="font-size: 13px; color: #746C63; margin-top: 2px">November impact update, Nov 18. Gmail did not answer for 3 of 214 sends. We never resend on our own, so no donor gets the same email twice.</div>
+</div>
+<button type="button" style="height: 40px; padding: 0 16px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; font: inherit; font-weight: 600; color: #29241F; cursor: pointer">Review</button>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+
+<section aria-labelledby="ready-h" style="flex: 5 1 420px; min-width: 0">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px">
+<div>
+<h2 id="ready-h" style="margin: 0; font-size: 18px; font-weight: 600">Ready to use</h2>
+<div style="font-size: 12px; color: #746C63; margin-top: 2px">5 stories with consent checked, as of now</div>
+</div>
+<a href="#" style="font-size: 13px; font-weight: 600">All stories</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{stories}}" as="s" hint-placeholder-count="3">
+<article style="background: #FFFDF9; border: 1px solid #E3D9CB; border-radius: 15px; padding: 16px 20px">
+<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
+<a href="#" style="font-size: 15px; font-weight: 600; text-decoration: none">{{s.title}}</a>
+<span style="flex: none; display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border-radius: 999px; font-size: 12px; font-weight: 600; background: #E2EFE8; color: #32745B">{{s.chip}}</span>
+</div>
+<p style="margin: 4px 0 0; color: #29241F">{{s.body}}</p>
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #E3D9CB">
+<span style="font-size: 12px; color: #746C63">{{s.by}}</span>
+<button type="button" style="height: 36px; padding: 0 14px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; font: inherit; font-weight: 600; color: #29241F; cursor: pointer">Use in an email</button>
+</div>
+</article>
+</sc-for>
+<a href="#" style="align-self: flex-start; font-size: 13px; font-weight: 600; padding: 4px 0">See 2 more ready stories</a>
+
+<h3 style="margin: 12px 0 0; font-size: 13px; font-weight: 600; color: #746C63">Waiting on consent (1)</h3>
+<article style="background: #FBF8F2; border: 1px solid #E3D9CB; border-radius: 15px; padding: 16px 20px">
+<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
+<a href="#" style="font-size: 15px; font-weight: 600; text-decoration: none">A question about pay, answered</a>
+<span style="flex: none; display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border-radius: 999px; font-size: 12px; font-weight: 600; background: #F5EAD6; color: #965C1C">Needs consent</span>
+</div>
+<p style="margin: 4px 0 0; color: #29241F">Sofia P. asked her coach how a paycheck works, and the group built a first budget together.</p>
+<p style="margin: 8px 0 0; font-size: 13px; color: #965C1C; font-weight: 600">This story names a participant. It cannot be used until a guardian's consent is on file.</p>
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #E3D9CB">
+<span style="font-size: 12px; color: #746C63">Captured by Priya Raman, coach · Nov 19</span>
+<button type="button" style="height: 36px; padding: 0 14px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; font: inherit; font-weight: 600; color: #29241F; cursor: pointer">Request consent</button>
+</div>
+</article>
+</div>
+</section>
+
+<section aria-labelledby="send-h" style="flex: 6 1 520px; min-width: 0">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px">
+<div>
+<h2 id="send-h" style="margin: 0; font-size: 18px; font-weight: 600">Sending and results</h2>
+<div style="font-size: 12px; color: #746C63; margin-top: 2px">Every send and open also shows on each donor's record</div>
+</div>
+<a href="#" style="font-size: 13px; font-weight: 600">All emails</a>
+</div>
+<div style="background: #FFFDF9; border: 1px solid #E3D9CB; border-radius: 15px">
+
+<div style="padding: 16px 20px 20px; border-bottom: 1px solid #E3D9CB">
+<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
+<div>
+<div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #746C63">Scheduled · Tue Nov 24, 9:00am Pacific</div>
+<a href="#" style="display: inline-block; margin-top: 2px; font-size: 15px; font-weight: 600; text-decoration: none">Year-end update: what your gift did this fall</a>
+</div>
+<span style="flex: none; display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border-radius: 999px; font-size: 12px; font-weight: 600; background: #F7F4EE; border: 1px solid #E3D9CB; color: #29241F">Scheduled</span>
+</div>
+<dl style="display: grid; grid-template-columns: 112px 1fr; gap: 8px 16px; margin: 12px 0 0">
+<dt style="color: #746C63">To</dt>
+<dd style="margin: 0"><span style="font-weight: 600">Gave in 2025, not yet in 2026</span> · 186 people<div style="font-size: 12px; color: #746C63">Built from giving history · count checked 2 minutes ago</div></dd>
+<dt style="color: #746C63">Left out</dt>
+<dd style="margin: 0">23 people: 14 have no email, 6 unsubscribed, 3 marked do not contact <a href="#" style="font-size: 13px; font-weight: 600">See who</a></dd>
+<dt style="color: #746C63">From</dt>
+<dd style="margin: 0">Remi S. &lt;hello@ambitionangels.example&gt;, your connected Gmail</dd>
+</dl>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px">
+<button type="button" style="height: 36px; padding: 0 14px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; font: inherit; font-weight: 600; color: #29241F; cursor: pointer">Review before it goes</button>
+<button type="button" style="height: 36px; padding: 0 14px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; font: inherit; color: #29241F; cursor: pointer">Send me a test</button>
+<span style="flex-grow: 1"></span>
+<span style="font-size: 13px; color: #746C63">Also scheduled: Coach thank-you, Dec 1 · 12 people</span>
+</div>
+</div>
+
+<sc-for list="{{sent}}" as="e" hint-placeholder-count="2">
+<div style="{{e.blockStyle}}">
+<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
+<div>
+<div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #746C63">{{e.when}}</div>
+<a href="#" style="display: inline-block; margin-top: 2px; font-size: 15px; font-weight: 600; text-decoration: none">{{e.title}}</a>
+</div>
+<span style="flex: none; display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border-radius: 999px; font-size: 12px; font-weight: 600; background: #E2EFE8; color: #32745B">Sent</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin-top: 12px; border: 1px solid #E3D9CB; border-radius: 12px; background: #FBF8F2">
+<sc-for list="{{e.figures}}" as="g" hint-placeholder-count="5">
+<div style="{{g.cellStyle}}">
+<div style="font-size: 12px; color: #746C63">{{g.label}}</div>
+<div style="font-size: 18px; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums">{{g.value}}<span style="font-size: 12px; font-weight: 500; color: #746C63">{{g.pct}}</span></div>
+<div style="font-size: 11px; color: #746C63; line-height: 1.3">{{g.source}}</div>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px">
+<a href="Main.dc.html" style="display: inline-flex; align-items: center; height: 36px; padding: 0 14px; box-sizing: border-box; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; font-weight: 600; color: #29241F; text-decoration: none">See who opened</a>
+<a href="#" style="font-size: 13px; font-weight: 600; padding: 0 8px">Full results</a>
+<span style="flex-grow: 1"></span>
+<span style="font-size: 12px; color: #746C63">{{e.foot}}</span>
+</div>
+</div>
+</sc-for>
+
+</div>
+</section>
+
+</div>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1347}}'>
+class Component extends DCLogic {
+renderVals() {
+const base = 'display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 9px; text-decoration: none; ';
+const nav = ['Home', 'Work', 'Programs', 'Fundraising', 'Comms', 'Finance', 'Impact', 'Organization'].map((label) => ({
+label,
+style: base + (label === 'Comms' ? 'background: #2A241E; color: #F3EDE4; font-weight: 600; box-shadow: inset 3px 0 0 #C96B38' : 'color: #A89B8D')
+}));
+const flowRaw = [
+{ label: 'Stories ready to use', value: '5', note: 'Consent checked, as of now', link: 'See stories' },
+{ label: 'Editions in progress', value: '1', note: 'December newsletter, 3 of 5 slots filled', link: 'Open edition' },
+{ label: 'Scheduled sends', value: '2', note: 'Next goes Tue Nov 24, 9:00am', link: 'See schedule' },
+{ label: 'Sent this month', value: '3', note: '386 emails delivered in November', link: 'See results' }
+];
+const flow = flowRaw.map((f, i) => Object.assign(f, {
+step: String(i + 1),
+arrow: i < flowRaw.length - 1,
+cellStyle: 'position: relative; padding: 16px 20px' + (i < flowRaw.length - 1 ? '; border-right: 1px solid #E3D9CB' : '')
+}));
+const stories = [
+{ title: 'A first mock interview, then a callback', chip: 'Consent on file until Jun 2027', body: 'After three coaching sessions, Andre W. practiced with Northgate Credit Union staff and was asked back to interview for a summer job.', by: 'Captured by Marcus Oyelaran, coach · Nov 17' },
+{ title: 'Coaches who came back for spring', chip: 'No one identifiable', body: '9 of 12 fall coaches have signed up again for spring, and 4 brought a friend.', by: 'Captured by Remi · Nov 12' },
+{ title: 'The library asked us to stay', chip: 'No one identifiable', body: 'Eastside Library offered its community room for every spring session at no cost.', by: 'Captured by Priya Raman, coach · Nov 10' }
+];
+const cell = (i) => 'padding: 10px 12px' + (i < 4 ? '; border-right: 1px solid #E3D9CB' : '');
+const fig = (label, value, pct, source, i) => ({ label, value, pct, source, cellStyle: cell(i) });
+const sent = [
+{ when: 'Sent Nov 18 · 214 people', title: 'November impact update', foot: '3 sends unclear, see Needs you above', figures: [
+fig('Delivered', '211', '', 'Accepted by Gmail', 0),
+fig('Opened', '118', ' 56%', 'Opens are estimates', 1),
+fig('Clicked', '31', ' 15%', 'From tracked links', 2),
+fig('Replied', '9', '', 'Logged from your Gmail', 3),
+fig('Unsubscribed', '2', '', 'Removed from future sends', 4)
+] },
+{ when: 'Sent Nov 4 · 88 people', title: 'Become an Ambition Coach this spring', foot: 'Results final after 14 days', figures: [
+fig('Delivered', '88', '', 'Accepted by Gmail', 0),
+fig('Opened', '51', ' 58%', 'Opens are estimates', 1),
+fig('Clicked', '19', ' 22%', 'From tracked links', 2),
+fig('Replied', '6', '', 'Logged from your Gmail', 3),
+fig('Unsubscribed', '0', '', 'None this send', 4)
+] }
+].map((e, i, all) => Object.assign(e, { blockStyle: 'padding: 16px 20px 20px' + (i < all.length - 1 ? '; border-bottom: 1px solid #E3D9CB' : '') }));
+return { nav, flow, stories, sent };
+}
+}
+</script>
+</body>
+</html>

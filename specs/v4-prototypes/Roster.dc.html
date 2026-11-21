@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cohort roster</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap">
+<style>
+body{margin:0}
+a{color:#29241F}a:hover{color:#9D532C}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 1000px; background: #1C1814; color: #29241F; font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 14px; line-height: 1.4">
+
+<nav aria-label="Main" style="flex: 1 1 248px; max-width: 248px; box-sizing: border-box; background: #1C1814; color: #F3EDE4; padding: 20px 12px; display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; gap: 10px; padding: 4px 10px 16px">
+<span aria-hidden="true" style="width: 26px; height: 26px; border-radius: 8px; background: #C96B38; display: inline-block"></span>
+<span style="font-weight: 700; font-size: 16px; letter-spacing: -0.01em">BloomOS</span>
+</div>
+<button type="button" style="display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 44px; box-sizing: border-box; padding: 0 12px; margin-bottom: 12px; background: #2A241E; color: #A89B8D; border: 1px solid #3A322A; border-radius: 9px; font: inherit; text-align: left; cursor: pointer"><span>Search</span><span style="font-size: 12px; border: 1px solid #4A4037; border-radius: 5px; padding: 1px 6px">/</span></button>
+<sc-for list="{{nav}}" as="item" hint-placeholder-count="8">
+<a href="#" style="{{item.style}}">{{item.label}}</a>
+</sc-for>
+<div style="flex-grow: 1; min-height: 24px"></div>
+<a href="#" style="display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #F3EDE4; text-decoration: none">Inbox<span style="background: #C96B38; color: #1C1814; font-weight: 700; font-size: 12px; border-radius: 999px; padding: 1px 8px">3</span></a>
+<a href="#" style="display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #A89B8D; text-decoration: none">Settings</a>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; margin: 10px 10px 10px 0; border-radius: 18px; background: #F7F4EE; padding: 0 32px 32px">
+
+<div role="tablist" aria-label="Programs" style="display: flex; flex-wrap: wrap; gap: 24px; border-bottom: 1px solid #E3D9CB; padding-top: 14px">
+<a href="#" style="padding: 10px 0; color: #746C63; text-decoration: none">Overview</a>
+<a href="#" style="padding: 10px 0; color: #746C63; text-decoration: none">People</a>
+<a href="#" style="padding: 10px 0; color: #746C63; text-decoration: none">Intake</a>
+<a href="#" aria-current="page" style="padding: 10px 0; color: #29241F; font-weight: 600; text-decoration: none; box-shadow: inset 0 -2px 0 #C96B38">Cohorts</a>
+<a href="#" style="padding: 10px 0; color: #746C63; text-decoration: none">Attendance</a>
+<a href="#" style="padding: 10px 0; color: #746C63; text-decoration: none">Partners</a>
+<a href="#" style="padding: 10px 0; color: #746C63; text-decoration: none">Coach</a>
+</div>
+
+<nav aria-label="Breadcrumb" style="padding-top: 20px; font-size: 13px; color: #746C63">
+<a href="#" style="color: #746C63">Cohorts</a><span aria-hidden="true" style="padding: 0 8px">/</span><span aria-current="page" style="color: #29241F">Fall Coaching Group B</span>
+</nav>
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 8px 0 16px">
+<div>
+<h1 style="margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.02em">Fall Coaching Group B</h1>
+<div style="margin-top: 4px; color: #746C63">Ambition Coach · Tuesdays 4:00pm at Eastside Library · Sep 15 to Dec 15</div>
+</div>
+<div style="display: flex; gap: 8px">
+<button type="button" aria-label="More actions" style="width: 44px; height: 44px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; color: #29241F; font-size: 18px; cursor: pointer">&#8942;</button>
+<button type="button" aria-expanded="true" aria-controls="add-people" style="height: 44px; padding: 0 16px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; font: inherit; font-weight: 600; color: #29241F; cursor: pointer">Add people</button>
+<a href="AttendancePhone.dc.html" style="display: inline-flex; align-items: center; height: 44px; padding: 0 18px; background: #9D532C; color: #FFFFFF; border-radius: 9px; font-weight: 600; text-decoration: none">Take attendance</a>
+</div>
+</header>
+
+<section id="add-people" aria-label="Add people to this cohort" style="background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 15px; margin-bottom: 16px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 16px 20px 12px">
+<h2 style="margin: 0 8px 0 0; font-size: 17px; font-weight: 600">Add people</h2>
+<label style="display: flex; align-items: center; gap: 8px; flex: 0 1 280px; height: 40px; box-sizing: border-box; padding: 0 12px; background: #FBF8F2; border: 1px solid #CDBEAA; border-radius: 9px; color: #746C63"><span>Search</span><input type="search" aria-label="Search people in Programs" value="grade 9" style="flex: 1; min-width: 0; border: 0; background: transparent; font: inherit; color: #29241F; outline-offset: 4px"></label>
+<button type="button" style="height: 32px; padding: 0 10px; background: #F5E5DB; border: 0; border-radius: 999px; font: inherit; font-weight: 600; color: #7D4223; cursor: pointer">Not in a cohort &#10005;</button>
+<button type="button" style="height: 32px; padding: 0 10px; background: transparent; border: 0; border-radius: 999px; font: inherit; font-weight: 600; color: #29241F; cursor: pointer">From Intake &#9662;</button>
+<span style="flex-grow: 1"></span>
+<span style="font-size: 13px; color: #746C63">14 match · <a href="#" style="color: #29241F; font-weight: 600">Select all 14</a></span>
+</div>
+<ul style="list-style: none; margin: 0; padding: 0 20px; border-top: 1px solid #E3D9CB">
+<sc-for list="{{picks}}" as="p" hint-placeholder-count="3">
+<li style="display: flex; align-items: center; gap: 12px; min-height: 44px; border-bottom: 1px solid #E3D9CB">
+<input type="checkbox" checked aria-label="{{p.aria}}" style="width: 18px; height: 18px; margin: 0; accent-color: #29241F">
+<span style="font-weight: 600; min-width: 96px">{{p.name}}</span>
+<span style="color: #746C63">{{p.detail}}</span>
+<span style="flex-grow: 1"></span>
+<span style="{{p.guardianStyle}}">{{p.guardian}}</span>
+</li>
+</sc-for>
+</ul>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 20px">
+<span style="font-weight: 600">3 selected</span>
+<label style="display: flex; align-items: center; gap: 8px; color: #746C63">Coach
+<select aria-label="Coach for the selected people" style="height: 36px; padding: 0 8px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; font: inherit; color: #29241F"><option>Assign later</option><option>Marcus Oyelaran</option><option>Priya Raman</option><option>Jordan Ellis</option></select>
+</label>
+<span style="flex-grow: 1"></span>
+<span style="font-size: 13px; color: #746C63">Have a list? <a href="#" style="color: #29241F; font-weight: 600">Import a roster file</a> with a cohort column.</span>
+<button type="button" style="height: 36px; padding: 0 14px; background: transparent; border: 0; font: inherit; color: #746C63; text-decoration: underline; cursor: pointer">Cancel</button>
+<button type="button" style="height: 36px; padding: 0 16px; background: #29241F; border: 0; border-radius: 9px; font: inherit; font-weight: 600; color: #FFFDF9; cursor: pointer">Add 3 selected</button>
+</div>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 16px">
+<div role="tablist" aria-label="Saved views" style="display: flex; flex-wrap: wrap; gap: 4px">
+<button type="button" role="tab" aria-selected="true" style="height: 36px; padding: 0 14px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; font: inherit; font-weight: 600; color: #29241F; cursor: pointer">Everyone</button>
+<button type="button" role="tab" aria-selected="false" style="height: 36px; padding: 0 14px; background: transparent; border: 1px solid transparent; border-radius: 9px; font: inherit; color: #746C63; cursor: pointer">By coach</button>
+<button type="button" role="tab" aria-selected="false" style="height: 36px; padding: 0 14px; background: transparent; border: 1px solid transparent; border-radius: 9px; font: inherit; color: #746C63; cursor: pointer">Needs follow-up</button>
+</div>
+<span aria-hidden="true" style="width: 1px; height: 24px; background: #E3D9CB; margin: 0 4px"></span>
+<label style="display: flex; align-items: center; gap: 8px; flex: 0 1 240px; height: 40px; box-sizing: border-box; padding: 0 12px; background: #FBF8F2; border: 1px solid #CDBEAA; border-radius: 9px; color: #746C63"><span>Search</span><input type="search" aria-label="Search this roster" placeholder="name or coach" style="flex: 1; min-width: 0; border: 0; background: transparent; font: inherit; color: #29241F; outline-offset: 4px"></label>
+<button type="button" style="height: 32px; padding: 0 10px; background: transparent; border: 0; border-radius: 999px; font: inherit; font-weight: 600; color: #29241F; cursor: pointer">Coach &#9662;</button>
+<button type="button" style="height: 32px; padding: 0 10px; background: transparent; border: 0; border-radius: 999px; font: inherit; font-weight: 600; color: #29241F; cursor: pointer">Grade &#9662;</button>
+<button type="button" style="height: 32px; padding: 0 10px; background: transparent; border: 0; border-radius: 999px; font: inherit; font-weight: 600; color: #29241F; cursor: pointer">Guardian on file &#9662;</button>
+<span style="flex-grow: 1"></span>
+<button type="button" style="height: 40px; padding: 0 14px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; font: inherit; color: #29241F; cursor: pointer">Sort: coach</button>
+</div>
+
+<section aria-label="Summary for this cohort" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); background: #FFFDF9; border: 1px solid #E3D9CB; border-radius: 15px; margin-bottom: 16px">
+<div style="padding: 16px 20px; border-right: 1px solid #E3D9CB">
+<div style="font-size: 13px; color: #746C63">Enrolled</div>
+<div style="font-size: 24px; font-weight: 600; letter-spacing: -0.02em; margin-top: 2px">{{enrolled}}</div>
+<div style="font-size: 12px; color: #746C63; margin-top: 2px">3 coaches, groups of 4 · as of now</div>
+</div>
+<div style="padding: 16px 20px; border-right: 1px solid #E3D9CB">
+<div style="font-size: 13px; color: #746C63">Attendance, last 4 sessions</div>
+<div style="font-size: 24px; font-weight: 600; letter-spacing: -0.02em; margin-top: 2px">{{rate}}</div>
+<div style="font-size: 12px; color: #746C63; margin-top: 2px">{{rateNote}}</div>
+</div>
+<div style="padding: 16px 20px; border-right: 1px solid #E3D9CB">
+<div style="font-size: 13px; color: #746C63">Missed twice in a row</div>
+<div style="font-size: 24px; font-weight: 600; letter-spacing: -0.02em; margin-top: 2px; color: #AE4339">{{missedCount}}</div>
+<div style="font-size: 12px; color: #AE4339; font-weight: 600; margin-top: 2px">{{missedNames}} · <a href="#" style="color: #AE4339">Follow up</a></div>
+</div>
+<div style="padding: 16px 20px">
+<div style="font-size: 13px; color: #746C63">Next session</div>
+<div style="font-size: 24px; font-weight: 600; letter-spacing: -0.02em; margin-top: 2px">Tue Nov 24</div>
+<div style="font-size: 12px; color: #746C63; margin-top: 2px">4:00pm, Eastside Library · roster ready</div>
+</div>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; font-size: 13px; color: #746C63">
+<div role="list" aria-label="Attendance marks" style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px">
+<span role="listitem" style="display: inline-flex; align-items: center; gap: 6px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5" fill="#32745B"></circle></svg>Present</span>
+<span role="listitem" style="display: inline-flex; align-items: center; gap: 6px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16"><path d="M8 2 L14 8 L8 14 L2 8 Z" fill="#965C1C"></path></svg>Late</span>
+<span role="listitem" style="display: inline-flex; align-items: center; gap: 6px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16"><path d="M4 4 L12 12 M12 4 L4 12" stroke="#AE4339" stroke-width="2.4" stroke-linecap="round" fill="none"></path></svg>Absent</span>
+<span role="listitem" style="display: inline-flex; align-items: center; gap: 6px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16"><path d="M5 8 H11" stroke="#A89B8D" stroke-width="2" stroke-linecap="round" fill="none"></path></svg>Not enrolled yet</span>
+</div>
+<span style="display: inline-flex; align-items: center; gap: 6px"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#746C63" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="10" height="7" rx="1.5"></rect><path d="M5.5 7 V5 a2.5 2.5 0 0 1 5 0 V7"></path></svg>Names shortened for privacy. Full names show to program staff only.</span>
+</div>
+
+<div style="background: #FFFDF9; border: 1px solid #E3D9CB; border-radius: 15px; overflow: hidden">
+<div role="toolbar" aria-label="Actions for selected people" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px 8px 20px; background: #29241F; color: #FFFDF9">
+<span style="font-weight: 600; margin-right: 8px">3 selected</span>
+<button type="button" style="height: 36px; padding: 0 14px; background: transparent; border: 1px solid #5A4F44; border-radius: 9px; font: inherit; color: #FFFDF9; cursor: pointer">Message guardians</button>
+<button type="button" style="height: 36px; padding: 0 14px; background: transparent; border: 1px solid #5A4F44; border-radius: 9px; font: inherit; color: #FFFDF9; cursor: pointer">Move to cohort</button>
+<button type="button" style="height: 36px; padding: 0 14px; background: transparent; border: 1px solid #5A4F44; border-radius: 9px; font: inherit; color: #FFFDF9; cursor: pointer">Export</button>
+<span style="flex-grow: 1"></span>
+<span style="font-size: 13px; color: #A89B8D">1 of the 3 has no guardian on file</span>
+<button type="button" style="height: 36px; padding: 0 10px; background: transparent; border: 0; font: inherit; color: #D9CFC2; text-decoration: underline; cursor: pointer">Clear</button>
+</div>
+<div style="overflow-x: auto">
+<table style="width: 100%; min-width: 980px; border-collapse: collapse; text-align: left">
+<thead>
+<tr style="font-size: 12px; color: #746C63; text-transform: uppercase; letter-spacing: 0.04em">
+<th scope="col" style="width: 20px; padding: 12px 0 12px 20px; border-bottom: 1px solid #E3D9CB"><input type="checkbox" aria-label="Select all 12" style="width: 18px; height: 18px; margin: 0; accent-color: #29241F; vertical-align: middle"></th>
+<th scope="col" style="padding: 12px 16px; font-weight: 600; border-bottom: 1px solid #E3D9CB">Participant</th>
+<th scope="col" style="padding: 12px 16px; font-weight: 600; border-bottom: 1px solid #E3D9CB">Coach</th>
+<th scope="col" style="padding: 12px 16px; font-weight: 600; border-bottom: 1px solid #E3D9CB">Last 6 sessions<div style="font-weight: 400; text-transform: none; letter-spacing: 0; margin-top: 2px">Oct 13 to Nov 17</div></th>
+<th scope="col" style="padding: 12px 16px; font-weight: 600; border-bottom: 1px solid #E3D9CB">Last note</th>
+<th scope="col" style="padding: 12px 20px 12px 16px; font-weight: 600; border-bottom: 1px solid #E3D9CB">Next step</th>
+</tr>
+</thead>
+<tbody>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="12">
+<tr style="{{r.rowStyle}}">
+<td style="padding: 12px 0 12px 20px; border-bottom: 1px solid #E3D9CB; vertical-align: top">
+<sc-if value="{{r.selected}}" hint-placeholder-val="{{false}}"><input type="checkbox" checked aria-label="{{r.selectLabel}}" style="width: 18px; height: 18px; margin: 1px 0 0; accent-color: #29241F"></sc-if>
+<sc-if value="{{r.unselected}}" hint-placeholder-val="{{true}}"><input type="checkbox" aria-label="{{r.selectLabel}}" style="width: 18px; height: 18px; margin: 1px 0 0; accent-color: #29241F"></sc-if>
+</td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #E3D9CB; vertical-align: top"><a href="#" style="font-weight: 600; text-decoration: none">{{r.name}}</a><div style="font-size: 12px; color: #746C63">{{r.band}} · <span style="{{r.guardianStyle}}">{{r.guardian}}</span></div></td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #E3D9CB; vertical-align: top">{{r.coach}}</td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #E3D9CB; vertical-align: top">
+<div role="img" aria-label="{{r.marksLabel}}" style="display: flex; gap: 4px; height: 20px; align-items: center">
+<sc-for list="{{r.marks}}" as="m" hint-placeholder-count="6">
+<span aria-hidden="true" style="display: inline-flex; width: 20px; height: 20px; align-items: center; justify-content: center;">
+<sc-if value="{{m.p}}" hint-placeholder-val="{{true}}"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5" fill="#32745B"></circle></svg></sc-if>
+<sc-if value="{{m.l}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M8 2 L14 8 L8 14 L2 8 Z" fill="#965C1C"></path></svg></sc-if>
+<sc-if value="{{m.a}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M4 4 L12 12 M12 4 L4 12" stroke="#AE4339" stroke-width="2.4" stroke-linecap="round" fill="none"></path></svg></sc-if>
+<sc-if value="{{m.n}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M5 8 H11" stroke="#A89B8D" stroke-width="2" stroke-linecap="round" fill="none"></path></svg></sc-if>
+</span>
+</sc-for>
+</div>
+<div style="{{r.streakStyle}}">{{r.streak}}</div>
+</td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #E3D9CB; vertical-align: top"><span>{{r.note}}</span><div style="font-size: 12px; color: #746C63">{{r.noteBy}}</div></td>
+<td style="padding: 12px 20px 12px 16px; border-bottom: 1px solid #E3D9CB; vertical-align: top"><a href="#" style="text-decoration: none">{{r.next}}</a><div style="{{r.dueStyle}}">{{r.due}}</div></td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 20px">
+<span style="color: #746C63">Showing all 12 people in this cohort</span>
+<div style="display: flex; gap: 8px">
+<button type="button" style="height: 36px; padding: 0 14px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; font: inherit; color: #29241F; cursor: pointer">Export roster</button>
+<a href="#" style="display: inline-flex; align-items: center; height: 36px; padding: 0 14px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; box-sizing: border-box; color: #29241F; text-decoration: none">See all sessions</a>
+</div>
+</div>
+</div>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1682}}'>
+class Component extends DCLogic {
+renderVals() {
+const base = 'display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 9px; text-decoration: none; ';
+const nav = ['Home', 'Work', 'Programs', 'Fundraising', 'Comms', 'Finance', 'Impact', 'Organization'].map((label) => ({
+label,
+style: base + (label === 'Programs' ? 'background: #2A241E; color: #F3EDE4; font-weight: 600; box-shadow: inset 3px 0 0 #C96B38' : 'color: #A89B8D')
+}));
+const onFile = 'color: #746C63';
+const missing = 'color: #965C1C; font-weight: 600';
+const picks = [
+{ name: 'Amara J.', detail: 'Grade 9 · Not in a cohort', guardian: 'Guardian on file', guardianStyle: 'font-size: 13px; ' + onFile },
+{ name: 'Diego R.', detail: 'Grade 9 · Not in a cohort', guardian: 'Guardian on file', guardianStyle: 'font-size: 13px; ' + onFile },
+{ name: 'Leila T.', detail: 'Grade 9 · Waitlist from Intake, Nov 12', guardian: 'No guardian on file', guardianStyle: 'font-size: 13px; ' + missing }
+].map((p) => Object.assign(p, { aria: 'Selected: ' + p.name }));
+
+const dates = ['Oct 13', 'Oct 20', 'Oct 27', 'Nov 3', 'Nov 10', 'Nov 17'];
+const word = { P: 'present', L: 'late', A: 'absent', N: 'not enrolled yet' };
+const late = 'font-size: 12px; color: #AE4339; font-weight: 600';
+const soon = 'font-size: 12px; color: #746C63';
+const raw = [
+{ name: 'Jaylen M.', band: 'Grade 10', g: true, coach: 'Marcus Oyelaran', s: 'PPLPAA', note: 'Guardian says work shifts changed.', noteBy: 'Nov 3 · Marcus', next: 'Call guardian about Tuesdays', due: '2 days late', isLate: true, sel: true },
+{ name: 'Sofia P.', band: 'Grade 9', g: false, coach: 'Priya Raman', s: 'PLPPAA', note: 'Asked how pay works at a first job.', noteBy: 'Nov 3 · Priya', next: 'Find a guardian contact', due: 'Due today', isLate: true, sel: true },
+{ name: 'Andre W.', band: 'Grade 10', g: true, coach: 'Marcus Oyelaran', s: 'PPPPPP', note: 'Mock interview went well.', noteBy: 'Nov 17 · Marcus', next: 'Plan Northgate visit', due: 'Due Dec 1', isLate: false, sel: true },
+{ name: 'Hana K.', band: 'Grade 9', g: true, coach: 'Marcus Oyelaran', s: 'PPPLPP', note: 'Top quiz match: nursing.', noteBy: 'Nov 17 · Marcus', next: 'Share nursing introship', due: 'Due Nov 24', isLate: false, sel: false },
+{ name: 'Mateo G.', band: 'Grade 11', g: true, coach: 'Marcus Oyelaran', s: 'PPAPPL', note: 'Missed Oct 27 for a game.', noteBy: 'Oct 27 · Marcus', next: 'Résumé draft review', due: 'Due Nov 24', isLate: false, sel: false },
+{ name: 'Nia B.', band: 'Grade 9', g: true, coach: 'Priya Raman', s: 'PPPPPP', note: 'Leads the group warm-up now.', noteBy: 'Nov 17 · Priya', next: 'Ask to co-lead spring', due: 'Due Dec 8', isLate: false, sel: false },
+{ name: 'Omar H.', band: 'Grade 10', g: true, coach: 'Priya Raman', s: 'LPPPLP', note: 'Bus runs late on Tuesdays.', noteBy: 'Nov 10 · Priya', next: 'Check bus pass request', due: 'Due Nov 24', isLate: false, sel: false },
+{ name: 'Grace L.', band: 'Ages 14 to 15', g: true, coach: 'Priya Raman', s: 'PPPPPL', note: 'Interested in design careers.', noteBy: 'Nov 17 · Priya', next: 'Send design introship', due: 'Due Nov 26', isLate: false, sel: false },
+{ name: 'Ethan W.', band: 'Grade 11', g: true, coach: 'Jordan Ellis', s: 'PPPPPP', note: 'Applied for a library aide job.', noteBy: 'Nov 17 · Jordan', next: 'Write a reference', due: 'Due Nov 23', isLate: false, sel: false },
+{ name: 'Zara B.', band: 'Grade 10', g: true, coach: 'Jordan Ellis', s: 'PAPPPP', note: 'Practicing a 30 second intro.', noteBy: 'Nov 10 · Jordan', next: 'Record intro practice', due: 'Due Nov 24', isLate: false, sel: false },
+{ name: 'Maya C.', band: 'Grade 9', g: true, coach: 'Jordan Ellis', s: 'PPPPLP', note: 'No note yet', noteBy: 'Add one after Tuesday', next: 'First one-on-one', due: 'Due Nov 24', isLate: false, sel: false },
+{ name: 'Kai N.', band: 'Grade 9', g: false, coach: 'Jordan Ellis', s: 'NNNNPP', note: 'Joined Nov 10 from Intake.', noteBy: 'Nov 10 · Remi', next: 'Get guardian form', due: 'Due Nov 24', isLate: false, sel: false }
+];
+
+let attended = 0;
+let held = 0;
+const missedNamesList = [];
+const rows = raw.map((r) => {
+const marks = r.s.split('').map((c) => ({ p: c === 'P', l: c === 'L', a: c === 'A', n: c === 'N' }));
+r.s.slice(2).split('').forEach((c) => { if (c !== 'N') { held += 1; if (c === 'P' || c === 'L') attended += 1; } });
+const twice = r.s.slice(-2) === 'AA';
+if (twice) missedNamesList.push(r.name);
+const counts = { P: 0, L: 0, A: 0 };
+r.s.split('').forEach((c) => { if (counts[c] !== undefined) counts[c] += 1; });
+const enrolledFor = r.s.replace(/N/g, '').length;
+return {
+name: r.name,
+band: r.band,
+guardian: r.g ? 'Guardian on file' : 'No guardian on file',
+guardianStyle: r.g ? onFile : missing,
+coach: r.coach,
+marks,
+marksLabel: r.s.split('').map((c, i) => dates[i] + ' ' + word[c]).join(', '),
+streak: twice ? 'Missed last 2' : (counts.P + counts.L) + ' of ' + enrolledFor + ' attended',
+streakStyle: twice ? 'font-size: 12px; color: #AE4339; font-weight: 600; margin-top: 4px' : 'font-size: 12px; color: #746C63; margin-top: 4px',
+note: r.note,
+noteBy: r.noteBy,
+next: r.next,
+due: r.due,
+dueStyle: r.isLate ? late : soon,
+selected: r.sel,
+unselected: !r.sel,
+selectLabel: 'Select ' + r.name,
+rowStyle: r.sel ? 'background: #FBF8F2' : ''
+};
+});
+const rate = Math.round((attended / held) * 100) + '%';
+return {
+nav,
+picks,
+rows,
+enrolled: String(raw.length),
+rate,
+rateNote: attended + ' of ' + held + ' check-ins, from session records',
+missedCount: String(missedNamesList.length),
+missedNames: missedNamesList.join(' and '),
+};
+}
+}
+</script>
+</body>
+</html>

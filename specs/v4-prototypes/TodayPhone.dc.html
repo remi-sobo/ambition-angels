@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Today on a phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap">
+<style>
+body{margin:0}
+a{color:#29241F}a:hover{color:#9D532C}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; overflow: hidden; display: flex; flex-direction: column; background: #F7F4EE; color: #29241F; font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 14px; line-height: 1.4">
+
+<main style="flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 16px 16px 32px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px">
+
+<header style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0 4px">
+<div>
+<h1 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.02em">Good morning, Remi</h1>
+<div style="font-size: 13px; color: #746C63; margin-top: 2px">Monday, Nov 23</div>
+</div>
+<button type="button" aria-label="Look someone up" style="flex: none; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; color: #29241F; cursor: pointer"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg></button>
+</header>
+
+<section aria-labelledby="mine-title" style="background: #FFFDF9; border: 1px solid #E3D9CB; border-radius: 15px">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #E3D9CB">
+<h2 id="mine-title" style="margin: 0; font-size: 17px; font-weight: 600">Mine, and overdue first</h2>
+<span style="font-size: 13px; color: #AE4339; font-weight: 600">3 late</span>
+</div>
+<sc-for list="{{mine}}" as="r" hint-placeholder-count="4">
+<div style="display: flex; align-items: center; gap: 12px; min-height: 76px; box-sizing: border-box; padding: 12px 16px; border-bottom: 1px solid #E3D9CB">
+<a href="#" style="flex: 1 1 auto; min-width: 0; text-decoration: none">
+<div style="font-size: 15px; font-weight: 600; line-height: 1.3">{{r.title}}</div>
+<div style="font-size: 13px; margin-top: 4px"><span style="{{r.dueStyle}}">{{r.due}}</span><span style="color: #746C63"> · {{r.kind}}</span></div>
+</a>
+<button type="button" aria-label="{{r.actionLabel}}" style="flex: none; width: 76px; height: 44px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; font: inherit; font-size: 15px; font-weight: 600; color: #29241F; cursor: pointer">{{r.action}}</button>
+</div>
+</sc-for>
+<a href="#" style="display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 0 16px; color: #9D532C; font-weight: 600; text-decoration: none">10 more assigned to you<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></a>
+</section>
+
+<section aria-labelledby="money-title" style="background: #FFFDF9; border: 1px solid #E3D9CB; border-radius: 15px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 4px 0 16px; min-height: 48px; border-bottom: 1px solid #E3D9CB">
+<div style="display: flex; align-items: center; gap: 8px">
+<h2 id="money-title" style="margin: 0; font-size: 17px; font-weight: 600">Money</h2>
+<span style="display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border-radius: 999px; background: #E2EFE8; color: #32745B; font-size: 12px; font-weight: 600">On track</span>
+</div>
+<a href="#" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; font-size: 13px; color: #746C63">Open Finance</a>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr))">
+<sc-for list="{{money}}" as="m" hint-placeholder-count="3">
+<div style="{{m.cellStyle}}">
+<div style="font-size: 12px; color: #746C63">{{m.label}}</div>
+<div style="font-size: 18px; font-weight: 600; letter-spacing: -0.02em; margin-top: 2px; font-variant-numeric: tabular-nums">{{m.value}}</div>
+<div style="font-size: 12px; color: #746C63; margin-top: 2px; line-height: 1.3">{{m.source}}</div>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section aria-label="Next meeting" style="display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 16px; background: #FBF8F2; border: 1px solid #E3D9CB; border-radius: 15px">
+<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#746C63" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>
+<div style="flex: 1 1 auto; min-width: 0">
+<div style="font-weight: 600; font-variant-numeric: tabular-nums">10:30am · Pacific Ridge call</div>
+<div style="font-size: 12px; color: #746C63">Budget questions, 30 min</div>
+</div>
+<a href="#" style="flex: none; display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; color: #9D532C; font-weight: 600">Prep ready</a>
+</section>
+
+</main>
+
+<nav aria-label="Main" style="flex: none; display: grid; grid-template-columns: repeat(5, 1fr); align-items: end; height: 76px; box-sizing: border-box; padding: 0 4px 8px; background: #FFFDF9; border-top: 1px solid #E3D9CB">
+<a href="#" aria-current="page" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 56px; color: #29241F; font-size: 12px; font-weight: 600; text-decoration: none; box-shadow: inset 0 3px 0 #C96B38"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>Today</a>
+<a href="#" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 56px; color: #746C63; font-size: 12px; text-decoration: none"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="M8 12l3 3 5-6"></path></svg>Work</a>
+<a href="CapturePhone.dc.html" aria-label="Capture: talk to log" style="display: flex; flex-direction: column; align-items: center; gap: 4px; color: #29241F; font-size: 12px; font-weight: 600; text-decoration: none"><span style="display: inline-flex; align-items: center; justify-content: center; width: 60px; height: 60px; margin-top: -24px; border-radius: 999px; background: #9D532C; color: #FFFFFF; border: 4px solid #F7F4EE"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0"></path><path d="M12 18v3"></path></svg></span>Capture</a>
+<a href="#" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 56px; color: #746C63; font-size: 12px; text-decoration: none"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"></path></svg>Fundraising</a>
+<a href="#" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 56px; color: #746C63; font-size: 12px; text-decoration: none"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>More</a>
+</nav>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+const late = 'color: #AE4339; font-weight: 600';
+const today = 'color: #29241F; font-weight: 600';
+const row = (title, kind, due, dueStyle, action) => ({ title, kind, due, dueStyle, action, actionLabel: action + ': ' + title });
+const mine = [
+row('Year-end ask, Dana Whitfield', 'Draft ready', '12 days late', late, 'Send'),
+row('Renewal call, Harlow Fund', 'Follow-up', '3 days late', late, 'Call'),
+row('Accept 3 proposed gifts', 'Decision', '2 days late', late, 'Review'),
+row('Thank-you, Okafor Family', 'To sign', 'Due today', today, 'Sign')
+];
+const cell = 'padding: 12px 12px 16px 16px';
+const divided = 'padding: 12px 12px 16px 12px; border-left: 1px solid #E3D9CB';
+const money = [
+{ label: 'Cash', value: '$214,380', source: 'Bank alert, today 6:02am', cellStyle: cell },
+{ label: 'Runway', value: '7.4 mo', source: 'At 3-month average spend', cellStyle: divided },
+{ label: 'This week', value: '$12,650', source: '9 gifts, as of now', cellStyle: divided }
+];
+return { mine, money };
+}
+}
+</script>
+</body>
+</html>

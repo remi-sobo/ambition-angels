@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Donor lookup on phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap">
+<style>
+body{margin:0}
+a{color:#29241F}a:hover{color:#9D532C}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; overflow: hidden; display: flex; flex-direction: column; background: #F7F4EE; color: #29241F; font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 14px; line-height: 1.4">
+
+<main style="flex: 1; min-height: 0; overflow-y: auto; padding: 0 16px 24px">
+
+<div style="display: flex; align-items: center; justify-content: space-between; height: 44px; margin: 0 -8px">
+<a href="Main.dc.html" style="display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0 8px; color: #29241F; text-decoration: none; font-weight: 600"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg>Donors</a>
+<button type="button" aria-label="More actions" style="width: 44px; height: 44px; background: transparent; border: 0; border-radius: 9px; color: #29241F; font-size: 20px; cursor: pointer">&#8942;</button>
+</div>
+
+<h1 style="margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2">Dana Whitfield</h1>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 4px; font-size: 13px"><span style="color: #746C63">Major donor since 2019</span><span style="padding: 2px 8px; background: #F5EAD6; border-radius: 6px; color: #965C1C; font-weight: 600">Prefers email. Do not call.</span></div>
+
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px">
+<a href="#" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 52px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 12px; color: #746C63; text-decoration: none; font-weight: 600"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-3 2a11 11 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"></path></svg>Call</a>
+<a href="#" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 52px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 12px; color: #29241F; text-decoration: none; font-weight: 600"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18v12H3zM3 7l9 7 9-7"></path></svg>Email</a>
+<button type="button" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 52px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 12px; color: #29241F; font: inherit; font-weight: 600; cursor: pointer"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg>Talk to log</button>
+</div>
+
+<section aria-label="Next step" style="margin-top: 12px; padding: 16px 16px 16px 20px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 15px; box-shadow: inset 4px 0 0 #AE4339">
+<div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #746C63">Next step</div>
+<div style="font-size: 20px; font-weight: 600; letter-spacing: -0.01em; margin-top: 2px; line-height: 1.25">Send year-end ask.</div>
+<div style="font-size: 13px; margin-top: 2px"><span style="font-weight: 600; color: #AE4339">12 days late.</span> <span style="color: #746C63">For the Year-end ask, $25,000</span></div>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px">
+<button type="button" style="height: 44px; background: #29241F; color: #FFFDF9; border: 0; border-radius: 9px; font: inherit; font-weight: 600; cursor: pointer">Mark done</button>
+<button type="button" style="height: 44px; background: #FFFDF9; color: #29241F; border: 1px solid #CDBEAA; border-radius: 9px; font: inherit; font-weight: 600; cursor: pointer">Reschedule</button>
+</div>
+</section>
+
+<section aria-label="Giving" style="margin-top: 12px; background: #FFFDF9; border: 1px solid #E3D9CB; border-radius: 15px">
+<div style="display: grid; grid-template-columns: repeat(3, 1fr)">
+<sc-for list="{{figures}}" as="f" hint-placeholder-count="3">
+<div style="{{f.cellStyle}}">
+<div style="font-size: 12px; color: #746C63">{{f.label}}</div>
+<div style="font-size: 20px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums">{{f.value}}</div>
+<div style="font-size: 12px; color: #746C63">{{f.note}}</div>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section aria-label="Last time" style="margin-top: 12px; padding: 16px; background: #FFFDF9; border: 1px solid #E3D9CB; border-radius: 15px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: -12px 0 -8px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 600">Last time</h2>
+<a href="#" style="display: inline-flex; align-items: center; gap: 2px; min-height: 44px; font-size: 13px; font-weight: 600">Coffee, Nov 6<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg></a>
+</div>
+<p style="margin: 4px 0 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden">Wants to see the coach program before year end. Open to a larger gift if it funds summer introships.</p>
+</section>
+
+<section aria-label="Recent activity" style="margin-top: 12px; background: #FFFDF9; border: 1px solid #E3D9CB; border-radius: 15px">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 16px 0"><h2 style="margin: 0; font-size: 17px; font-weight: 600">Recent</h2><a href="Donor.dc.html" style="display: inline-flex; align-items: center; gap: 2px; min-height: 44px; font-size: 13px; font-weight: 600">See all 31<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg></a></div>
+<ul style="list-style: none; margin: 0; padding: 0">
+<sc-for list="{{recent}}" as="r" hint-placeholder-count="3">
+<li style="display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 44px; padding: 4px 16px; box-sizing: border-box; border-top: 1px solid #E3D9CB">
+<span aria-hidden="true" style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 999px; background: #F7F4EE; border: 1px solid #E3D9CB; box-sizing: border-box"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#29241F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{r.icon}}"></path></svg></span>
+<span style="min-width: 0"><span style="display: block; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.title}}</span><span style="display: block; font-size: 13px; color: #746C63">{{r.meta}}</span></span>
+<span style="font-size: 13px; color: #746C63; font-variant-numeric: tabular-nums">{{r.date}}</span>
+</li>
+</sc-for>
+</ul>
+</section>
+
+</main>
+
+<nav aria-label="Main" style="flex: none; display: grid; grid-template-columns: repeat(5, 1fr); align-items: end; height: 76px; box-sizing: border-box; padding: 0 4px 8px; background: #FFFDF9; border-top: 1px solid #E3D9CB">
+<a href="#" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 56px; color: #746C63; font-size: 12px; text-decoration: none"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>Today</a>
+<a href="#" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 56px; color: #746C63; font-size: 12px; text-decoration: none"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="M8 12l3 3 5-6"></path></svg>Work</a>
+<a href="CapturePhone.dc.html" aria-label="Capture: talk to log" style="display: flex; flex-direction: column; align-items: center; gap: 4px; color: #29241F; font-size: 12px; font-weight: 600; text-decoration: none"><span style="display: inline-flex; align-items: center; justify-content: center; width: 60px; height: 60px; margin-top: -24px; border-radius: 999px; background: #9D532C; color: #FFFFFF; border: 4px solid #F7F4EE"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0"></path><path d="M12 18v3"></path></svg></span>Capture</a>
+<a href="#" aria-current="page" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 56px; color: #29241F; font-size: 12px; font-weight: 600; text-decoration: none; box-shadow: inset 0 3px 0 #C96B38"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"></path></svg>Fundraising</a>
+<a href="#" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 56px; color: #746C63; font-size: 12px; text-decoration: none"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>More</a>
+</nav>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+const cell = 'padding: 12px; border-right: 1px solid #E3D9CB; min-width: 0';
+const figures = [
+{ label: 'Lifetime', value: '$48,000', note: '9 gifts, as of now', cellStyle: cell },
+{ label: 'Last gift', value: '$10,000', note: 'Oct 3, thanked', cellStyle: cell },
+{ label: 'This year', value: '$15,000', note: 'Last year $12,000', cellStyle: 'padding: 12px; min-width: 0' }
+];
+const recent = [
+{ icon: 'M3 6h18v12H3zM3 7l9 7 9-7', title: 'Email: Fall impact update', meta: 'Opened and clicked', date: 'Nov 18' },
+{ icon: 'M4 5h16v11H9l-5 4z', title: 'Coffee with Dana', meta: 'Conversation, Remi', date: 'Nov 6' },
+{ icon: 'M5 12l4 4 10-10', title: 'Task done: Send Q3 report', meta: 'Shannon', date: 'Oct 20' }
+];
+return { figures, recent };
+}
+}
+</script>
+</body>
+</html>

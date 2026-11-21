@@ -307,7 +307,7 @@ export function MatchRow({ m }: { m: MatchView }) {
             {m.coach.detail ? ` · ${m.coach.detail}` : ""}
           </div>
         </button>
-        <div className="flex items-center gap-1" aria-label={`${done} of 4 sessions done`}>
+        <div className="flex items-center gap-1" role="img" aria-label={`${done} of 4 sessions done`}>
           {m.sessions.map((s) => (
             <span key={s.n} className={`w-5 h-1.5 rounded-full ${s.done_at ? "bg-orange" : "bg-tile"}`} />
           ))}

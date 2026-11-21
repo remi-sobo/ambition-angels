@@ -131,7 +131,7 @@ export default async function StrategyNarrativePage({
 
       <div className="mt-16 pt-6 border-t border-hairline text-sm text-ink-3">
         Tip: hit{" "}
-        <Link href="/admin/strategic-plan/narrative?present=1" className="text-orange hover:underline">
+        <Link href="/admin/strategic-plan/narrative?present=1" className="text-orange underline underline-offset-2">
           Present
         </Link>{" "}
         for a full-screen, keyboard-driven walk-through (← → between movements, Esc to exit).

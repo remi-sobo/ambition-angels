@@ -1,5 +1,8 @@
 "use client";
 
+import { saveAction } from "@/lib/admin/saveAction";
+import Input, { Textarea } from "@/app/admin/_components/ui/Input";
+import Button from "@/app/admin/_components/ui/Button";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
@@ -55,62 +58,41 @@ export default function MeetingDetailClient({ detail }: { detail: Detail }) {
   const { record, matched, suggestions, linkedTasks, agenda, recurring } = detail;
   const pending = suggestions.filter((s) => s.status === "pending");
 
-  async function api(url: string, body: unknown, method: "POST" | "PATCH" = "POST") {
-    const r = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return r;
+  // Every write on this record goes through saveAction (V4 Stage G): a
+  // failure is said in a toast and nothing on screen pretends it saved.
+  async function api(url: string, body: unknown, failure: string, method: "POST" | "PATCH" = "POST") {
+    const r = await saveAction({ request: { url, method, body }, failure, toast });
+    if (r.ok) startTransition(() => router.refresh());
+    return r.ok;
   }
 
   async function setStatus(status: FollowUpStatus, applyToSeries = false) {
     setBusy(true);
-    try {
-      await api(
-        `/api/admin/meetings/${record.id}`,
-        { follow_up_status: status, ...(applyToSeries ? { apply_to_series: true } : {}) },
-        "PATCH"
-      );
-      startTransition(() => router.refresh());
-    } catch (e) {
-      console.error(e);
-      toast.error("Couldn't update. Try again.");
-    } finally {
-      setBusy(false);
-    }
+    await api(
+      `/api/admin/meetings/${record.id}`,
+      { follow_up_status: status, ...(applyToSeries ? { apply_to_series: true } : {}) },
+      "Couldn't update. Try again.",
+      "PATCH",
+    );
+    setBusy(false);
   }
 
   async function parse() {
     if (!transcript.trim()) return;
     setParsing(true);
-    try {
-      await api(`/api/admin/meetings/${record.id}/transcript`, {
-        transcript,
-        store_transcript: storeTranscript,
-      });
-      setTranscript("");
-      startTransition(() => router.refresh());
-    } catch (e) {
-      console.error(e);
-      toast.error("Couldn't parse the transcript. Try again.");
-    } finally {
-      setParsing(false);
-    }
+    const ok = await api(
+      `/api/admin/meetings/${record.id}/transcript`,
+      { transcript, store_transcript: storeTranscript },
+      "Couldn't parse the transcript. Try again.",
+    );
+    if (ok) setTranscript("");
+    setParsing(false);
   }
 
   async function decide(suggestionId: string, action: "accept" | "dismiss") {
     setBusy(true);
-    try {
-      await api(`/api/admin/meetings/${record.id}/suggestions`, { suggestion_id: suggestionId, action });
-      startTransition(() => router.refresh());
-    } catch (e) {
-      console.error(e);
-      toast.error("Couldn't save. Try again.");
-    } finally {
-      setBusy(false);
-    }
+    await api(`/api/admin/meetings/${record.id}/suggestions`, { suggestion_id: suggestionId, action }, "Couldn't save. Try again.");
+    setBusy(false);
   }
 
   return (
@@ -299,16 +281,16 @@ export default function MeetingDetailClient({ detail }: { detail: Detail }) {
             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-light text-orange-dark text-xs font-bold">
               R
             </span>
-            <label className="text-xs uppercase tracking-wider text-ink-2 font-semibold">
+            <label htmlFor={`transcript-${record.id}`} className="text-xs uppercase tracking-wider text-ink-2 font-semibold">
               Paste a transcript for Reed
             </label>
           </div>
-          <textarea
+          <Textarea
+            id={`transcript-${record.id}`}
             value={transcript}
             onChange={(e) => setTranscript(e.target.value)}
             rows={5}
-            placeholder="Paste the meeting transcript or your notes…"
-            className="w-full text-sm rounded-panel border border-hairline bg-surface p-3 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange/40"
+            placeholder="Paste the meeting transcript or your notes"
           />
           <div className="mt-2.5 flex items-center justify-between gap-3 flex-wrap">
             <label className="flex items-center gap-2 text-xs text-ink-2 cursor-pointer">
@@ -320,13 +302,9 @@ export default function MeetingDetailClient({ detail }: { detail: Detail }) {
               />
               Keep the full transcript on this record (off = summary only)
             </label>
-            <button
-              onClick={parse}
-              disabled={parsing || !transcript.trim()}
-              className="text-sm font-semibold px-4 py-2 rounded-full bg-orange text-white hover:bg-orange-dark disabled:opacity-50 transition-colors"
-            >
-              {parsing ? "Reed is reading…" : "Summarize & suggest"}
-            </button>
+            <Button type="button" onClick={parse} disabled={!transcript.trim()} loading={parsing}>
+              {parsing ? "Reed is reading" : "Summarize and suggest"}
+            </Button>
           </div>
         </div>
       </section>
@@ -375,36 +353,32 @@ function ConnectEntity({ meetingId }: { meetingId: string }) {
 
   async function connect(entity: ConnectResult) {
     setSaving(true);
-    try {
-      const r = await fetch(`/api/admin/meetings/${meetingId}/connect`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ entity_type: entity.type, entity_id: entity.id }),
-      });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      setQ("");
-      setResults([]);
-      startTransition(() => router.refresh());
-    } catch (e) {
-      console.error(e);
-      toast.error("Couldn't connect. Try again.");
-    } finally {
-      setSaving(false);
-    }
+    const r = await saveAction({
+      request: { url: `/api/admin/meetings/${meetingId}/connect`, method: "POST", body: { entity_type: entity.type, entity_id: entity.id } },
+      failure: "Couldn't connect. Try again.",
+      success: `Connected ${entity.name}`,
+      toast,
+    });
+    setSaving(false);
+    if (!r.ok) return;
+    setQ("");
+    setResults([]);
+    startTransition(() => router.refresh());
   }
 
   return (
     <div className="rounded-panel border border-dashed border-hairline bg-tile/30 p-4">
-      <label className="text-xs uppercase tracking-wider text-ink-2 font-semibold">
+      <label htmlFor={`connect-${meetingId}`} className="text-xs uppercase tracking-wider text-ink-2 font-semibold">
         Connect a donor or partner
       </label>
-      <input
-        type="text"
+      <Input
+        id={`connect-${meetingId}`}
+        type="search"
         value={q}
         onChange={(e) => setQ(e.target.value)}
         disabled={saving}
-        placeholder="Search the CRM by name…"
-        className="mt-2 w-full text-sm rounded-panel border border-hairline bg-surface p-2.5 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange/40 disabled:opacity-50"
+        placeholder="Search the CRM by name"
+        className="mt-2"
       />
       {q.trim().length >= 2 && (
         <div className="mt-2 space-y-1">

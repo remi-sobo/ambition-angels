@@ -37,11 +37,28 @@ import {
 import { editCard } from "./edit";
 import { cardKindOf, filedElsewhere, isHeldKind } from "./cardKind";
 
+/** One team-inbox notification (the shape of lib/notifications/notify's input). */
+export type HandoffNotice = {
+  orgId: string;
+  recipientId: string;
+  actorId: string;
+  type: string;
+  title: string;
+  body: string | null;
+  linkedEntityType: string | null;
+  linkedEntityId: string | null;
+  linkedLabel: string | null;
+  url: string | null;
+};
+
 export type ActionDeps = {
   supabase: SupabaseClient;
   ctx: ApplyCtx;
   /** Destination permission check for the caller's active org (ctxHasPermission). */
   hasPermission: (permission: string) => Promise<boolean>;
+  /** "Send to a teammate" (handoff.ts): the notifications spine's one write
+   *  path, injected so nothing under lib/capture holds a service-role client. */
+  notify?: (notice: HandoffNotice) => Promise<{ id: string } | null>;
   now?: () => Date;
 };
 
@@ -123,6 +140,10 @@ export async function confirmCard(deps: ActionDeps, cardId: string, patch?: unkn
   if (!card) return fail(404, "Not found");
   const capture = await loadCapture(supabase, card.capture_id);
   if (!capture) return fail(404, "Not found");
+
+  // Sent to a teammate (handoff.ts) or filed by a gift / story action: done,
+  // with no applied row to recover. Never re-run an applier on it.
+  if (card.status === "confirmed" && !card.applied_id && filedElsewhere(card.payload)) return { ok: true, card };
 
   // V4 §8: a gift or story card is never filed by an applier, whatever its
   // status says. A gift is recorded in the gift drawer (never optimistic,

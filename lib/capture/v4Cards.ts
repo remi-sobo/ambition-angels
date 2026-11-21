@@ -15,7 +15,7 @@
  * Writes only capture_cards and captures, through the session client.
  */
 
-import { buildStoryFields, cardKindOf, filedElsewhere } from "./cardKind";
+import { buildStoryFields, cardKindOf, filedElsewhere, filingPermission } from "./cardKind";
 import { findGift } from "./apply/giftLink";
 import { CARD_COLUMNS, type CardRow } from "./apply/shared";
 import { settleCapture, type ActionDeps, type ActionResult } from "./confirm";
@@ -67,6 +67,9 @@ export async function markPledgeAdded(deps: ActionDeps, cardId: string): Promise
   if (cardKindOf(card) !== "gift" || card.payload.gift_type !== "pledge") return fail(409, "Only a pledge card can be marked added.", card);
   if (card.status === "confirmed" && filedElsewhere(card.payload)?.table === "pledges") return { ok: true, card };
   if (card.status !== "held") return fail(409, "This card was already handled.", card);
+  // Recording no longer needs ops.write (capture.use), so the destination's
+  // own permission is asked here, as recordGiftFiled does.
+  if (!(await deps.hasPermission(filingPermission(card)))) return fail(403, "You don't have permission to add pledges.", card);
   return markFiled(deps, card, { table: "pledges", manual: true });
 }
 
@@ -76,6 +79,9 @@ export async function keepStory(deps: ActionDeps, cardId: string): Promise<Actio
   if (cardKindOf(card) !== "story") return fail(409, "Only a story card can be kept.", card);
   if (card.status === "confirmed" && filedElsewhere(card.payload)?.table === "capture_cards") return { ok: true, card };
   if (card.status !== "held") return fail(409, "This card was already handled.", card);
+  // Keeping a story needed ops.write under Stage C (the capture tables asked
+  // for it); with capture.use for every role it is asked here instead.
+  if (!(await deps.hasPermission(filingPermission(card)))) return fail(403, "You don't have permission to keep stories.", card);
   // The hold travels with the draft: consent stays "needed" for an
   // identifiable story, and nothing can mark it otherwise from here.
   return markFiled(deps, card, { table: "capture_cards", kept: true });

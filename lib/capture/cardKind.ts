@@ -226,11 +226,15 @@ export function storyUsable(story: { identifiable?: unknown; consent?: unknown }
   return storyHold(story, consentOnFile) === null;
 }
 
-/** What "filed" means on a gift or story card (payload.filed). */
+/** What "filed" means on a card no applier wrote (payload.filed): a gift or
+ *  story card's own action, or any card sent to a teammate (handoff.ts). */
 export type FiledElsewhere =
   | { table: "gifts"; id: string; amount: number | null }
   | { table: "pledges"; manual: true }
-  | { table: "capture_cards"; kept: true };
+  | { table: "capture_cards"; kept: true }
+  | { table: "notifications"; handoff: true; to: string[]; toNames: string[] };
+
+const strings = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
 
 export function filedElsewhere(payload: Record<string, unknown> | null | undefined): FiledElsewhere | null {
   const f = payload?.filed as Record<string, unknown> | undefined;
@@ -238,5 +242,50 @@ export function filedElsewhere(payload: Record<string, unknown> | null | undefin
   if (f.table === "gifts" && typeof f.id === "string") return { table: "gifts", id: f.id, amount: typeof f.amount === "number" ? f.amount : null };
   if (f.table === "pledges" && f.manual === true) return { table: "pledges", manual: true };
   if (f.table === "capture_cards" && f.kept === true) return { table: "capture_cards", kept: true };
+  if (f.table === "notifications" && f.handoff === true) {
+    return { table: "notifications", handoff: true, to: strings(f.to), toNames: strings(f.to_names) };
+  }
   return null;
+}
+
+// ── Who may file which card (voice for every role) ──────────────────────────
+
+/**
+ * The permission filing a card needs, by kind. Recording needs only
+ * capture.use (capture_use_permission.sql, all five roles); FILING still
+ * needs the destination's own permission, exactly as each applier's
+ * pre-check and the destination table's RLS ask for it:
+ *
+ *   conversation  fundraising.write (a donor), program.write (a partner);
+ *                 unpicked, the donor rule, the common case
+ *   todo / note   ops.write (ops_tasks)
+ *   draft         ops.write (reed_drafts, capture_drafts_permission.sql)
+ *   gift          fundraising.write (the gift drawer's route; a pledge is
+ *                 added on the donor record, the same permission)
+ *   story         ops.write: what keeping one needed under Stage C, when
+ *                 the capture tables themselves asked for ops.write
+ */
+export function filingPermission(card: { dest: string; entity_type?: string | null; payload: Record<string, unknown> | null | undefined }): string {
+  switch (cardKindOf(card)) {
+    case "conversation":
+      return card.entity_type === "partner" ? "program.write" : "fundraising.write";
+    case "gift":
+      return "fundraising.write";
+    case "todo":
+    case "note":
+    case "draft":
+    case "story":
+      return "ops.write";
+  }
+}
+
+/** Every permission filingPermission can name: what a client needs to know. */
+export const FILING_PERMISSIONS = ["ops.write", "fundraising.write", "program.write"] as const;
+
+/** Can someone holding `perms` file this card themselves? */
+export function canFileCard(
+  card: { dest: string; entity_type?: string | null; payload: Record<string, unknown> | null | undefined },
+  perms: Iterable<string>,
+): boolean {
+  return new Set(perms).has(filingPermission(card));
 }

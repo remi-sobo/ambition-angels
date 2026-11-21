@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import Alert from "./ui/Alert";
 
 /**
@@ -24,6 +25,10 @@ export default function AdminPWA() {
   const [waiting, setWaiting] = useState<ServiceWorker | null>(null);
   const [reloading, setReloading] = useState(false);
   const [offline, setOffline] = useState(false);
+  // V4 Stage E: the attendance screen keeps working offline (marks queue on
+  // the device), so the banner says that there instead of "will not be saved".
+  const pathname = usePathname() ?? "";
+  const attendanceScreen = /^\/admin\/(programs\/)?cohorts\/[^/]+\/sessions\/[^/]+/.test(pathname);
 
   useEffect(() => {
     const sync = () => setOffline(!navigator.onLine);
@@ -129,7 +134,9 @@ export default function AdminPWA() {
       style={{ paddingTop: "calc(env(safe-area-inset-top) + 8px)" }}
     >
       <Alert tone="warning" title="You are offline." className="w-full max-w-md shadow-2xl">
-        Changes you make now will not be saved. Reconnect to keep working.
+        {attendanceScreen
+          ? "Attendance marks you take here stay on this device and send when you are back online."
+          : "Changes you make now will not be saved. Reconnect to keep working."}
       </Alert>
     </div>
   ) : null;

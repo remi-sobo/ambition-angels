@@ -132,7 +132,7 @@ describe("finance is confined to finance", () => {
 
   test("finance cannot read the student roster: the page refuses before any query", async () => {
     as("finance");
-    const el = await StudentsPage();
+    const el = await StudentsPage({});
     expect(isValidElement(el)).toBe(true);
     expect((el as { type: unknown }).type).toBe(NotAuthorized);
     expect(state.serviceRoleCalls).toBe(0);
@@ -140,7 +140,7 @@ describe("finance is confined to finance", () => {
 
   test("board_viewer cannot read the student roster either", async () => {
     as("board_viewer");
-    const el = await StudentsPage();
+    const el = await StudentsPage({});
     expect((el as { type: unknown }).type).toBe(NotAuthorized);
     expect(state.serviceRoleCalls).toBe(0);
   });

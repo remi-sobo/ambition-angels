@@ -10,6 +10,7 @@ import {
   rowFingerprint,
   dedupeEmails,
   verdictFor,
+  cohortLookup,
   type Mapping,
 } from "@/lib/admin/imports/engine";
 import { requirePermission } from "@/lib/admin/requirePermission";
@@ -46,7 +47,7 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   }
 
   const entity = run.entity_type as "student" | "constituent";
-  const mapping = (run.mapping ?? {}) as { header?: string[]; map?: Mapping };
+  const mapping = (run.mapping ?? {}) as { header?: string[]; map?: Mapping; cohort_id?: string | null };
   const header = mapping.header ?? [];
   const map = mapping.map ?? {};
   const defs = await getFieldDefs(ctx.orgId, entity);
@@ -56,6 +57,26 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   const stageKeys = entity === "student"
     ? new Set((await getParticipantStages()).map((s) => s.stage_key))
     : new Set<string>();
+
+  // V4 Stage E: the cohort column and "put everyone in this cohort" resolve
+  // against the org's open cohorts only (org-pinned read). A default cohort
+  // that is no longer open fails the whole stage rather than half-enrolling.
+  let cohortsByName: Map<string, string> | undefined;
+  let defaultCohortId: string | null = null;
+  if (entity === "student") {
+    const { data: cohortRows } = await supabase
+      .from("cohorts")
+      .select("id, name, status")
+      .eq("org_id", ctx.orgId)
+      .in("status", ["planning", "active"]);
+    cohortsByName = cohortLookup((cohortRows ?? []) as { id: string; name: string }[]);
+    if (mapping.cohort_id) {
+      defaultCohortId = cohortsByName.get(String(mapping.cohort_id).toLowerCase()) ?? null;
+      if (!defaultCohortId) {
+        return NextResponse.json({ error: "The cohort chosen for everyone is not open in this organization." }, { status: 400 });
+      }
+    }
+  }
 
   const { data: rowData } = await supabase
     .from("import_rows")
@@ -112,7 +133,7 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   const updates = workable.map((r, i) => {
     const fp = fingerprints[i];
     const base = { id: r.id, org_id: ctx.orgId, import_id: params.id, row_num: r.row_num, raw: r.raw };
-    const built = buildRow(normalizeRow(header, r.raw, map), { entity, defs, stageKeys });
+    const built = buildRow(normalizeRow(header, r.raw, map), { entity, defs, stageKeys, cohortsByName, defaultCohortId });
     if (!built.ok) {
       invalid++;
       return { ...base, status: "invalid", verdict: null, matched_entity_id: null, normalized: null, error: built.error };
@@ -121,7 +142,7 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
     seenInFile.add(fp);
     const emailMatch = dedupeEmails(entity, built).map((e) => emailIndex.get(e)).find(Boolean) ?? null;
     const v = verdictFor(refHits.has(fp) || inFileDup, emailMatch);
-    const normalized = { fingerprint: fp, spine: built.spine, custom: built.custom };
+    const normalized = { fingerprint: fp, spine: built.spine, custom: built.custom, cohort_id: built.cohortId ?? null };
     if (v.verdict === "skip") {
       skipped++;
       return {

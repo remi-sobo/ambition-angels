@@ -10,6 +10,8 @@ import { TYPE } from "@/lib/admin/typeScale";
 import Alert from "@/app/admin/_components/ui/Alert";
 import { fetchAll } from "@/lib/supabase/fetchAll";
 import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
+import { ProgramsFirstRun } from "@/app/admin/programs/_components/ProgramsFirstRun";
+import { NewCohortForm } from "@/app/admin/cohorts/_components/CohortControls";
 
 // Spec Programs P1 — Attendance, the model's one seatless screen (recon §G:
 // cohort_sessions + attendance, "bindable"). One surface across every
@@ -111,7 +113,7 @@ export default async function AttendancePage() {
     .slice(-RECENT_LIMIT)
     .reverse();
 
-  const Row = ({ s, showRate }: { s: SessionRow; showRate?: boolean }) => {
+  const Row = ({ s, showRate, cta }: { s: SessionRow; showRate?: boolean; cta?: boolean }) => {
     const expected = enrolledByCohort.get(s.cohort_id) ?? 0;
     const agg = marksBySession.get(s.id);
     const taken = agg?.taken ?? 0;
@@ -119,7 +121,7 @@ export default async function AttendancePage() {
     return (
       <Link
         href={`/admin/programs/cohorts/${s.cohort_id}/sessions/${s.id}`}
-        className="group flex items-center gap-3 px-4 py-2.5 rounded-panel border border-hairline bg-surface transition-colors hover:bg-tile"
+        className={`group flex flex-wrap items-center gap-3 px-4 ${cta ? "py-3.5 min-h-[56px]" : "py-2.5"} rounded-panel border border-hairline bg-surface transition-colors hover:bg-tile`}
       >
         <span className="text-xs text-ink-2 font-mono [font-variant-numeric:tabular-nums] w-24 shrink-0">
           {fmtDate(s.session_date)}
@@ -145,6 +147,10 @@ export default async function AttendancePage() {
             {expected} expected · not taken
           </span>
         )}
+        {/* V4 Stage E: today's rows say what the tap does (it opens the phone roster). */}
+        {cta ? (
+          <span className="shrink-0 text-xs font-semibold text-orange">Take attendance →</span>
+        ) : null}
       </Link>
     );
   };
@@ -156,6 +162,7 @@ export default async function AttendancePage() {
     emptyHint,
     emptyAction,
     showRate,
+    cta,
   }: {
     label: string;
     rows: SessionRow[];
@@ -163,6 +170,7 @@ export default async function AttendancePage() {
     emptyHint?: string;
     emptyAction?: React.ReactNode;
     showRate?: boolean;
+    cta?: boolean;
   }) => (
     <section>
       <h2 className={`${TYPE.sectionHeader} mb-2`}>
@@ -173,7 +181,7 @@ export default async function AttendancePage() {
       ) : (
         <div className="space-y-1.5">
           {rows.map((s) => (
-            <Row key={s.id} s={s} showRate={showRate} />
+            <Row key={s.id} s={s} showRate={showRate} cta={cta} />
           ))}
         </div>
       )}
@@ -181,6 +189,21 @@ export default async function AttendancePage() {
   );
 
   const sessionsWord = terms.sessions.toLowerCase();
+  // V4 Stage E (SetupEmpty.dc.html): an org with no cohorts yet gets the
+  // first-run panel instead of three empty sections.
+  if ((cohortsData ?? []).length === 0) {
+    return (
+      <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace space-y-6">
+        <PageHeader title="Attendance" subtitle={`Take attendance for every ${terms.cohort.toLowerCase()} from one place.`} />
+        <ProgramsFirstRun
+          kind="cohorts"
+          terms={terms}
+          addOne={<NewCohortForm />}
+          headers={["Date", terms.cohort, terms.session, "Marked"]}
+        />
+      </div>
+    );
+  }
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace space-y-8">
       <PageHeader
@@ -196,6 +219,7 @@ export default async function AttendancePage() {
       <Section
         label="Today"
         rows={today}
+        cta
         empty={`No ${sessionsWord} scheduled today`}
       />
       <Section

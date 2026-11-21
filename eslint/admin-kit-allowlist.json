@@ -70,7 +70,6 @@
     "app/admin/careers/_components/CareersControls.tsx": 3,
     "app/admin/careers/daily/_components/DailyControls.tsx": 1,
     "app/admin/careers/pool/_components/PoolControls.tsx": 2,
-    "app/admin/cohorts/[id]/_components/CohortDetailControls.tsx": 3,
     "app/admin/compliance/_components/ComplianceControls.tsx": 2,
     "app/admin/compliance/[id]/_components/ComplianceDetailControls.tsx": 2,
     "app/admin/demoday/DemoDaySignups.tsx": 1,

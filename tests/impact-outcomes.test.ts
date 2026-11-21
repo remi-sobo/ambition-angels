@@ -22,8 +22,11 @@ describe("I1 structural pins", () => {
     expect(src).toMatch(/m\.department === "program" && m\.active/);
   });
 
-  test("Contract 2: values render ONLY through the <Metric> primitive — no bare figure", () => {
-    expect(src).toMatch(/<Metric metricKey=\{m\.metric_key\} showName \/>/);
+  test("Contract 2: values render ONLY through the catalog primitive (V4 G2: <MetricFigure>) — no bare figure", () => {
+    // V4 Stage G2 (spec §6 "every displayed number goes through Metric"): the
+    // value now rides <MetricFigure>, which reads the same catalog state as
+    // <Metric> and adds the required source line and the missing/stale states.
+    expect(src).toMatch(/<MetricFigure[\s\S]*?metricKey=\{m\.metric_key\}[\s\S]*?source=\{metricSource\(m, now, fmtDate\)\}/);
     // No direct formatting of a metric value on this page: the primitive owns
     // the number and its flags.
     expect(src).not.toMatch(/fmtMetricValue/);
@@ -31,9 +34,12 @@ describe("I1 structural pins", () => {
   });
 
   test("provenance is the screen, not the fine print — and nothing is faked or written", () => {
-    // The provenance line states origin, capture date, and cadence.
-    expect(src).toMatch(/Entered by hand/);
-    expect(src).toMatch(/never captured/);
+    // The provenance line states origin, capture date, and cadence. Since
+    // V4 G2 it is built by lib/impact/metricDisplay.ts (unit-tested in
+    // tests/finance-g2.test.ts) and is the Figure's required source.
+    const display = readFileSync(join(__dirname, "..", "lib", "impact", "metricDisplay.ts"), "utf8");
+    expect(display).toMatch(/Entered by hand/);
+    expect(display).toMatch(/Never captured/);
     expect(src).toMatch(/cadence/);
     // Reads only — the update flow stays on KPIs; no snapshot reads outside
     // the catalog, no writes, no funnel.

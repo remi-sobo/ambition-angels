@@ -4,6 +4,10 @@ import { useState } from "react";
 import EmptyState from "@/app/admin/_components/EmptyState";
 import { useRouter } from "next/navigation";
 import { TYPE } from "@/lib/admin/typeScale";
+import Button from "@/app/admin/_components/ui/Button";
+import Badge from "@/app/admin/_components/ui/Badge";
+import { Checkbox } from "@/app/admin/_components/ui/Input";
+import { TextField } from "@/app/admin/_components/ui/Field";
 
 // Spec Finance N3 — compose a report. Selection state lives in the URL: the
 // button navigates to the draft with a fresh report id (rid), which is the
@@ -49,21 +53,22 @@ export default function ComposeForm({
     router.push(`${basePath}?${params.toString()}`);
   }
 
+  // V4 Stage G2: a labeled title field, kit checkboxes, one primary button.
   return (
-    <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+    <section className="bg-surface border border-hairline rounded-panel overflow-hidden">
       <div className="px-5 py-4 border-b border-hairline">
         <h2 className={TYPE.cardTitle}>Compose a report</h2>
-        <p className="text-xs text-ink-3">
-          Pick the numbers; the draft flags anything unresolved inline. Only the export is gated.
+        <p className={`${TYPE.bodyMuted} mt-1`}>
+          Pick the numbers. The draft flags anything unresolved where it appears; only the export is held back.
         </p>
       </div>
       <div className="p-5 space-y-4">
-        <input
+        <TextField
+          label="Report title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder={titlePlaceholder}
           maxLength={120}
-          className="w-full text-sm bg-surface border-hairline rounded-control px-3 py-2 text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-orange"
         />
         {metrics.length === 0 ? (
           <EmptyState
@@ -71,45 +76,33 @@ export default function ComposeForm({
             title="No metrics in the catalog yet"
             hint="Reports pick their numbers from the Metric Catalog. Define the first metric and it appears here."
             action={
-              <a href="/admin/impact/kpis" className="text-xs font-semibold text-orange hover:text-orange-dark">
-                Open the Metric Catalog →
-              </a>
+              <Button variant="secondary" size="sm" href="/admin/impact/kpis">
+                Open the Metric Catalog
+              </Button>
             }
           />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {metrics.map((m) => {
-              const flagged = m.state === "conflict" || m.state === "stale" || m.stale;
-              return (
-                <label
-                  key={m.key}
-                  className="flex items-center gap-2 text-sm text-ink-1 cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selected.has(m.key)}
-                    onChange={() => toggle(m.key)}
-                    className="accent-orange"
-                  />
-                  <span className="truncate">{m.name}</span>
-                  {flagged && (
-                    <span className={`${TYPE.badge} px-2 py-0.5 rounded-full bg-status-watch-bg text-status-watch-text`}>
-                      {m.state === "conflict" ? "conflict" : "stale"}
-                    </span>
-                  )}
-                </label>
-              );
-            })}
-          </div>
+          <fieldset>
+            <legend className={`${TYPE.fieldLabel} mb-2`}>Numbers to include</legend>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
+              {metrics.map((m) => {
+                const flagged = m.state === "conflict" || m.state === "stale" || m.stale;
+                return (
+                  <label key={m.key} className="flex items-center gap-2 min-h-[36px] text-sm text-ink-1 cursor-pointer">
+                    <Checkbox checked={selected.has(m.key)} onChange={() => toggle(m.key)} />
+                    <span className="truncate">{m.name}</span>
+                    {flagged ? <Badge tone="warning">{m.state === "conflict" ? "Conflict" : "Out of date"}</Badge> : null}
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
         )}
-        <button
-          type="button"
-          onClick={openDraft}
-          disabled={selected.size === 0}
-          className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark rounded-full px-4 py-2 transition-colors disabled:opacity-40"
-        >
-          Draft it → ({selected.size})
-        </button>
+        <div className="flex justify-end">
+          <Button onClick={openDraft} disabled={selected.size === 0}>
+            {`Draft the report (${selected.size})`}
+          </Button>
+        </div>
       </div>
     </section>
   );

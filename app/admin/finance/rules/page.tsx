@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import type { FinCategory } from "@/lib/finance/types";
 import RulesEditor from "./_components/RulesEditor";
 import NoCategories from "../_components/NoCategories";
 import PageHeader from "../../_components/PageHeader";
+import PageShell from "../../_components/ui/PageShell";
 import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 type Rule = {
@@ -28,9 +28,9 @@ export default async function RulesPage() {
   const ctx = await getOrgContext();
   if (!ctx) {
     return (
-      <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8">
+      <PageShell width="reading">
         <PageHeader title="Rules" subtitle="Sign in to view categorization rules." />
-      </div>
+      </PageShell>
     );
   }
   const orgId = ctx.orgId;
@@ -53,34 +53,21 @@ export default async function RulesPage() {
   const categories = (catsRaw ?? []) as FinCategory[];
   const rules = (rulesRaw ?? []) as Rule[];
 
-  return (
-    <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8">
-      <header className="mb-2">
-        <div className="flex items-center gap-3 text-xs text-ink-2 mb-1">
-          <Link href="/admin/finance" className="hover:text-ink-1">
-            ← Finance
-          </Link>
-        </div>
-        <PageHeader
-          title="Category rules"
-          subtitle={
-            <span className="block max-w-2xl">
-              Rules run automatically on every CSV import and on demand against
-              uncategorized transactions. First match wins by priority; ties are
-              broken by recency. Bad regex patterns are silently skipped at
-              match-time so a single broken rule doesn&apos;t poison an import.
-            </span>
-          }
-        />
-      </header>
+  const subtitle =
+    "Rules run on every CSV import and on demand against uncategorized transactions. The highest priority match wins, then the newest. A broken pattern is skipped, so one bad rule never stops an import.";
 
+  // Settings archetype (V4 Stage G2): reading width; the header lives in the
+  // client editor so its primary action can open the drawer.
+  return (
+    <PageShell width="reading">
       {categories.length === 0 ? (
-        <div className="mt-6">
+        <>
+          <PageHeader title="Category rules" subtitle={subtitle} />
           <NoCategories />
-        </div>
+        </>
       ) : (
-        <RulesEditor initialRules={rules} categories={categories} />
+        <RulesEditor initialRules={rules} categories={categories} subtitle={subtitle} />
       )}
-    </div>
+    </PageShell>
   );
 }

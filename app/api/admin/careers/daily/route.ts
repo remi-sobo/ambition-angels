@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
+import { requireAaOnly } from "@/lib/admin/aaOnly";
 import { lowZoneViolation, LOW_ZONE_PER_WEEK, LOW_ZONE_MAX } from "@/lib/games/daily";
 
 // Schedule (or clear) a daily job (specs/teen-games-v1.md Phase 4). Only
@@ -13,8 +13,8 @@ const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 const SOC_RE = /^\d{2}-\d{4}$/;
 
 export async function POST(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const gate = await requireAaOnly("aa.career_library", { write: true });
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 
   const body = await req.json().catch(() => ({}));
   const { day, soc_code } = body;

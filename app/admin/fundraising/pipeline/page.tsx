@@ -15,12 +15,12 @@ export const dynamic = "force-dynamic";
 export default async function PipelinePage({
   searchParams,
 }: {
-  searchParams?: { pipeline?: string; year?: string };
+  searchParams?: { pipeline?: string; year?: string; view?: string };
 }) {
   return (
-    <div className="min-h-screen bg-ink">
+    <div>
       <PipelineHome searchParams={searchParams} basePath="/admin/fundraising/pipeline" />
-      <div className="max-w-[1400px] px-4 lg:px-8 pb-6 lg:pb-8">
+      <div id="ask-log" className="max-w-workspace px-4 lg:px-8 pb-6 lg:pb-8 scroll-mt-24">
         <AskLog embedded />
       </div>
     </div>

@@ -3,19 +3,12 @@
 import localFont from "next/font/local";
 import { FormEvent, useEffect, useState } from "react";
 
-// Self-hosted Lora (latin, variable wght), app/fonts/lora/. Same 400-500
+// Self-hosted Lora (full upstream variable wght), app/fonts/lora/. Same 400-500
 // normal + italic, CSS variable and display as the old next/font/google call.
 const lora = localFont({
   src: [
-    { path: "../fonts/lora/Lora-latin-wght.woff2", weight: "400 500", style: "normal" },
-    { path: "../fonts/lora/Lora-Italic-latin-wght.woff2", weight: "400 500", style: "italic" },
-  ],
-  declarations: [
-    {
-      prop: "unicode-range",
-      value:
-        "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
-    },
+    { path: "../fonts/lora/Lora-wght.woff2", weight: "400 500", style: "normal" },
+    { path: "../fonts/lora/Lora-Italic-wght.woff2", weight: "400 500", style: "italic" },
   ],
   variable: "--font-lora",
   display: "swap",

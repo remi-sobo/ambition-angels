@@ -72,8 +72,46 @@ function bearerRole(req) {
   const tok = (req.headers.authorization || "").replace(/^Bearer /i, "");
   return decodeJwt(tok)?.role || null;
 }
-function rlsFilter(req, rows) {
+// Per-table read permissions, roughly as the policies have them: every
+// `create policy ... for select|all ... has_permission(org_id, '<perm>')` in
+// supabase/migrations, plus the tables whose policies are made in loops
+// (named here by prefix). A session read of such a table by a role holding
+// none of its permissions gets no rows, as RLS would give it. Auth tables
+// keep their own-row policies and are never narrowed here.
+const RLS_PERMS = (() => {
+  const map = {};
+  const dir = path.join(here, "../../supabase/migrations");
+  const re = /create\s+policy\s+"?[^"]*"?\s+on\s+(?:public\.)?(\w+)\s+(?:as\s+\w+\s+)?for\s+(?:select|all)\b[\s\S]{0,80}?using\s*\(\s*\(?\s*(?:select\s+)?private\.has_permission\(\s*org_id\s*,\s*'([\w.]+)'/gi;
+  try {
+    for (const f of fs.readdirSync(dir).sort()) {
+      const sql = fs.readFileSync(path.join(dir, f), "utf8");
+      let m;
+      while ((m = re.exec(sql))) (map[m[1]] ||= new Set()).add(m[2]);
+    }
+  } catch {}
+  const prefix = [
+    [/^(constituents|gifts|soft_credits|pledges|pledge_payments|recurring_plans|opportunities|asks|grants|grant_requirements|campaigns|appeals|funds|households|interactions|segments|email_campaigns|email_sends|fr_)/, "fundraising.read"],
+    [/^(students|cohorts|cohort_members|cohort_sessions|attendance|programs|partners|partner_contacts|applications|participants)/, "program.read"],
+    [/^(ops_|work_)/, "ops.read"],
+    [/^fin_/, "finance.read"],
+    [/^board_/, "board.read"],
+    [/^compliance_/, "compliance.read"],
+  ];
+  const AUTH = new Set(["memberships", "orgs", "profiles", "org_entitlements", "role_permissions", "entity_types", "org_terminology", "invitations"]);
+  return (table) => {
+    if (AUTH.has(table)) return null;
+    const perms = new Set(map[table] || []);
+    for (const [re2, perm] of prefix) if (re2.test(table)) perms.add(perm);
+    return perms.size ? perms : null;
+  };
+})();
+function rlsFilter(req, rows, table) {
   if (!config.twoOrg || bearerRole(req) !== "authenticated") return rows;
+  const need = table ? RLS_PERMS(table) : null;
+  if (need) {
+    const held = new Set((fx.tables.role_permissions || []).filter((r) => r.role === config.role).map((r) => r.permission));
+    if (![...need].some((p) => held.has(p))) return [];
+  }
   const mine = new Set((fx.tables.memberships || []).filter((m) => m.user_id === who.user.id).map((m) => m.org_id));
   return rows.filter((r) => !r || typeof r !== "object" || !("org_id" in r) || r.org_id == null || mine.has(r.org_id));
 }
@@ -569,7 +607,7 @@ const server = http.createServer(async (req, res) => {
       if (isRead) {
         if (matchesFail(config.failRead, table)) return send(res, 500, { code: "XX000", message: `v4 mock: forced read failure on ${table}`, details: null, hint: null });
         if (config.delayMs && (!config.delayPattern || new RegExp(config.delayPattern).test(table))) await sleep(config.delayMs);
-        const all = rlsFilter(req, fx.tables[table] || []);
+        const all = rlsFilter(req, fx.tables[table] || [], table);
         let rows = applyFilters(all, params, ignored);
         // !inner embeds: drop parents whose embed resolves empty (best effort)
         rows = applyOrder(rows, url.searchParams.get("order"));

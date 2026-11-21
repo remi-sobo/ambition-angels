@@ -14,7 +14,7 @@ import { formatAddress, type Settings } from "@/lib/admin/orgIdentity";
  *    --apply twice is a no-op the second time, and a run cut off half way is
  *    finished by running it again (the planner sees what landed and skips it).
  *
- * The concrete reader/writer (lib/admin/onboarding/supabase-io.ts) uses the
+ * The concrete reader/writer (scripts/setup-org-io.ts, operator-only, outside app/ and lib/ so no app code can write entitlements) uses the
  * service role from the operator's machine. Tests use an in-memory fake
  * (tests/setup-org-planner.test.ts); the script is never run by CI.
  */

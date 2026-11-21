@@ -1,13 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { SetupReader, SetupWriter, ExistingOrg } from "./planner";
-import { inviteMemberWith } from "@/lib/admin/people-invite";
+import type { SetupReader, SetupWriter, ExistingOrg } from "../lib/admin/onboarding/planner";
+import { inviteMemberWith } from "../lib/admin/people-invite";
 
 /**
  * The concrete SetupReader/SetupWriter for scripts/setup-org.ts: a
  * service-role client on the operator's machine. Every read and write names
  * the org explicitly (the service role bypasses RLS). Writes are
  * insert-if-missing or upserts on the tables' natural keys, so a re-run is a
- * no-op. Never imported by the app.
+ * no-op. Never imported by the app. It lives in scripts/ on purpose:
+ * org_entitlements writes are operator-only, and
+ * tests/role-guard-coverage.test.ts forbids them anywhere under app/ or lib/.
  */
 
 function fail(what: string, error: { message: string } | null): void {

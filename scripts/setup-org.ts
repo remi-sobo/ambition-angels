@@ -29,7 +29,7 @@ import { createRequire } from "node:module";
 import { createClient } from "@supabase/supabase-js";
 import { validateAnswers } from "../lib/admin/onboarding/answers";
 import { applySetup, formatPlan, isProductionTarget, planSetup, productionGuard } from "../lib/admin/onboarding/planner";
-import { supabaseSetupReader, supabaseSetupWriter } from "../lib/admin/onboarding/supabase-io";
+import { supabaseSetupReader, supabaseSetupWriter } from "./setup-org-io";
 
 function parseAnswersFile(path: string): unknown {
   const text = readFileSync(path, "utf8");

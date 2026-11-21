@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import PageHeader from "../../_components/PageHeader";
@@ -50,14 +49,12 @@ export default async function StrategySetupPage() {
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[900px]">
+      {/* PageHeader v2 (V4 P1). */}
       <PageHeader
+        breadcrumb={[{ label: "Strategic Plan", href: "/admin/organization/strategy" }]}
         title="Plan setup"
-        subtitle={
-          <>
-            Close the gaps that make a plan measurable. Add measures, wire them to live data, set a review
-            cadence · jump to the <Link href="/admin/strategic-plan" className="text-orange hover:underline">full plan</Link> anytime
-          </>
-        }
+        subtitle="Close the gaps that make a plan measurable: add measures, wire them to live data, set a review cadence."
+        moreActions={[{ label: "Whole plan", href: "/admin/organization/strategy" }]}
       />
       <SetupWizard
         foundationSet={foundationSet}

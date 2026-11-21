@@ -1,5 +1,8 @@
 "use client";
 
+import Button from "@/app/admin/_components/ui/Button";
+import Drawer from "@/app/admin/_components/ui/Drawer";
+import { TextField } from "@/app/admin/_components/ui/Field";
 import { saveAction } from "@/lib/admin/saveAction";
 import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import { useCallback, useEffect, useState } from "react";
@@ -297,9 +300,12 @@ export function RefreshMetricsButton() {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   return (
-    <button
-      disabled={busy}
-      title="Recompute auto KPIs (grants, corporate, donor updates, active teens) from live data"
+    <Button
+      type="button"
+      variant="secondary"
+      size="sm"
+      loading={busy}
+      title="Recompute the live measures from current data"
       onClick={async () => {
         setBusy(true);
         const r = await saveAction({
@@ -310,10 +316,9 @@ export function RefreshMetricsButton() {
         setBusy(false);
         if (r.ok) router.refresh();
       }}
-      className="text-xs font-semibold text-ink-1 bg-tile hover:bg-tile px-4 py-2 rounded-full transition-colors disabled:opacity-50"
     >
-      {busy ? "Refreshing…" : "↻ Refresh metrics"}
-    </button>
+      {busy ? "Refreshing" : "Refresh metrics"}
+    </Button>
   );
 }
 
@@ -534,26 +539,34 @@ export function NewObjectiveForm() {
     }
   };
 
-  if (!open) {
-    return (
-      <button onClick={() => setOpen(true)} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors">
-        + New objective
-      </button>
-    );
-  }
+  // V4 Stage G: the Strategy page's one primary action, in the kit Drawer.
   return (
-    <form onSubmit={submit} className="w-full bg-surface border-hairline rounded-panel p-4 flex flex-wrap items-end gap-3">
-      <label className="flex-1 min-w-[240px] text-xs text-ink-2">Objective
-        <input className={`${inputCls} w-full mt-1`} value={title} required autoFocus placeholder="Execute an effective and efficient fundraising strategy" onChange={(e) => setTitle(e.target.value)} />
-      </label>
-      <label className="flex-1 min-w-[240px] text-xs text-ink-2">3-year statement
-        <input className={`${inputCls} w-full mt-1`} value={stmt} placeholder="Where this needs to be in 3 years" onChange={(e) => setStmt(e.target.value)} />
-      </label>
-      <button type="submit" disabled={busy} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full disabled:opacity-50">
-        {busy ? "Saving…" : "Create"}
-      </button>
-      <button type="button" onClick={() => setOpen(false)} className="text-xs text-ink-2 hover:text-ink-1 px-2">Cancel</button>
-    </form>
+    <>
+      <Button type="button" onClick={() => setOpen(true)}>
+        New objective
+      </Button>
+      <Drawer
+        open={open}
+        onClose={() => setOpen(false)}
+        title="New objective"
+        description="A standing pillar of the plan. Goals and measures go under it."
+        footer={
+          <>
+            <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="new-objective" loading={busy}>
+              {busy ? "Saving" : "Create objective"}
+            </Button>
+          </>
+        }
+      >
+        <form id="new-objective" onSubmit={submit} className="grid gap-4">
+          <TextField label="Objective" required autoFocus value={title} placeholder="Run an effective fundraising strategy" onChange={(e) => setTitle(e.target.value)} />
+          <TextField label="Three-year statement" value={stmt} placeholder="Where this needs to be in three years" onChange={(e) => setStmt(e.target.value)} />
+        </form>
+      </Drawer>
+    </>
   );
 }
 

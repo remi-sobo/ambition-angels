@@ -44,7 +44,9 @@ export default function PageHeader({
           <p className={`${TYPE.bodyMuted} mt-1.5 max-w-reading`}>{subtitle}</p>
         ) : null}
       </div>
-      {actions ? <div className="flex items-center gap-2 shrink-0">{actions}</div> : null}
+      {/* flex-wrap + max-w-full: on a phone the actions wrap under the title
+          and never push the page wider than the screen (V4 A2, spec §10). */}
+      {actions ? <div className="flex flex-wrap items-center gap-2 max-w-full">{actions}</div> : null}
     </div>
   );
 }

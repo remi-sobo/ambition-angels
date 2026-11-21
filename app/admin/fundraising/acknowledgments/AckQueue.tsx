@@ -3,6 +3,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { money } from "../../finance/_components/charts";
 import StatCard from "../../_components/StatCard";
+import PageHeader from "../../_components/PageHeader";
 import { constituentName } from "@/lib/fundraising/display";
 import {
   complianceBlock,
@@ -81,7 +82,7 @@ export default async function AckQueue({ embedded = false }: { embedded?: boolea
   const oldest = pending[0];
 
   return (
-    <div className={embedded ? undefined : "min-h-screen bg-ink"}>
+    <div>
       {embedded ? (
         <div className="flex items-center gap-3 flex-wrap mb-4">
           <div>
@@ -103,32 +104,36 @@ export default async function AckQueue({ embedded = false }: { embedded?: boolea
             </Link>
           </div>
         </div>
-      ) : (
-        <div className="bg-tile border-b border-hairline px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30 flex items-center gap-3">
-          <Link href="/admin/fundraising/donors" className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors">
-            ← Donors
-          </Link>
-          <span className={`${TYPE.cardTitle} sm:text-base`}>Acknowledgments</span>
-          <div className="ml-auto flex items-center gap-4">
-            <LogAckButton />
-            <ThankathonButton count={pending.length} />
-            <Link
-              href="/admin/fundraising/acknowledgments/letters"
-              className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors"
-            >
-              Letters →
-            </Link>
-            <Link
-              href="/admin/fundraising/acknowledgments/templates"
-              className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors"
-            >
-              Templates →
-            </Link>
-          </div>
-        </div>
-      )}
+      ) : null}
 
       <div className={embedded ? "space-y-4" : "max-w-workspace px-4 lg:px-8 py-6 lg:py-8 space-y-6"}>
+        {/* V4 A2: standalone, this queue is Fundraising → Thank-yous, so it
+            takes the standard page header under the shell tab row (the V1
+            sticky bar and its "← Donors" link to a 308'd path are gone). */}
+        {!embedded && (
+          <PageHeader
+            title="Thank-yous"
+            subtitle="Gifts waiting for a thank-you, oldest first. The receipt language is generated, never edited."
+            actions={
+              <>
+                <LogAckButton />
+                <ThankathonButton count={pending.length} />
+                <Link
+                  href="/admin/fundraising/acknowledgments/letters"
+                  className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors"
+                >
+                  Letters →
+                </Link>
+                <Link
+                  href="/admin/fundraising/acknowledgments/templates"
+                  className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors"
+                >
+                  Templates →
+                </Link>
+              </>
+            }
+          />
+        )}
         {!embedded && (
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           <StatCard

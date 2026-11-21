@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
+import { getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 const STATUSES = ["present", "late", "excused", "absent"] as const;
 const METHODS = ["roster", "qr", "kiosk", "admin"] as const;
@@ -13,10 +14,9 @@ const isUuid = (v: unknown): v is string =>
 // every still-unmarked enrolled member. Recording marks the session held
 // and bumps last_activity_at for students who showed up.
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("program.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   if (!isUuid(params.id)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }

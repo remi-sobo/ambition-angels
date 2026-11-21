@@ -17,7 +17,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed, getAdminUser } from "@/lib/admin/auth";
+import { getAdminUser } from "@/lib/admin/auth";
 import { requireEntitlement } from "@/lib/admin/entitlements";
 import { constituentName } from "@/lib/fundraising/display";
 import { analyzeDonor, FLAG_LABELS, type RetentionFlag } from "@/lib/fundraising/retention";
@@ -27,6 +27,7 @@ import { runNextMove } from "@/lib/agents/next-move/agent";
 import type { NextMoveDossier, NextMoveEntityType, NextMoveRecord } from "@/lib/agents/next-move/types";
 import { logAICall } from "@/lib/ai/ledger";
 import { orgOverAICap } from "@/lib/ai/cap";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -318,7 +319,8 @@ async function prospectDossier(supabase: Supabase, id: string): Promise<NextMove
 // ── Handlers ────────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
-  if (!(await isAuthed())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requirePermission("fundraising.read");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
   const url = new URL(req.url);
   const entityType = url.searchParams.get("entity_type") ?? "";
   const entityId = url.searchParams.get("entity_id") ?? "";
@@ -330,7 +332,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requirePermission("fundraising.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
 
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const entityType = body?.entity_type as string;

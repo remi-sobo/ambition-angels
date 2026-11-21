@@ -5,16 +5,16 @@
  * calendar_events RLS. Runs as service-role.
  */
 import { NextResponse } from "next/server";
-import { getOrgContext } from "@/lib/admin/auth";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { runCalendarSync } from "@/lib/agenda/calendar-sync";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function POST() {
-  const ctx = await getOrgContext();
-  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requirePermission("ops.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
 
   const results = await runCalendarSync(getSupabaseAdmin(), new Date());
   return NextResponse.json({

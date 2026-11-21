@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { DEFAULT_RULES } from "@/lib/finance/default-rules";
 import { NO_CATEGORIES_MESSAGE, orgCategoryIds } from "@/lib/finance/categories";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 // POST /api/admin/finance/rules/seed
 //
@@ -18,10 +18,9 @@ import { NO_CATEGORIES_MESSAGE, orgCategoryIds } from "@/lib/finance/categories"
 // Angels' chart; an org with a different chart gets the subset that fits,
 // or a clear message when none do).
 export async function POST(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("finance.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   const supabase = getSupabaseAdmin();
 
   // Pull existing patterns once and skip anything that matches by

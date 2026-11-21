@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { orgCategoryIds } from "@/lib/finance/categories";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 type ApplyItem = { id: string; category_id: string; create_rule?: boolean; pattern?: string };
 
@@ -13,10 +13,9 @@ type ApplyItem = { id: string; category_id: string; create_rule?: boolean; patte
 // the merchant pattern so future imports auto-categorize. Rules are de-duped
 // (same lowercased pattern + category) so re-running never spams the rule list.
 export async function POST(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("finance.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   const body = (await req.json().catch(() => null)) as { items?: unknown } | null;
   const itemsRaw = body && Array.isArray(body.items) ? body.items : null;
   if (!itemsRaw) return NextResponse.json({ error: "items[] required" }, { status: 400 });

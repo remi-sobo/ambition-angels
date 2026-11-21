@@ -52,16 +52,19 @@ export async function POST(req: NextRequest) {
   const stewardshipRules = await loadStewardshipRules(supabase, ctx.orgId);
 
   // One pass to build an email → constituent-id map for dedupe (case-insensitive).
+  // Org fence: RLS returns rows from EVERY org the user belongs to, so both
+  // dedupe reads pin the ACTIVE org. Without it, a user in two orgs would match
+  // (and attach gifts to) the other org's donor.
   const emailToId = new Map<string, string>();
   // Paged: `.limit(50000)` was still capped at PostgREST's 1,000 rows, so
   // every constituent past the first 1,000 was invisible to dedupe and got
   // re-created. A dedupe set that hit the hard cap aborts rather than guess.
   const existingRes = await fetchAll<{ id: string; emails: string[] | null }>(
-    () => supabase.from("constituents").select("id, emails"),
+    () => supabase.from("constituents").select("id, emails").eq("org_id", ctx.orgId),
     { order: ["id"], hardCap: 200_000 }
   );
   const priorRes = await fetchAll<{ constituent_id: string | null; gift_date: string; amount: number }>(
-    () => supabase.from("gifts").select("constituent_id, gift_date, amount").eq("external_source", "import"),
+    () => supabase.from("gifts").select("constituent_id, gift_date, amount").eq("org_id", ctx.orgId).eq("external_source", "import"),
     { order: ["id"], hardCap: 200_000 }
   );
   if (existingRes.error || priorRes.error || existingRes.truncated || priorRes.truncated) {

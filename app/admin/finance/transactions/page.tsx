@@ -13,6 +13,7 @@ import PageHeader from "../../_components/PageHeader";
 import ReconcileSection from "../reconcile/ReconcileSection";
 import CloseSection from "../close/CloseSection";
 import { TYPE } from "@/lib/admin/typeScale";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 type SearchParams = {
   q?: string;
@@ -61,6 +62,8 @@ export default async function TransactionsPage({
 }: {
   searchParams: SearchParams;
 }) {
+  const roleGate = await requirePagePermission("finance.read", "Finance");
+  if (!roleGate.ok) return roleGate.page;
   const q = (searchParams.q ?? "").trim();
   const category = (searchParams.category ?? "").trim();
   const from = isISO(searchParams.from) ? searchParams.from : "";

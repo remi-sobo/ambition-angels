@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import PageHeader from "../../_components/PageHeader";
 import { TYPE } from "@/lib/admin/typeScale";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Per-person views — the Performance Agreement (BloomOS Strategy, Phase 5).
 // Each owner's slice of the plan: their objectives, goals, measures, and
@@ -31,6 +32,8 @@ const fmtVal = (v: number | null, unit: string | null): string => {
 };
 
 export default async function StrategyPeoplePage() {
+  const roleGate = await requirePagePermission("reports.read", "Strategic plan");
+  if (!roleGate.ok) return roleGate.page;
   const ctx = await getOrgContext();
   if (!ctx) return <div className="px-4 lg:px-8 py-6 text-sm text-ink-2">Not authorized.</div>;
   const orgId = ctx.orgId;

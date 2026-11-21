@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { isOrgCategory } from "@/lib/finance/categories";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 // PATCH /api/admin/finance/transactions/:id
 //
@@ -17,10 +17,9 @@ export async function PATCH(
 ) {
   // Org fence: service-role update by id must be constrained to the caller's
   // org, else any tenant could edit another tenant's transaction by UUID.
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("finance.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }

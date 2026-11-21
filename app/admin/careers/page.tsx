@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import PageHeader from "../_components/PageHeader";
 import StatCard from "../_components/StatCard";
 import { CareersControls, type CardView, type OccupationView } from "./_components/CareersControls";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // The career library pipeline (specs/ms-career-library-v2.md): import →
 // curate → generate → machine gates → human review → serve. This surface is
@@ -12,6 +13,8 @@ import { CareersControls, type CardView, type OccupationView } from "./_componen
 export const dynamic = "force-dynamic";
 
 export default async function CareersPage() {
+  const roleGate = await requirePagePermission("program.read", "Career library");
+  if (!roleGate.ok) return roleGate.page;
   const supabase = getSupabaseAdmin();
   const [{ data: occData }, { data: cardData }] = await Promise.all([
     supabase

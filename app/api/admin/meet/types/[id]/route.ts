@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 const patchSchema = z.object({
   name: z.string().min(1).max(200).optional(),
@@ -23,8 +23,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const ctx = await getOrgContext();
-  if (!ctx) { return NextResponse.json({ error: "Unauthorized" }, { status: 401 }); }
+  const guard = await requirePermission("ops.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
 
   let body: unknown;
   try {

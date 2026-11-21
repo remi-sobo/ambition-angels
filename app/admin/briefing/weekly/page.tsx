@@ -7,6 +7,7 @@ import PageHeader from "../../_components/PageHeader";
 import type { BriefingData } from "@/lib/briefing";
 import { gatherCrmOverdue } from "@/lib/admin/crmOverdue";
 import CrmOverdueList from "./_components/CrmOverdueList";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // AI-narrated weekly briefing (the original Executive Briefing). The daily
 // decision feed now lives at /admin/briefing; this weekly edition — narrated
@@ -17,6 +18,8 @@ const fmtUsd = (n: number) =>
   n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 export default async function WeeklyBriefingPage() {
+  const roleGate = await requirePagePermission("ops.read", "Briefing");
+  if (!roleGate.ok) return roleGate.page;
   const supabase = getSupabaseAdmin();
   // Org fence: the service-role client bypasses RLS, so the briefings read is
   // scoped to the active org (else "newest across all orgs" would leak).

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import FeatureGate from "@/app/admin/_components/FeatureGate";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 import DonorProfile from "../../donors/[id]/DonorProfile";
 import ProspectProfile from "../../prospects/[id]/ProspectProfile";
 import { resolveDonor360 } from "./resolve";
@@ -28,6 +29,10 @@ export default async function Donor360Page({
   searchParams?: { activity?: string };
 }) {
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();
+  // RLS already hides donors from a role without fundraising.read; this says
+  // so with the not-authorized panel instead of a bare 404 (V4 Stage P).
+  const gate = await requirePagePermission("fundraising.read", "Fundraising");
+  if (!gate.ok) return gate.page;
   const supabase = createServerSupabase();
 
   const kind = await resolveDonor360((table) =>

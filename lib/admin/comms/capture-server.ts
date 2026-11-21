@@ -136,3 +136,69 @@ export function bankFiler(orgId: string, capturedBy: string | null) {
     return r.ok ? { ok: true as const, storyId: r.storyId } : { ok: false as const, error: r.error };
   };
 }
+
+// ── The one-time move of Stage C's kept drafts ──────────────────────────────
+// Before Stage D, "Keep" on a story card left the card itself as the held
+// draft (payload.filed = { table: 'capture_cards', kept: true }). Those
+// drafts move into the bank here, once each: the card is re-marked
+// { table: 'stories', id } so a second run finds nothing. Only KEPT drafts
+// move; a held card nobody has decided on stays in its author's confirm stack.
+
+type DraftCard = { id: string; payload: Record<string, unknown> | null };
+
+const isKeptDraft = (c: DraftCard) => {
+  const p = c.payload ?? {};
+  const f = p.filed as Record<string, unknown> | undefined;
+  return p.card_kind === "story" && f?.table === "capture_cards" && f?.kept === true;
+};
+
+export async function listKeptStoryDrafts(db: SupabaseClient, orgId: string): Promise<DraftCard[]> {
+  const { data, error } = await db
+    .from("capture_cards")
+    .select("id, payload")
+    .eq("org_id", orgId)
+    .eq("status", "confirmed")
+    .eq("payload->>card_kind", "story")
+    .limit(500);
+  if (error) return [];
+  return ((data ?? []) as DraftCard[]).filter(isKeptDraft);
+}
+
+export async function moveKeptStoryDrafts(
+  db: SupabaseClient,
+  orgId: string,
+  capturedBy: string | null,
+): Promise<{ moved: number; failed: number }> {
+  const drafts = await listKeptStoryDrafts(db, orgId);
+  let moved = 0;
+  let failed = 0;
+  for (const card of drafts) {
+    const p = card.payload ?? {};
+    const r = await fileStory(db, orgId, {
+      title: typeof p.title === "string" ? p.title : null,
+      body: typeof p.text === "string" ? p.text : "",
+      about: typeof p.about === "string" ? p.about : null,
+      identifiable: p.identifiable,
+      capturedBy,
+      source: "reed",
+    });
+    if (!r.ok) {
+      failed += 1;
+      continue;
+    }
+    const { error } = await db
+      .from("capture_cards")
+      .update({ payload: { ...p, filed: { table: "stories", id: r.storyId } } })
+      .eq("id", card.id)
+      .eq("org_id", orgId);
+    if (error) {
+      // The story exists but the card still says "kept": take the story back
+      // out so a retry cannot file it twice.
+      await db.from("stories").delete().eq("id", r.storyId).eq("org_id", orgId);
+      failed += 1;
+      continue;
+    }
+    moved += 1;
+  }
+  return { moved, failed };
+}

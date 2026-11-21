@@ -1,17 +1,22 @@
 "use client";
 
-// Client pieces of the compliance calendar: item rows with status actions
-// (start / mark filed / waive / delete) and the new-item form. Marking a
-// recurring item filed rolls its due date forward server-side.
+// Client pieces of the compliance calendar (V4 Stage G): the row menu
+// (start, mark filed, waive, reopen, edit in a Drawer, delete) and the New
+// deadline drawer. Notes and the checklist live on the item's record page
+// (/admin/organization/compliance/[id]), one click from every row. Every
+// write goes through saveAction, then router.refresh().
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
-import { userMessage } from "@/lib/admin/errors";
+import { saveAction } from "@/lib/admin/saveAction";
+import Button from "@/app/admin/_components/ui/Button";
+import Drawer from "@/app/admin/_components/ui/Drawer";
+import MoreActionsMenu, { type MenuAction } from "@/app/admin/_components/ui/MoreActionsMenu";
+import { DateField, SelectField, TextField } from "@/app/admin/_components/ui/Field";
 import { useAssignees, withSelected } from "../../_lib/useAssignees";
-import { normalizeAssignee, handleLabel } from "@/lib/admin/assignees";
+import { normalizeAssignee } from "@/lib/admin/assignees";
 import { KIND_LABELS, RECUR_OPTIONS } from "./labels";
 
 export type ChecklistItem = { id: string; text: string; done: boolean };
@@ -30,511 +35,222 @@ export type ComplianceItem = {
   last_filed_at: string | null;
 };
 
-const inputCls =
-  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+const KIND_OPTIONS = Object.entries(KIND_LABELS).map(([value, label]) => ({ value, label }));
+const RECUR_SELECT = RECUR_OPTIONS.map(([value, label]) => ({ value, label }));
 
-// Assignees come from the org's members (useAssignees), same handle
-// convention as ops tasks; the stored lowercase value is what the
-// daily-queue assignee filter matches on. The pure helpers (normalizeAssignee
-// / handleLabel) live in lib/admin/assignees so server components (the item
-// profile page) can import them without crossing the client boundary.
+type Draft = { title: string; kind: string; due: string; recur: string; jurisdiction: string; assignee: string };
 
-export function ComplianceRow({ item }: { item: ComplianceItem }) {
+/** The shared fields of the new and edit drawers. */
+function ItemFields({ d, set, error, formId, onSubmit }: { d: Draft; set: (d: Draft) => void; error: string; formId: string; onSubmit: (e: React.FormEvent) => void }) {
+  const members = useAssignees();
+  return (
+    <form id={formId} onSubmit={onSubmit} className="grid grid-cols-2 gap-4">
+      <TextField
+        className="col-span-2"
+        label="Title"
+        required
+        autoFocus
+        value={d.title}
+        placeholder="Workers' comp premium audit"
+        error={error || undefined}
+        onChange={(e) => set({ ...d, title: e.target.value })}
+      />
+      <DateField label="Due" required value={d.due} onChange={(e) => set({ ...d, due: e.target.value })} />
+      <SelectField label="Repeats" value={d.recur} onChange={(e) => set({ ...d, recur: e.target.value })} options={RECUR_SELECT} />
+      <SelectField label="Type" value={d.kind} onChange={(e) => set({ ...d, kind: e.target.value })} options={KIND_OPTIONS} />
+      <TextField label="Jurisdiction" value={d.jurisdiction} placeholder="IRS, CA" onChange={(e) => set({ ...d, jurisdiction: e.target.value })} />
+      <SelectField
+        className="col-span-2"
+        label="Owner"
+        value={d.assignee}
+        placeholder="Unassigned"
+        onChange={(e) => set({ ...d, assignee: e.target.value })}
+        options={withSelected(members, d.assignee)}
+      />
+    </form>
+  );
+}
+
+export function ComplianceRowActions({ item }: { item: ComplianceItem }) {
   const router = useRouter();
   const toast = useToast();
   const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
-  const [notesDraft, setNotesDraft] = useState(item.notes ?? "");
-  const [newCheckText, setNewCheckText] = useState("");
-  // Optimistic local copy: consecutive edits (add two items back-to-back,
-  // quick toggles) must each build on the latest array, not on a server prop
-  // that router.refresh() hasn't delivered yet — otherwise the second edit
-  // silently drops the first.
-  const [checklist, setChecklist] = useState<ChecklistItem[]>(item.checklist ?? []);
   const [editing, setEditing] = useState(false);
-  const [editError, setEditError] = useState("");
-  const [eTitle, setETitle] = useState(item.title);
-  const [eKind, setEKind] = useState(item.kind);
-  const [eDue, setEDue] = useState(item.due_date);
-  const [eRecur, setERecur] = useState(item.recur);
-  const [eJurisdiction, setEJurisdiction] = useState(item.jurisdiction ?? "");
-  const [eAssignee, setEAssignee] = useState(normalizeAssignee(item.assigned_to));
-  const memberOptions = useAssignees();
+  const [error, setError] = useState("");
+  const fresh = (): Draft => ({
+    title: item.title,
+    kind: item.kind,
+    due: item.due_date,
+    recur: item.recur,
+    jurisdiction: item.jurisdiction ?? "",
+    assignee: normalizeAssignee(item.assigned_to),
+  });
+  const [draft, setDraft] = useState<Draft>(fresh);
 
-  const startEdit = () => {
-    setETitle(item.title);
-    setEKind(item.kind);
-    setEDue(item.due_date);
-    setERecur(item.recur);
-    setEJurisdiction(item.jurisdiction ?? "");
-    setEAssignee(normalizeAssignee(item.assigned_to));
-    setEditError("");
-    setEditing(true);
+  const patch = async (fields: Record<string, unknown>, success?: string) => {
+    setBusy(true);
+    const r = await saveAction({ request: { url: `/api/admin/compliance/${item.id}`, method: "PATCH", body: fields }, success, toast });
+    setBusy(false);
+    if (r.ok) router.refresh();
   };
 
   const saveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!eTitle.trim() || !eDue) {
-      setEditError("Title and due date are required.");
+    if (!draft.title.trim() || !draft.due) {
+      setError("Title and due date are required.");
       return;
     }
     setBusy(true);
-    setEditError("");
-    try {
-      const res = await fetch(`/api/admin/compliance/${item.id}`, {
+    setError("");
+    const r = await saveAction({
+      request: {
+        url: `/api/admin/compliance/${item.id}`,
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: eTitle.trim(),
-          kind: eKind,
-          due_date: eDue,
-          recur: eRecur,
-          jurisdiction: eJurisdiction.trim() || null,
-          assigned_to: eAssignee || null,
-        }),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        throw new Error(userMessage(res, j));
-      }
-      setEditing(false);
-      router.refresh();
-    } catch (err) {
-      setEditError(err instanceof Error ? err.message : "Failed to save");
-    } finally {
-      setBusy(false);
+        body: {
+          title: draft.title.trim(),
+          kind: draft.kind,
+          due_date: draft.due,
+          recur: draft.recur,
+          jurisdiction: draft.jurisdiction.trim() || null,
+          assigned_to: draft.assignee || null,
+        },
+      },
+      failure: false,
+      success: "Saved",
+      toast,
+    });
+    setBusy(false);
+    if (!r.ok) {
+      setError(r.message);
+      return;
     }
+    setEditing(false);
+    router.refresh();
   };
-
-  const patch = async (fields: Record<string, unknown>) => {
-    setBusy(true);
-    try {
-      const res = await fetch(`/api/admin/compliance/${item.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(fields),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        toast.error(userMessage(res, j));
-      }
-      router.refresh();
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  // Checklist edits always send the full replacement array.
-  const saveChecklist = (next: ChecklistItem[]) => {
-    setChecklist(next);
-    void patch({ checklist: next });
-  };
-
-  const newCheckId = () =>
-    typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : Math.random().toString(36).slice(2, 10);
-
-  const addCheckItem = (e: React.FormEvent) => {
-    e.preventDefault();
-    const text = newCheckText.trim();
-    if (!text) return;
-    setNewCheckText("");
-    saveChecklist([...checklist, { id: newCheckId(), text, done: false }]);
-  };
-
-  const notesDirty = notesDraft !== (item.notes ?? "");
-  const checkedCount = checklist.filter((c) => c.done).length;
 
   const remove = async () => {
-    const ok = await confirm({
-      title: `Delete “${item.title}”?`,
-      confirmLabel: "Delete",
-      destructive: true,
-    });
+    const ok = await confirm({ title: `Delete “${item.title}”?`, confirmLabel: "Delete", destructive: true });
     if (!ok) return;
     setBusy(true);
-    try {
-      await fetch(`/api/admin/compliance/${item.id}`, { method: "DELETE" });
-      router.refresh();
-    } finally {
-      setBusy(false);
-    }
+    const r = await saveAction({ request: { url: `/api/admin/compliance/${item.id}`, method: "DELETE" }, success: "Deleted", toast });
+    setBusy(false);
+    if (r.ok) router.refresh();
   };
 
-  const overdue =
-    item.due_date < new Date().toISOString().slice(0, 10) &&
-    (item.status === "upcoming" || item.status === "in_progress");
   const openItem = item.status === "upcoming" || item.status === "in_progress";
-
-  if (editing) {
-    return (
-      <article className="bg-surface border-orange/40 rounded-panel p-3 text-sm">
-        <form onSubmit={saveEdit} className="grid grid-cols-2 lg:grid-cols-6 gap-2 items-end">
-          <label className="col-span-2 text-xs text-ink-2">
-            Title
-            <input className={`${inputCls} w-full mt-1`} value={eTitle} required autoFocus
-              onChange={(e) => setETitle(e.target.value)} />
-          </label>
-          <label className="text-xs text-ink-2">
-            Type
-            <select className={`${inputCls} w-full mt-1`} value={eKind} onChange={(e) => setEKind(e.target.value)}>
-              {Object.entries(KIND_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>{v}</option>
-              ))}
-            </select>
-          </label>
-          <label className="text-xs text-ink-2">
-            Due
-            <input className={`${inputCls} w-full mt-1`} type="date" value={eDue} required
-              onChange={(e) => setEDue(e.target.value)} />
-          </label>
-          <label className="text-xs text-ink-2">
-            Repeats
-            <select className={`${inputCls} w-full mt-1`} value={eRecur} onChange={(e) => setERecur(e.target.value)}>
-              {RECUR_OPTIONS.map(([v, l]) => (
-                <option key={v} value={v}>{l}</option>
-              ))}
-            </select>
-          </label>
-          <label className="text-xs text-ink-2">
-            Jurisdiction
-            <input className={`${inputCls} w-full mt-1`} value={eJurisdiction} placeholder="IRS / CA / —"
-              onChange={(e) => setEJurisdiction(e.target.value)} />
-          </label>
-          <label className="text-xs text-ink-2">
-            Assigned to
-            <select className={`${inputCls} w-full mt-1`} value={eAssignee} onChange={(e) => setEAssignee(e.target.value)}>
-              <option value="">Unassigned</option>
-              {withSelected(memberOptions, eAssignee).map((a) => (
-                <option key={a.value} value={a.value}>{a.label}</option>
-              ))}
-            </select>
-          </label>
-          <div className="col-span-full flex gap-2 items-center">
-            <button type="submit" disabled={busy}
-              className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors disabled:opacity-50">
-              {busy ? "Saving…" : "Save"}
-            </button>
-            <button type="button" onClick={() => setEditing(false)}
-              className="text-xs text-ink-2 hover:text-ink-1 px-2">
-              Cancel
-            </button>
-            {editError && <p className="text-expense text-xs">{editError}</p>}
-          </div>
-        </form>
-      </article>
-    );
-  }
+  const items: MenuAction[] = [
+    ...(item.status === "upcoming" ? [{ label: "Start", onSelect: () => void patch({ status: "in_progress" }, "Started") }] : []),
+    ...(openItem
+      ? [
+          { label: item.recur !== "none" ? "Mark filed (rolls forward)" : "Mark filed", onSelect: () => void patch({ status: "filed" }, "Marked filed") },
+          { label: "Waive", onSelect: () => void patch({ status: "waived" }, "Waived") },
+        ]
+      : [{ label: "Reopen", onSelect: () => void patch({ status: "upcoming" }, "Reopened") }]),
+    { label: "Notes and checklist", href: `/admin/organization/compliance/${item.id}` },
+    {
+      label: "Edit",
+      onSelect: () => {
+        setDraft(fresh());
+        setError("");
+        setEditing(true);
+      },
+    },
+    { label: "Delete", danger: true, onSelect: () => void remove() },
+  ];
 
   return (
-    <article
-      className={`bg-surface border rounded-panel p-3 text-sm ${
-        overdue ? "border-expense/30" : "border-hairline"
-      } ${busy ? "opacity-60" : ""}`}
-    >
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
-          {KIND_LABELS[item.kind] ?? item.kind}
-        </span>
-        <Link
-          href={`/admin/compliance/${item.id}`}
-          className="font-semibold text-ink-1 hover:text-orange transition-colors"
-        >
-          {item.title}
-        </Link>
-        {item.jurisdiction && item.jurisdiction !== "—" && (
-          <span className="text-xs text-ink-2">{item.jurisdiction}</span>
-        )}
-        {item.assigned_to && (
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/10 text-orange">
-            {handleLabel(item.assigned_to)}
-          </span>
-        )}
-        <span
-          className={`ml-auto text-xs tabular-nums ${
-            overdue ? "text-expense font-semibold" : "text-ink-1"
-          }`}
-        >
-          {item.due_date}
-          {item.recur !== "none" && (
-            <span className="text-ink-2"> · {item.recur}</span>
-          )}
-        </span>
-      </div>
-      <div className="flex flex-wrap items-center gap-1 mt-2">
-        {item.status === "upcoming" && openItem && (
-          <button
-            onClick={() => patch({ status: "in_progress" })}
-            disabled={busy}
-            className="px-2 py-1 rounded-control text-xs bg-tile hover:bg-tile text-ink-2"
-          >
-            Start
-          </button>
-        )}
-        {item.status === "in_progress" && (
-          <span className="px-2 py-1 text-xs text-status-watch-text">In progress</span>
-        )}
-        {openItem && (
-          <button
-            onClick={() => patch({ status: "filed" })}
-            disabled={busy}
-            className="px-2 py-1 rounded-control text-xs font-semibold bg-orange/15 text-orange hover:bg-orange/25"
-          >
-            Mark filed{item.recur !== "none" ? " → rolls forward" : ""}
-          </button>
-        )}
-        {openItem && (
-          <button
-            onClick={() => patch({ status: "waived" })}
-            disabled={busy}
-            className="px-2 py-1 rounded-control text-xs text-ink-2 hover:text-ink-1"
-          >
-            Waive
-          </button>
-        )}
-        {!openItem && (
-          <button
-            onClick={() => patch({ status: "upcoming" })}
-            disabled={busy}
-            className="px-2 py-1 rounded-control text-xs bg-tile hover:bg-tile text-ink-2"
-          >
-            Reopen
-          </button>
-        )}
-        <button
-          onClick={() => setShowDetails((v) => !v)}
-          className="px-2 py-1 rounded-control text-xs text-ink-2 hover:text-ink-1"
-        >
-          {showDetails ? "Hide details" : "Details"}
-          {!showDetails && checklist.length > 0 && (
-            <span className="tabular-nums"> · {checkedCount}/{checklist.length}</span>
-          )}
-        </button>
-        <button
-          onClick={startEdit}
-          disabled={busy}
-          className="ml-auto px-2 py-1 rounded-control text-xs text-ink-2 hover:text-orange"
-        >
-          Edit
-        </button>
-        <button
-          onClick={() => void remove()}
-          disabled={busy}
-          className="px-2 py-1 rounded-control text-xs text-ink-2 hover:text-expense"
-        >
-          Delete
-        </button>
-      </div>
-      {showDetails && (
-        <div className="mt-2 border-t border-hairline pt-3 space-y-3">
-          <label className="block text-xs text-ink-2">
-            Notes
-            <textarea
-              className={`${inputCls} w-full mt-1 leading-relaxed`}
-              rows={3}
-              value={notesDraft}
-              placeholder="What needs to go along with this filing, contacts, portal links…"
-              onChange={(e) => setNotesDraft(e.target.value)}
-            />
-          </label>
-          {notesDirty && (
-            <div className="flex gap-2 items-center -mt-1">
-              <button
-                onClick={() => {
-                  const v = notesDraft.trim();
-                  setNotesDraft(v);
-                  void patch({ notes: v || null });
-                }}
-                disabled={busy}
-                className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
-              >
-                Save notes
-              </button>
-              <button
-                onClick={() => setNotesDraft(item.notes ?? "")}
-                className="text-xs text-ink-2 hover:text-ink-1 px-1"
-              >
-                Discard
-              </button>
-            </div>
-          )}
-          <div>
-            <p className="text-xs text-ink-2 mb-1">Checklist</p>
-            {checklist.length > 0 && (
-              <ul className="space-y-1 mb-2">
-                {checklist.map((c) => (
-                  <li key={c.id} className="flex items-center gap-2 group">
-                    <input
-                      type="checkbox"
-                      checked={c.done}
-                      disabled={busy}
-                      onChange={() =>
-                        saveChecklist(
-                          checklist.map((x) => (x.id === c.id ? { ...x, done: !x.done } : x))
-                        )
-                      }
-                      className="accent-orange w-3.5 h-3.5 shrink-0"
-                    />
-                    <span
-                      className={`text-xs leading-relaxed ${
-                        c.done ? "line-through text-ink-3" : "text-ink-1"
-                      }`}
-                    >
-                      {c.text}
-                    </span>
-                    <button
-                      onClick={() => saveChecklist(checklist.filter((x) => x.id !== c.id))}
-                      disabled={busy}
-                      aria-label={`Delete "${c.text}"`}
-                      className="ml-auto px-1.5 text-sm leading-none text-ink-3 hover:text-expense opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
-                    >
-                      ×
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <form onSubmit={addCheckItem} className="flex gap-2">
-              <input
-                className={`${inputCls} flex-1 !py-1.5 text-xs`}
-                value={newCheckText}
-                placeholder="Add checklist item"
-                onChange={(e) => setNewCheckText(e.target.value)}
-              />
-              <button
-                type="submit"
-                disabled={busy || !newCheckText.trim()}
-                className="text-xs font-semibold px-3 rounded-control bg-tile hover:bg-tile text-ink-2 disabled:opacity-50"
-              >
-                Add
-              </button>
-            </form>
-          </div>
-          {item.last_filed_at && (
-            <p className="text-xs text-ink-2">
-              Last filed {item.last_filed_at.slice(0, 10)}.
-            </p>
-          )}
-        </div>
-      )}
-    </article>
+    <>
+      <MoreActionsMenu label={`Actions for ${item.title}`} size="sm" disabled={busy} items={items} />
+      <Drawer
+        open={editing}
+        onClose={() => setEditing(false)}
+        title="Edit deadline"
+        footer={
+          <>
+            <Button type="button" variant="secondary" onClick={() => setEditing(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form={`edit-compliance-${item.id}`} loading={busy}>
+              {busy ? "Saving" : "Save"}
+            </Button>
+          </>
+        }
+      >
+        <ItemFields d={draft} set={setDraft} error={error} formId={`edit-compliance-${item.id}`} onSubmit={saveEdit} />
+      </Drawer>
+    </>
   );
 }
 
+/** The page's one primary action: New deadline, in the kit Drawer. */
 export function NewComplianceForm() {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [title, setTitle] = useState("");
-  const [kind, setKind] = useState("custom");
-  const [dueDate, setDueDate] = useState("");
-  const [recur, setRecur] = useState("annual");
-  const [jurisdiction, setJurisdiction] = useState("");
-  const [assignee, setAssignee] = useState("");
-  const memberOptions = useAssignees();
+  const blank: Draft = { title: "", kind: "custom", due: "", recur: "annual", jurisdiction: "", assignee: "" };
+  const [draft, setDraft] = useState<Draft>(blank);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!draft.title.trim() || !draft.due) {
+      setError("Title and due date are required.");
+      return;
+    }
     setBusy(true);
     setError("");
-    try {
-      const res = await fetch("/api/admin/compliance", {
+    const r = await saveAction({
+      request: {
+        url: "/api/admin/compliance",
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          kind,
-          due_date: dueDate,
-          recur,
-          jurisdiction: jurisdiction || undefined,
-          assigned_to: assignee || undefined,
-        }),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        throw new Error(userMessage(res, j));
-      }
-      setTitle(""); setDueDate(""); setJurisdiction(""); setAssignee("");
-      setOpen(false);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create item");
-    } finally {
-      setBusy(false);
+        body: {
+          title: draft.title.trim(),
+          kind: draft.kind,
+          due_date: draft.due,
+          recur: draft.recur,
+          jurisdiction: draft.jurisdiction || undefined,
+          assigned_to: draft.assignee || undefined,
+        },
+      },
+      failure: false,
+      success: "Deadline added",
+      toast,
+    });
+    setBusy(false);
+    if (!r.ok) {
+      setError(r.message);
+      return;
     }
+    setDraft(blank);
+    setOpen(false);
+    router.refresh();
   };
 
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors"
-      >
-        + New deadline
-      </button>
-    );
-  }
-
   return (
-    <form
-      onSubmit={submit}
-      className="w-full bg-surface border-hairline rounded-panel p-4 grid grid-cols-2 lg:grid-cols-5 gap-3 items-end"
-    >
-      <label className="col-span-2 text-xs text-ink-2">
-        Title
-        <input className={`${inputCls} w-full mt-1`} value={title} required autoFocus
-          placeholder="Workers' comp premium audit" onChange={(e) => setTitle(e.target.value)} />
-      </label>
-      <label className="text-xs text-ink-2">
-        Type
-        <select className={`${inputCls} w-full mt-1`} value={kind} onChange={(e) => setKind(e.target.value)}>
-          {Object.entries(KIND_LABELS).map(([k, v]) => (
-            <option key={k} value={k}>{v}</option>
-          ))}
-        </select>
-      </label>
-      <label className="text-xs text-ink-2">
-        Due
-        <input className={`${inputCls} w-full mt-1`} type="date" value={dueDate} required
-          onChange={(e) => setDueDate(e.target.value)} />
-      </label>
-      <label className="text-xs text-ink-2">
-        Repeats
-        <select className={`${inputCls} w-full mt-1`} value={recur} onChange={(e) => setRecur(e.target.value)}>
-          <option value="annual">Annually</option>
-          <option value="quarterly">Quarterly</option>
-          <option value="biennial">Every 2 years</option>
-          <option value="none">One-time</option>
-        </select>
-      </label>
-      <label className="text-xs text-ink-2">
-        Jurisdiction
-        <input className={`${inputCls} w-full mt-1`} value={jurisdiction} placeholder="IRS / CA / —"
-          onChange={(e) => setJurisdiction(e.target.value)} />
-      </label>
-      <label className="text-xs text-ink-2">
-        Assigned to
-        <select className={`${inputCls} w-full mt-1`} value={assignee} onChange={(e) => setAssignee(e.target.value)}>
-          <option value="">Unassigned</option>
-          {withSelected(memberOptions, assignee).map((a) => (
-            <option key={a.value} value={a.value}>{a.label}</option>
-          ))}
-        </select>
-      </label>
-      <div className="col-span-full flex gap-2">
-        <button type="submit" disabled={busy}
-          className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors disabled:opacity-50">
-          {busy ? "Saving…" : "Create"}
-        </button>
-        <button type="button" onClick={() => setOpen(false)}
-          className="text-xs text-ink-2 hover:text-ink-1 px-2">
-          Cancel
-        </button>
-        {error && <p className="text-expense text-xs self-center">{error}</p>}
-      </div>
-    </form>
+    <>
+      <Button type="button" onClick={() => setOpen(true)}>
+        New deadline
+      </Button>
+      <Drawer
+        open={open}
+        onClose={() => setOpen(false)}
+        title="New deadline"
+        description="A recurring filing is one row that always shows its next due date. Marking it filed rolls it forward."
+        footer={
+          <>
+            <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="new-compliance" loading={busy}>
+              {busy ? "Saving" : "Create"}
+            </Button>
+          </>
+        }
+      >
+        <ItemFields d={draft} set={setDraft} error={error} formId="new-compliance" onSubmit={submit} />
+      </Drawer>
+    </>
   );
 }

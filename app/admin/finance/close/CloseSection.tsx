@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getFinanceSnapshot } from "@/lib/admin/finance";
 import { endOfMonthISO } from "@/lib/finance/runway";
 import { loadRevenueSchedule, scheduleToRunwayPledges } from "@/lib/finance/schedule";
 import CloseWizard from "./_components/CloseWizard";
 import PageHeader from "../../_components/PageHeader";
+import PageShell from "../../_components/ui/PageShell";
 import { TYPE } from "@/lib/admin/typeScale";
 import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
@@ -76,10 +76,10 @@ export default async function CloseSection({ embedded = false }: { embedded?: bo
 
   if (embedded) {
     return (
-      <section className="mt-8 max-w-4xl">
+      <section className="mt-8 max-w-reading">
         <div className="mb-3">
-          <h2 className={TYPE.cardTitle}>Friday close</h2>
-          <p className="text-xs text-ink-3 max-w-2xl">
+          <h2 className={TYPE.sectionTitle}>Friday close</h2>
+          <p className={`${TYPE.bodyMuted} mt-1`}>
             Work top to bottom, then stamp the close. The stamp blocks while reconcile
             proposals are pending above. A reports.approve holder can waive, on the record.
           </p>
@@ -90,12 +90,10 @@ export default async function CloseSection({ embedded = false }: { embedded?: bo
   }
 
   return (
-    <div className="max-w-4xl px-4 lg:px-8 py-6 lg:py-8">
+    <PageShell width="reading">
       <header>
-        <div className="flex items-center gap-3 text-xs text-ink-2 mb-1">
-          <Link href="/admin/finance" className="hover:text-ink-1">← Finance</Link>
-        </div>
         <PageHeader
+          breadcrumb={[{ label: "Finance", href: "/admin/finance/snapshot" }]}
           title="Friday close"
           subtitle={
             <span className="block max-w-2xl">
@@ -108,6 +106,6 @@ export default async function CloseSection({ embedded = false }: { embedded?: bo
       </header>
 
       {wizard}
-    </div>
+    </PageShell>
   );
 }

@@ -7,7 +7,11 @@ import { CashFlowChart, Donut, money, type DonutSeg } from "../_components/chart
 import PrintButton from "./_components/PrintButton";
 import { TYPE } from "@/lib/admin/typeScale";
 import { CHART } from "@/lib/admin/chartTokens";
-import Alert from "@/app/admin/_components/ui/Alert";
+import Notice from "@/app/admin/_components/ui/Notice";
+import PageShell from "@/app/admin/_components/ui/PageShell";
+import PageHeader from "@/app/admin/_components/PageHeader";
+import Figure, { SummaryStrip } from "@/app/admin/_components/ui/Figure";
+import DataTable from "@/app/admin/_components/ui/DataTable";
 import { fetchAll } from "@/lib/supabase/fetchAll";
 import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
@@ -123,7 +127,11 @@ export default async function BoardReport() {
     : "Cash not yet reconciled to the bank";
 
   return (
-    <div className="max-w-4xl px-4 lg:px-8 py-6 lg:py-8">
+    // V4 Stage G2: a reading-width page with the kit header (Print is the one
+    // primary action), Figures with sources for the key numbers, and
+    // DataTable v2 for budget vs actual. The report keeps its two charts: it
+    // is a printed document for the board, not a dashboard.
+    <PageShell width="reading">
       <style
         dangerouslySetInnerHTML={{
           __html:
@@ -131,36 +139,53 @@ export default async function BoardReport() {
         }}
       />
 
-      <div className="flex items-center justify-between gap-4 mb-5 no-print">
-        <p className="text-xs text-ink-2">A print-ready snapshot for the board. Numbers match the Finance dashboard.</p>
-        <PrintButton />
+      <div className="no-print">
+        <PageHeader
+          breadcrumb={[{ label: "Reports", href: "/admin/finance/reports" }]}
+          title="Board financial report"
+          subtitle="A print-ready snapshot for the board. The numbers match the Finance snapshot."
+          primaryAction={<PrintButton />}
+        />
       </div>
 
       <div id="board-report" className="bg-white text-ink-1 rounded-panel-lg border-hairline p-8 space-y-7">
         {/* Title */}
         <header className="border-b border-hairline pb-4">
           <div className={TYPE.cardLabel}>{orgName} · Board Financial Report</div>
-          <h1 className={`${TYPE.pageTitle} mt-1`}>Fiscal Year {cfg.year}</h1>
+          <h2 className={`${TYPE.pageTitle} mt-1`}>Fiscal Year {cfg.year}</h2>
           <div className="text-xs text-ink-2 mt-1">As of {asOf} · {reconciledTxt}</div>
         </header>
 
         {partial && (
-          <Alert tone="warning" title="Partial ledger">
+          <Notice tone="partial" title="Partial ledger.">
             More transactions or gifts exist than this report reads, so cash, year-to-date and budget figures below
             are incomplete. Do not present them as final.
-          </Alert>
+          </Notice>
         )}
 
         {/* Headline */}
         <p className="text-sm text-ink-1 leading-relaxed">{headline}</p>
 
-        {/* KPIs */}
-        <section className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <Kpi label="Cash on hand" value={money(snap.cashOnHand)} />
-          <Kpi label="Cash runway" value={snap.runway.cash.months === null ? "—" : `${snap.runway.cash.months.toFixed(1)} mo`} sub={`${money(snap.runway.inputs.baseline)}/mo burn`} />
-          <Kpi label="Raised YTD" value={money(raisedHard)} sub={goalPct === null ? undefined : `${goalPct}% of goal`} />
-          <Kpi label="Net YTD" value={`${snap.netYTD >= 0 ? "+" : "−"}${money(Math.abs(snap.netYTD))}`} />
-        </section>
+        {/* Key figures, each with its source */}
+        <SummaryStrip label="Key figures">
+          <Figure label="Cash on hand" value={cfg.startDate || cfg.reconciledAt ? money(snap.cashOnHand) : null} source={reconciledTxt} />
+          <Figure
+            label="Cash runway"
+            value={snap.runway.cash.months === null ? null : `${snap.runway.cash.months.toFixed(1)} months`}
+            source={`At ${money(snap.runway.inputs.baseline)} a month of spending`}
+          />
+          <Figure
+            label="Raised this year"
+            value={receivedYTD.error ? null : money(raisedHard)}
+            compare={goalPct === null ? undefined : `${goalPct}% of goal`}
+            source="Gifts received plus committed pledges and grants"
+          />
+          <Figure
+            label="Net this year"
+            value={`${snap.netYTD >= 0 ? "+" : "-"}${money(Math.abs(snap.netYTD))}`}
+            source="Money in minus money out, from transactions"
+          />
+        </SummaryStrip>
 
         {/* Cash flow */}
         <section>
@@ -211,29 +236,41 @@ export default async function BoardReport() {
           {budgetRows.length === 0 ? (
             <Empty>Set a budget and import transactions to see this table.</Empty>
           ) : (
-            <table className="w-full text-xs">
-              <thead>
-                <tr className={`${TYPE.tableHeader} border-b border-hairline`}>
-                  <th className="text-left py-1.5">Group</th>
-                  <th className="text-right py-1.5">Actual</th>
-                  <th className="text-right py-1.5">Budget</th>
-                  <th className="text-right py-1.5">% used</th>
-                </tr>
-              </thead>
-              <tbody>
-                {budgetRows.map((r) => {
-                  const pct = r.budget > 0 ? Math.round((r.actual / r.budget) * 100) : null;
-                  return (
-                    <tr key={r.group} className="border-b border-hairline">
-                      <td className="py-1.5 text-ink-1">{r.group}</td>
-                      <td className="py-1.5 text-right font-mono">{money(r.actual)}</td>
-                      <td className="py-1.5 text-right font-mono text-ink-2">{r.budget > 0 ? money(r.budget) : "—"}</td>
-                      <td className={`py-1.5 text-right font-mono ${pct !== null && pct > 100 ? "text-expense" : "text-ink-1"}`}>{pct === null ? "—" : `${pct}%`}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <DataTable
+              label="Budget vs actual by group"
+              noun={{ one: "group", many: "groups" }}
+              columns={[
+                { key: "group", header: "Group", card: "title", render: (r) => <span className="text-ink-1">{r.group}</span> },
+                { key: "actual", header: "Actual", align: "right", className: "tabular-nums", render: (r) => money(r.actual) },
+                {
+                  key: "budget",
+                  header: "Budget",
+                  align: "right",
+                  className: "tabular-nums text-ink-2",
+                  render: (r) => (r.budget > 0 ? money(r.budget) : "No budget"),
+                },
+                {
+                  key: "used",
+                  header: "Used",
+                  align: "right",
+                  className: "tabular-nums",
+                  render: (r) => {
+                    const pct = r.budget > 0 ? Math.round((r.actual / r.budget) * 100) : null;
+                    return pct === null ? (
+                      <span className="text-ink-2">Not measured</span>
+                    ) : (
+                      <span className={pct > 100 ? "text-status-critical-text font-semibold" : "text-ink-1"}>{pct}%</span>
+                    );
+                  },
+                },
+              ]}
+              data={{ rows: budgetRows, total: budgetRows.length, page: 0, pageSize: 500 }}
+              getRowId={(r) => r.group}
+              getRowLabel={(r) => r.group}
+              spec={{ sortable: [], defaultSort: null, pageSize: 500 }}
+              state={{ page: 0, sort: null }}
+              baseHref="/admin/finance/reports?view=board"
+            />
           )}
         </section>
 
@@ -242,17 +279,7 @@ export default async function BoardReport() {
           Forecast figures exclude closed-lost. Figures match the BloomOS Finance dashboard.
         </footer>
       </div>
-    </div>
-  );
-}
-
-function Kpi({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="border border-hairline rounded-panel p-3">
-      <div className={TYPE.cardLabel}>{label}</div>
-      <div className={`${TYPE.sectionTitle} mt-0.5 [font-variant-numeric:tabular-nums]`}>{value}</div>
-      {sub && <div className="text-xs text-ink-2 mt-0.5">{sub}</div>}
-    </div>
+    </PageShell>
   );
 }
 

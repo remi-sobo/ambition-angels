@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
-import { userMessage, networkMessage } from "@/lib/admin/errors";
+import Button from "@/app/admin/_components/ui/Button";
+import Badge, { type BadgeTone } from "@/app/admin/_components/ui/Badge";
+import ListRow, { ListRows } from "@/app/admin/_components/ui/ListRow";
+import { useSaveAction } from "@/app/admin/_lib/useSaveAction";
 import { TYPE } from "@/lib/admin/typeScale";
 
 export type ReconItem = {
@@ -21,90 +23,75 @@ export type ReconItem = {
   resolved_by: string | null;
 };
 
-const SOURCE_META: Record<string, { label: string; cls: string }> = {
-  hubspot: { label: "HubSpot", cls: "bg-orange/10 text-orange border-orange/30" },
-  gmail: { label: "Email", cls: "bg-revenue/10 text-revenue border-revenue/30" },
-  stripe: { label: "Stripe", cls: "bg-navy/10 text-navy border-navy/30" },
-  manual: { label: "Manual", cls: "bg-ink/5 text-ink-2 border-hairline" },
+const SOURCE_META: Record<string, { label: string; tone: BadgeTone }> = {
+  hubspot: { label: "HubSpot", tone: "neutral" },
+  gmail: { label: "Email", tone: "neutral" },
+  stripe: { label: "Stripe", tone: "neutral" },
+  manual: { label: "Manual", tone: "neutral" },
 };
 
 const fmtMoney = (n: number | null) =>
   n == null ? "" : n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
-function Card({ item, onResolve }: { item: ReconItem; onResolve: (id: string, action: "accept" | "dismiss") => void }) {
-  const toast = useToast();
+// The reconcile inbox (V4 Stage G2: kit ListRow, Badge and Button; writes
+// through saveAction). Accepting books money, so nothing is optimistic: a
+// row leaves the list only after the server confirms.
+function Row({ item, onResolve }: { item: ReconItem; onResolve: (id: string) => void }) {
+  const save = useSaveAction();
   const [busy, setBusy] = useState<null | "accept" | "dismiss">(null);
   const src = SOURCE_META[item.source] ?? SOURCE_META.manual;
 
   async function act(action: "accept" | "dismiss") {
     setBusy(action);
-    try {
-      const r = await fetch(`/api/admin/finance/reconciliation/${item.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
-      });
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok) {
-        toast.error(userMessage(r, d));
-        setBusy(null);
-        return;
-      }
-      onResolve(item.id, action);
-    } catch {
-      toast.error(networkMessage());
-      setBusy(null);
-    }
+    const r = await save({
+      request: { url: `/api/admin/finance/reconciliation/${item.id}`, method: "PATCH", body: { action } },
+      success: action === "accept" ? "Added to the ledger" : item.kind === "flag" ? "Resolved" : "Dismissed",
+    });
+    setBusy(null);
+    if (r.ok) onResolve(item.id);
   }
 
   return (
-    <div className="rounded-panel border-hairline bg-surface p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className={`text-xs font-semibold border rounded px-1.5 py-0.5 ${src.cls}`}>
-              {src.label}
-            </span>
-            {item.kind === "flag" && (
-              <span className="text-xs font-semibold border border-status-watch-text/30 text-status-watch-text rounded px-1.5 py-0.5">
-                Needs a look
-              </span>
-            )}
-            {item.confidence && (
-              <span className="text-xs text-ink-3 capitalize">{item.confidence} confidence</span>
-            )}
-          </div>
-          <h3 className="mt-1.5 font-heading font-semibold text-ink-1 text-[15px] leading-snug">
-            {item.title}
-            {item.amount != null && <span className="ml-2 text-revenue">{fmtMoney(item.amount)}</span>}
-          </h3>
-          {item.detail && <p className="mt-1 text-xs text-ink-2 leading-relaxed whitespace-pre-wrap">{item.detail}</p>}
-          {item.evidence_url && (
-            <a href={item.evidence_url} target="_blank" rel="noopener noreferrer" className="mt-1.5 inline-block text-xs text-orange hover:text-orange-dark underline">
-              View source ↗
-            </a>
-          )}
-        </div>
-        <div className="flex flex-col items-stretch gap-1.5 shrink-0 w-28">
-          {item.kind === "commitment" && (
-            <button
-              onClick={() => act("accept")}
-              disabled={!!busy}
-              className="text-xs font-semibold px-3 py-1.5 rounded-full bg-orange text-white hover:bg-orange-dark transition-colors disabled:opacity-60"
-            >
-              {busy === "accept" ? "Adding…" : "Add to ledger"}
-            </button>
-          )}
-          <button
-            onClick={() => act("dismiss")}
-            disabled={!!busy}
-            className="text-xs font-semibold px-3 py-1.5 rounded-full border border-hairline text-ink-2 hover:text-ink-1 hover:bg-tile transition-colors disabled:opacity-60"
-          >
-            {busy === "dismiss" ? "…" : item.kind === "flag" ? "Resolve" : "Dismiss"}
-          </button>
-        </div>
-      </div>
-    </div>
+    <ListRow
+      title={
+        <>
+          {item.title}
+          {item.amount != null ? <span className="ml-2 tabular-nums">{fmtMoney(item.amount)}</span> : null}
+        </>
+      }
+      meta={
+        <>
+          <Badge tone={src.tone}>{src.label}</Badge>
+          {item.kind === "flag" ? <Badge tone="warning">Needs a look</Badge> : null}
+          {item.confidence ? <span className="text-xs text-ink-2 capitalize">{item.confidence} confidence</span> : null}
+        </>
+      }
+      context={
+        <>
+          {item.detail ? <span className="whitespace-pre-wrap">{item.detail}</span> : null}
+          {item.evidence_url ? (
+            <>
+              {item.detail ? " " : null}
+              <a href={item.evidence_url} target="_blank" rel="noopener noreferrer" className="font-semibold underline underline-offset-2">
+                View source
+              </a>
+            </>
+          ) : null}
+        </>
+      }
+      actions={
+        <>
+          <Button variant="secondary" size="sm" onClick={() => act("dismiss")} loading={busy === "dismiss"} disabled={!!busy}>
+            {item.kind === "flag" ? "Resolve" : "Dismiss"}
+          </Button>
+          {item.kind === "commitment" ? (
+            <Button size="sm" onClick={() => act("accept")} loading={busy === "accept"} disabled={!!busy}>
+              Add to ledger
+            </Button>
+          ) : null}
+        </>
+      }
+    />
   );
 }
 
@@ -114,52 +101,52 @@ export default function ReconcileInbox({ pending, resolved }: { pending: ReconIt
 
   function onResolve(id: string) {
     setItems((prev) => prev.filter((i) => i.id !== id));
-    // Refresh so dashboard/pledges pick up an accepted commitment.
+    // Re-read so the snapshot and forecast pick up an accepted commitment.
     router.refresh();
   }
 
   return (
     <div className="space-y-6">
-      <section>
-        <div className="flex items-center justify-between mb-2.5">
-          <h2 className={TYPE.cardTitle}>
-            To review <span className="text-ink-3 font-normal">· {items.length}</span>
-          </h2>
-        </div>
+      <section className="bg-surface border border-hairline rounded-panel px-5">
+        <h3 className={`${TYPE.cardTitle} pt-4`}>
+          To review <span className="text-ink-2 font-normal">· {items.length}</span>
+        </h3>
         {items.length === 0 ? (
-          <div className="rounded-panel border-dashed border-hairline bg-surface/50 p-8 text-center">
-            <p className="text-sm text-ink-2 font-medium">Inbox zero. 🎉</p>
-            <p className="mt-1 text-xs text-ink-3">
-              Nothing to reconcile right now. Ask Cowork to run a sweep, or it&apos;ll post here on the weekly run.
-            </p>
-          </div>
+          <p className={`${TYPE.bodyMuted} py-6`}>
+            Nothing to reconcile right now. New proposals arrive with the weekly sweep.
+          </p>
         ) : (
-          <div className="space-y-2.5">
+          <ListRows>
             {items.map((it) => (
-              <Card key={it.id} item={it} onResolve={onResolve} />
+              <Row key={it.id} item={it} onResolve={onResolve} />
             ))}
-          </div>
+          </ListRows>
         )}
       </section>
 
-      {resolved.length > 0 && (
-        <section>
-          <h2 className={`${TYPE.cardTitle} mb-2.5`}>Recently resolved</h2>
-          <div className="rounded-panel border-hairline bg-surface divide-y divide-hairline">
+      {resolved.length > 0 ? (
+        <section className="bg-surface border border-hairline rounded-panel px-5">
+          <h3 className={`${TYPE.cardTitle} pt-4`}>Recently resolved</h3>
+          <ListRows>
             {resolved.map((it) => (
-              <div key={it.id} className="px-4 py-2.5 flex items-center justify-between gap-3 text-xs">
-                <span className="text-ink-2 truncate">
-                  {it.title}
-                  {it.amount != null && <span className="ml-1.5 text-ink-3">{fmtMoney(it.amount)}</span>}
-                </span>
-                <span className={`shrink-0 font-semibold ${it.status === "accepted" ? "text-revenue" : "text-ink-3"}`}>
-                  {it.status === "accepted" ? "Added ✓" : "Dismissed"}
-                </span>
-              </div>
+              <ListRow
+                key={it.id}
+                title={
+                  <span className="font-normal text-ink-2">
+                    {it.title}
+                    {it.amount != null ? <span className="ml-1.5 tabular-nums">{fmtMoney(it.amount)}</span> : null}
+                  </span>
+                }
+                actions={
+                  <Badge tone={it.status === "accepted" ? "success" : "neutral"}>
+                    {it.status === "accepted" ? "Added" : "Dismissed"}
+                  </Badge>
+                }
+              />
             ))}
-          </div>
+          </ListRows>
         </section>
-      )}
+      ) : null}
     </div>
   );
 }

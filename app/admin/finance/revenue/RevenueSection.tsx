@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import { loadRevenueSchedule } from "@/lib/finance/schedule";
 import { constituentName } from "@/lib/fundraising/display";
 import RevenueManager, { type Commitment, type ReceivedGift } from "./_components/RevenueManager";
+import SegmentedControl from "../../_components/ui/SegmentedControl";
 import PageHeader from "../../_components/PageHeader";
 import { TYPE } from "@/lib/admin/typeScale";
 import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
@@ -98,54 +98,34 @@ export default async function RevenueSection({
   const years = [year - 1, year, year + 1].filter((y) => y >= 2024 && y <= 2030);
 
   const yearPills = (
-    <div className="flex items-center gap-2 text-xs">
-      {years.map((y) => (
-        <Link
-          key={y}
-          href={`${basePath}?year=${y}`}
-          className={`px-3 py-1 rounded-full border ${
-            y === year
-              ? "border-orange/60 bg-orange/15 text-orange"
-              : "border-hairline text-ink-2 hover:text-ink-1"
-          }`}
-        >
-          {y}
-        </Link>
-      ))}
-    </div>
+    <SegmentedControl
+      label="Revenue year"
+      segments={years.map((y) => ({ value: String(y), label: String(y) }))}
+      value={String(year)}
+      hrefFor={(y) => `${basePath}?year=${y}`}
+    />
   );
 
   return (
-    <div className={embedded ? undefined : "max-w-workspace px-4 lg:px-8 py-6 lg:py-8"}>
+    <div className={embedded ? undefined : "px-4 lg:px-8 py-6 lg:py-8 max-w-workspace"}>
       {embedded ? (
         <div className="flex items-center gap-3 flex-wrap mb-3">
           <div>
-            <h2 className={TYPE.cardTitle}>Revenue · {year}</h2>
-            <p className="text-xs text-ink-3 max-w-2xl">
-              Received = money landed · Committed = signed, not yet in the bank · Projected =
-              pipeline, weighted by probability.
+            <h2 className={TYPE.sectionTitle}>Revenue {year}</h2>
+            <p className={`${TYPE.bodyMuted} mt-1 max-w-reading`}>
+              Received is money landed. Committed is signed but not yet in the bank. Projected is pipeline, weighted by its
+              chance of closing.
             </p>
           </div>
           <div className="ml-auto">{yearPills}</div>
         </div>
       ) : (
-        <header>
-          <div className="flex items-center gap-3 text-xs text-ink-2 mb-1">
-            <Link href="/admin/finance" className="hover:text-ink-1">
-              ← Finance
-            </Link>
-          </div>
-          <PageHeader
-            title={<>Revenue · {year}</>}
-            subtitle={
-              <span className="block max-w-2xl">
-                What&apos;s come in and what&apos;s still expected this year. Committed = signed but not yet
-                in the bank. Projected = pipeline, weighted by probability. Received = money landed.
-              </span>
-            }
-            actions={yearPills}
-          />
-        </header>
+        <PageHeader
+          breadcrumb={[{ label: "Finance", href: "/admin/finance/snapshot" }]}
+          title={`Revenue ${year}`}
+          subtitle="What has come in and what is still expected this year. Committed is signed but not yet in the bank. Projected is pipeline, weighted by its chance of closing. Received is money landed."
+          secondaryActions={yearPills}
+        />
       )}
 
       <RevenueManager

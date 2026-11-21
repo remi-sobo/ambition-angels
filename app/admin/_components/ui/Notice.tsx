@@ -22,9 +22,18 @@ import { TYPE } from "@/lib/admin/typeScale";
  * `inline` drops the box for use inside a panel, as a row with a top
  * hairline (Finance.dc.html); the default is a boxed notice.
  */
-export type NoticeTone = "info" | "success" | "warning" | "danger" | "partial" | "stale";
+export type NoticeTone =
+  | "info"
+  | "success"
+  | "warning"
+  | "danger"
+  | "partial"
+  | "stale";
 
-const TONES: Record<NoticeTone, { box: string; well: string; glyph: ReactNode; sr: string }> = {
+const TONES: Record<
+  NoticeTone,
+  { box: string; well: string; glyph: ReactNode; sr: string }
+> = {
   info: {
     box: "bg-tile border-hairline",
     well: "bg-app text-ink-2",
@@ -87,23 +96,43 @@ export default function Notice({
   return (
     <div
       role={tone === "danger" ? "alert" : "status"}
-      className={`flex flex-wrap items-center gap-3 ${
-        inline ? "px-5 py-3 border-t border-hairline" : `px-4 py-3 rounded-panel border ${t.box}`
+      className={`flex items-start gap-3 ${
+        inline
+          ? "px-5 py-3 border-t border-hairline"
+          : `px-4 py-3 rounded-panel border ${t.box}`
       } ${className}`}
     >
-      <span aria-hidden className={`shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full ${t.well}`}>
-        <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          {tone === "info" || tone === "warning" || tone === "partial" || tone === "stale" ? <circle cx="12" cy="12" r="7" /> : null}
+      <span
+        aria-hidden
+        className={`shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full ${t.well}`}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          className="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          {tone === "info" ||
+          tone === "warning" ||
+          tone === "partial" ||
+          tone === "stale" ? (
+            <circle cx="12" cy="12" r="7" />
+          ) : null}
           {t.glyph}
         </svg>
       </span>
-      <p className={`flex-[1_1_320px] min-w-0 ${TYPE.body}`}>
-        <span className="sr-only">{t.sr}: </span>
-        {title ? <strong className="font-semibold">{title}</strong> : null}
-        {title && children ? " " : null}
-        {children ? <span className="text-ink-2">{children}</span> : null}
-      </p>
-      {action ? <div className="shrink-0">{action}</div> : null}
+      <div className="flex flex-1 min-w-0 flex-wrap items-center gap-x-3 gap-y-2 min-h-[28px]">
+        <p className={`flex-[1_1_280px] min-w-0 ${TYPE.body}`}>
+          <span className="sr-only">{t.sr}: </span>
+          {title ? <strong className="font-semibold">{title}</strong> : null}
+          {title && children ? " " : null}
+          {children ? <span className="text-ink-2">{children}</span> : null}
+        </p>
+        {action ? <div className="shrink-0">{action}</div> : null}
+      </div>
     </div>
   );
 }

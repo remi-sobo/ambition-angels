@@ -100,11 +100,11 @@ export default function Timeline({
             >
               <span
                 aria-hidden
-                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-app border border-hairline text-ink-1 [&>svg]:w-4 [&>svg]:h-4"
+                className="col-start-1 row-start-1 inline-flex items-center justify-center w-8 h-8 rounded-full bg-app border border-hairline text-ink-1 [&>svg]:w-4 [&>svg]:h-4"
               >
                 {e.icon}
               </span>
-              <div className="min-w-0">
+              <div className="col-start-2 row-start-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-h-[32px]">
                   <span className={`${TYPE.body} font-semibold`}>{e.title}</span>
                   {e.chips}
@@ -112,10 +112,10 @@ export default function Timeline({
                 {e.meta ? <div className={`${TYPE.bodyMuted} text-[13px] mt-0.5`}>{e.meta}</div> : null}
                 {e.body ? <div className={`${TYPE.body} mt-2 max-w-[60ch]`}>{e.body}</div> : null}
               </div>
-              <div className="flex gap-1 self-start row-start-2 col-start-2 sm:row-start-auto sm:col-start-auto">{e.actions}</div>
+              <div className="flex flex-wrap gap-1 self-start col-start-2 row-start-2 sm:col-start-3 sm:row-start-1 empty:hidden">{e.actions}</div>
               <time
                 dateTime={e.dateTime}
-                className={`${TYPE.bodyMuted} text-[13px] tabular-nums leading-8 text-right col-start-3 row-start-1 sm:col-start-auto`}
+                className={`${TYPE.bodyMuted} text-[13px] tabular-nums leading-8 text-right whitespace-nowrap col-start-3 row-start-1 sm:col-start-4`}
               >
                 {e.date}
               </time>

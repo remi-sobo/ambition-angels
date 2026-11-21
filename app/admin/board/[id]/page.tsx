@@ -3,7 +3,10 @@ import { notFound } from "next/navigation";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import { getEntityHistory } from "@/lib/admin/history";
-import StatCard from "../../_components/StatCard";
+import PageHeader, { IdentityChip } from "../../_components/PageHeader";
+import NextStepBar from "../../_components/ui/NextStepBar";
+import Figure, { SummaryStrip } from "../../_components/ui/Figure";
+import { memberNextStep } from "@/lib/admin/board/roster";
 import { EntityTasks } from "../../_components/EntityTasks";
 import { EntityDocuments } from "../../_components/EntityDocuments";
 import { CommentThread } from "../../_components/CommentThread";
@@ -91,58 +94,60 @@ export default async function BoardMemberPage({ params }: { params: { id: string
   const today = new Date().toISOString().slice(0, 10);
   const coiCurrent = !!member.coi_signed_at && member.coi_signed_at >= `${year}-01-01`;
   const termPast = !!member.term_end && member.term_end < today;
+  const step = memberNextStep(member, year, today);
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
-      <div className="flex items-center gap-3 flex-wrap mb-6">
-        <Link href="/admin/board" className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors">
-          ← Board
-        </Link>
-        <h1 className={`${TYPE.pageTitle} !text-lg`}>{member.name}</h1>
-        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
-          {ROLE_LABELS[member.officer_role] ?? member.officer_role}
-        </span>
-        {member.status !== "active" && (
-          <span className="text-xs px-2 py-0.5 rounded-full bg-tile text-ink-2">{member.status}</span>
-        )}
-        <div className="ml-auto">
-          <MemberQuickActions member={member} coiYear={year} />
-        </div>
-      </div>
+      <PageHeader
+        breadcrumb={[{ label: "Board", href: "/admin/organization/board" }]}
+        title={member.name}
+        chips={
+          <>
+            <IdentityChip>{ROLE_LABELS[member.officer_role] ?? member.officer_role}</IdentityChip>
+            {member.status !== "active" ? <IdentityChip>{member.status}</IdentityChip> : null}
+            {member.affiliation ? <IdentityChip>{member.affiliation}</IdentityChip> : null}
+          </>
+        }
+        secondaryActions={<MemberQuickActions member={member} coiYear={year} />}
+        primaryAction={<EditMemberProfile member={member} />}
+        moreActions={[
+          { label: "All board members", href: "/admin/organization/board" },
+          ...(member.constituent_id ? [{ label: "Open donor record", href: `/admin/fundraising/donors-funders/${member.constituent_id}` }] : []),
+        ]}
+      />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <StatCard
-          label="Term"
-          value={member.term_end ? fmtDate(member.term_end) : "—"}
-          sub={`term ${member.term_number}${termPast ? " · expired" : ""}`}
-          muted={!member.term_end}
+      <NextStepBar
+        title={step.tone === "quiet" && step.text === "Nothing due" ? null : step.text}
+        due={termPast ? { text: "Term has ended.", late: true } : undefined}
+        meta={step.text === "Nothing due" ? "COI is current and the term is not ending soon." : `Term ${member.term_number}${member.term_end ? `, ends ${fmtDate(member.term_end)}` : ""}.`}
+      />
+
+      <SummaryStrip label="Member summary">
+        <Figure
+          label="Term ends"
+          value={member.term_end ? fmtDate(member.term_end) : "No end date"}
+          source={`Term ${member.term_number}, from the roster${termPast ? " (ended)" : ""}`}
         />
-        <StatCard
-          label="COI"
-          value={coiCurrent ? "Current" : member.coi_signed_at ? "Stale" : "Missing"}
-          sub={member.coi_signed_at ? `signed ${fmtDate(member.coi_signed_at)}` : "990 Part VI Q12"}
-          muted={coiCurrent}
+        <Figure
+          label="Conflict of interest"
+          value={coiCurrent ? "Current" : member.coi_signed_at ? "Out of date" : "Not on file"}
+          source={member.coi_signed_at ? `Signed ${fmtDate(member.coi_signed_at)} (990 Part VI Q12)` : "990 Part VI Q12"}
         />
-        <StatCard
-          label="Giving"
-          value={member.constituent_id ? fmtUsd(ytd) : "—"}
-          sub={member.constituent_id ? `this year · ${fmtUsd(lifetime)} lifetime` : "not linked to a donor"}
-          muted={!member.constituent_id}
+        <Figure
+          label={`Given in ${year}`}
+          value={member.constituent_id ? fmtUsd(ytd) : null}
+          source={member.constituent_id ? `${fmtUsd(lifetime)} lifetime, from the linked donor record` : "Not linked to a donor record"}
         />
-        <StatCard
+        <Figure
           label="Attendance"
-          value={recorded.length > 0 ? `${attended.length}/${recorded.length}` : "—"}
-          sub="meetings with attendance"
-          muted={recorded.length === 0}
+          value={recorded.length > 0 ? `${attended.length} of ${recorded.length}` : null}
+          source="Meetings where attendance was taken"
         />
-      </div>
+      </SummaryStrip>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <section className="lg:col-span-5 bg-tile border-hairline rounded-panel-lg p-5 space-y-3 self-start">
-          <div className="flex items-start justify-between gap-2 mb-1">
-            <h2 className={TYPE.cardTitle}>Profile</h2>
-            <EditMemberProfile member={member} />
-          </div>
+          <h2 className={`${TYPE.cardTitle} mb-1`}>Profile</h2>
           {[
             ["Email", member.email ?? "—"],
             ["Phone", member.phone ?? "—"],
@@ -156,7 +161,7 @@ export default async function BoardMemberPage({ params }: { params: { id: string
               </span>
               {label === "Donor record" && member.constituent_id ? (
                 <Link
-                  href={`/admin/fundraising/donors/${member.constituent_id}`}
+                  href={`/admin/fundraising/donors-funders/${member.constituent_id}`}
                   className="text-orange/80 hover:text-orange"
                 >
                   open donor profile

@@ -38,9 +38,9 @@ const SURFACE_LABEL: Record<string, string> = {
 
 const usd = (n: number) => `$${n.toFixed(2)}`;
 
-function Card({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+function Card({ id, title, description, children }: { id?: string; title: string; description?: string; children: React.ReactNode }) {
   return (
-    <section className="bg-surface border-hairline rounded-panel-lg p-5 lg:p-6">
+    <section id={id} className="bg-surface border-hairline rounded-panel-lg p-5 lg:p-6 scroll-mt-6">
       <h2 className="font-heading font-semibold text-ink-1">{title}</h2>
       {description && <p className="text-xs text-ink-2 mt-1 mb-4">{description}</p>}
       {!description && <div className="mb-4" />}
@@ -95,8 +95,10 @@ export default async function SettingsPage({
   }
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[760px]">
-      <PageHeader title="Settings" subtitle="Your BloomOS account and security" />
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-reading">
+      {/* V4 A2: this page is the Settings home's "Your account" section; the
+          other sections sit in the left list (settings/layout.tsx). */}
+      <PageHeader title="Your account" subtitle="Your BloomOS account and security" />
 
       <div className="space-y-5">
         <Card title="Account">
@@ -145,6 +147,7 @@ export default async function SettingsPage({
         </Card>
 
         <Card
+          id="google-calendar"
           title="Google Calendar"
           description="Connect your calendar so BloomOS can show your day. Read-only. BloomOS never changes your events."
         >
@@ -175,6 +178,7 @@ export default async function SettingsPage({
         </Card>
 
         <Card
+          id="data-sources"
           title="Data sources"
           description="Where your data comes from. File imports and connected systems."
         >
@@ -189,7 +193,7 @@ export default async function SettingsPage({
                     </p>
                   </div>
                   <Link
-                    href="/admin/imports"
+                    href="/admin/settings/imports/csv"
                     className="shrink-0 text-sm font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-control transition-colors"
                   >
                     Import a CSV

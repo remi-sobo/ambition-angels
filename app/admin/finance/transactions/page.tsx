@@ -167,7 +167,7 @@ export default async function TransactionsPage({
               ) : null}
               <AiCategorize uncategorizedCount={uncategorizedCount ?? 0} />
               <Link
-                href="/admin/finance/upload"
+                href="/admin/settings/finance/upload"
                 className="rounded-full bg-orange hover:bg-orange-dark text-white px-3 py-1"
               >
                 + Import CSV
@@ -206,7 +206,7 @@ export default async function TransactionsPage({
                         label="transactions"
                         hint="The ledger fills from your bank exports; every number upstream (runway, burn, budget vs. actual) starts here."
                         action={
-                          <a href="/admin/finance/upload" className="text-xs font-semibold text-orange hover:text-orange-dark">
+                          <a href="/admin/settings/finance/upload" className="text-xs font-semibold text-orange hover:text-orange-dark">
                             Import the first CSV →
                           </a>
                         }

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { loadRules, matchRule, bumpHitCounts } from "@/lib/finance/categorize";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 // POST /api/admin/finance/rules/apply-all
 //
@@ -19,10 +19,9 @@ export async function POST(req: NextRequest) {
   // Org fence: the service-role client bypasses RLS, so this mass update MUST
   // be constrained to the caller's org — else it would rewrite every tenant's
   // transactions with this org's rules.
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("finance.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   const orgId = ctx.orgId;
   const supabase = getSupabaseAdmin();
 

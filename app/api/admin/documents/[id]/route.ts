@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { DOC_TYPES, DOCUMENTS_BUCKET } from "@/lib/documents/config";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 const isUuid = (v: unknown): v is string =>
   typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
@@ -15,8 +15,8 @@ const isISODate = (v: unknown): v is string =>
 // (active|archived).
 // All via the session client: documents.write RLS is the authority.
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const ctx = await getOrgContext();
-  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requirePermission("documents.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
   if (!isUuid(params.id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
@@ -91,8 +91,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 // Row first (session client — documents.delete RLS is the gate; links cascade),
 // then the storage object, so no orphan remains in the bucket.
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  const ctx = await getOrgContext();
-  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requirePermission("documents.delete");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
   if (!isUuid(params.id)) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
 
   const supabase = createServerSupabase();

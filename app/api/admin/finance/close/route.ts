@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOrgContext } from "@/lib/admin/auth";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { upsertFinConfig } from "@/lib/admin/finance";
 import { CLOSE_ARTIFACT_TYPE, closeBlocked, periodKey } from "@/lib/finance/closeGate";
 import { audit } from "@/lib/audit";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 // POST /api/admin/finance/close
 //
@@ -22,10 +22,9 @@ import { audit } from "@/lib/audit";
 // blocked response tells the wizard what stands in the way; nothing else
 // about the ritual is blocked (Contract 7 rule 1 — only the exit).
 export async function POST(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("finance.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
 
   const period = periodKey(new Date().toISOString());
   // Org fence: the service-role client bypasses RLS, so both gate reads are

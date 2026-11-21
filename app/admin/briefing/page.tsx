@@ -8,6 +8,7 @@ import PulseStrip from "./_components/PulseStrip";
 import FundraisingPriorities from "./_components/FundraisingPriorities";
 import FollowUps from "./_components/FollowUps";
 import TodayAgenda from "../_components/overview/TodayAgenda";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Executive Briefing v2 (spec Phase 1): an AI-narrated morning brief over a
 // deterministic engine. The ranked decision feed and pulse strip are computed
@@ -16,6 +17,8 @@ import TodayAgenda from "../_components/overview/TodayAgenda";
 export const dynamic = "force-dynamic";
 
 export default async function BriefingPage() {
+  const roleGate = await requirePagePermission("ops.read", "Briefing");
+  if (!roleGate.ok) return roleGate.page;
   const { briefing, pulse, followups, fundraising } = await gatherBriefingView();
   const narrative = await getNarrative(briefing, pulse, followups);
   const today = new Date(briefing.computedAt).toLocaleDateString("en-US", {

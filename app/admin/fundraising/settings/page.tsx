@@ -5,12 +5,15 @@ import PageHeader from "../../_components/PageHeader";
 import HubSpotSettings from "./_components/HubSpotSettings";
 import { TYPE } from "@/lib/admin/typeScale";
 import { isEnvIntegrationOwner, NOT_OWNER_MESSAGE } from "@/lib/integrations/env-owner";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // X7 — fundraising integrations / settings. Reads the service-only connections
 // row directly (RLS deny-all → must use the service-role client server-side).
 export const dynamic = "force-dynamic";
 
 export default async function FundraisingSettingsPage() {
+  const roleGate = await requirePagePermission("fundraising.read", "Fundraising");
+  if (!roleGate.ok) return roleGate.page;
   let connected = false;
   let flags = { sync_out: false, sync_in: false, sync_gifts_as_deals: false };
   // Org fence: connections carries org_id and the service-role client bypasses

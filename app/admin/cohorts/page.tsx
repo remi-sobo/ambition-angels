@@ -12,6 +12,7 @@ import { getOrgContext } from "@/lib/admin/auth";
 import { TYPE } from "@/lib/admin/typeScale";
 import Alert from "../_components/ui/Alert";
 import { fetchAll } from "@/lib/supabase/fetchAll";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Cohorts & attendance (Ring 3, modules/02-program.md "Cohorts"):
 // program × term × site groupings with capacity, sessions, and dosage
@@ -38,6 +39,8 @@ const STATUS_CHIP: Record<string, string> = {
 };
 
 export default async function CohortsPage() {
+  const roleGate = await requirePagePermission("program.read", "Programs");
+  if (!roleGate.ok) return roleGate.page;
   const supabase = getSupabaseAdmin();
   // Org fence: the service-role client bypasses RLS, so every read is scoped to
   // the active org. No session → empty.

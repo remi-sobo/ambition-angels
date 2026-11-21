@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { getOrgContext, isAuthed } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { findOrCreateFunder } from "@/lib/fundraising/grants";
 import { isAskForm, isAskStatus } from "@/lib/fundraising/asks";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 const isISODate = (v: unknown): v is string =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -14,10 +14,9 @@ const isUuid = (v: unknown): v is string =>
 // links an existing constituent, a name find-or-creates one, but it can never
 // be cleared.
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("fundraising.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   if (!isUuid(params.id)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
@@ -114,9 +113,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 // Postgres; the storage objects are best-effort cleaned so the bucket doesn't
 // accumulate orphans.
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!(await isAuthed())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("fundraising.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
   if (!isUuid(params.id)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }

@@ -33,6 +33,7 @@ import {
   type InitiativeRollup,
 } from "./_components/PlanControls";
 import { TYPE } from "@/lib/admin/typeScale";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Strategic plan (BloomOS Strategy — specs/bloomos-strategy-command-center.md):
 // one spine, three lenses. Org = the glance (status line + grid, B1). Area = the
@@ -108,6 +109,8 @@ export default async function StrategicPlanPage({
 }: {
   searchParams?: { [key: string]: string | string[] | undefined };
 }) {
+  const roleGate = await requirePagePermission("reports.read", "Strategic plan");
+  if (!roleGate.ok) return roleGate.page;
   const ctx = await getOrgContext();
   if (!ctx) {
     return <div className="px-4 lg:px-8 py-6 text-sm text-ink-2">Not authorized.</div>;

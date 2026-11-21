@@ -5,6 +5,7 @@ import { getOrgContext } from "@/lib/admin/auth";
 import { getTermLabel, pluralizeTerm } from "@/lib/admin/terminology";
 import PageHeader from "../../_components/PageHeader";
 import { NewVolunteerForm, UnflagButton } from "./_components/VolunteerControls";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Volunteer (Leader) list — constituents flagged is_volunteer, relabeled per
 // org_terminology (YL EPA reads "Leaders"). Volunteers are constituents
@@ -27,6 +28,8 @@ const displayName = (v: VolunteerRow) =>
   [v.first_name, v.last_name].filter(Boolean).join(" ") || v.org_name || "(no name)";
 
 export default async function VolunteersPage() {
+  const roleGate = await requirePagePermission("fundraising.read", "Fundraising");
+  if (!roleGate.ok) return roleGate.page;
   const ctx = await getOrgContext();
   const term = await getTermLabel("volunteer", "Volunteer");
   const terms = pluralizeTerm(term);

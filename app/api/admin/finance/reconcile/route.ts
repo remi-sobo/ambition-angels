@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOrgContext } from "@/lib/admin/auth";
 import { upsertFinConfig } from "@/lib/admin/finance";
 import { audit } from "@/lib/audit";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 function isISODate(v: unknown): v is string {
   return typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -16,10 +16,9 @@ function isISODate(v: unknown): v is string {
 // Cash on hand is then (this balance) + (transactions dated after `as_of`), so
 // the displayed number is always anchored to a number the user confirmed.
 export async function POST(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("finance.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
 
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });

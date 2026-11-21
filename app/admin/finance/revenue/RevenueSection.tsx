@@ -6,6 +6,7 @@ import { constituentName } from "@/lib/fundraising/display";
 import RevenueManager, { type Commitment, type ReceivedGift } from "./_components/RevenueManager";
 import PageHeader from "../../_components/PageHeader";
 import { TYPE } from "@/lib/admin/typeScale";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 type SearchParams = { year?: string };
 
@@ -22,6 +23,8 @@ export default async function RevenueSection({
   embedded?: boolean;
   basePath?: string;
 }) {
+  const roleGate = await requirePagePermission("finance.read", "Finance");
+  if (!roleGate.ok) return embedded ? null : roleGate.page;
   const supabase = getSupabaseAdmin();
 
   // Org fence: the service-role client bypasses RLS, so every read below is

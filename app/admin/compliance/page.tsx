@@ -9,6 +9,7 @@ import {
   NewComplianceForm,
   type ComplianceItem,
 } from "./_components/ComplianceControls";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Compliance calendar (Ring 4, modules/07-governance.md): every filing,
 // renewal, and policy deadline in one tickler. Marking an item filed rolls
@@ -24,6 +25,8 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function CompliancePage() {
+  const roleGate = await requirePagePermission("compliance.read", "Compliance");
+  if (!roleGate.ok) return roleGate.page;
   const supabase = getSupabaseAdmin();
   // Org fence: the service-role client bypasses RLS, so the read is scoped to
   // the active org. No session → empty.

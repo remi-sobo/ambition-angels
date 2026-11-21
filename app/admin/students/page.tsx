@@ -11,6 +11,7 @@ import { getParticipantStages } from "@/lib/admin/program/stages";
 import { getOrgContext } from "@/lib/admin/auth";
 import { getFieldDefs } from "@/lib/admin/customFields";
 import { getProgramTerms, getTermLabel } from "@/lib/admin/terminology";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Participant roster (program spine, spec #4): one roster across programs,
 // organized by the org's journey stages. The stage vocabulary is per-org
@@ -19,6 +20,8 @@ import { getProgramTerms, getTermLabel } from "@/lib/admin/terminology";
 export const dynamic = "force-dynamic";
 
 export default async function StudentsPage() {
+  const roleGate = await requirePagePermission("program.read", "Students");
+  if (!roleGate.ok) return roleGate.page;
   const supabase = getSupabaseAdmin();
   const ctx = await getOrgContext();
   const [{ data }, stages, customFieldDefs, terms, volunteerTerm, { data: leaderRows }] =

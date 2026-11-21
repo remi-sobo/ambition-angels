@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import PageHeader from "../../../_components/PageHeader";
 import HubspotImportPicker from "./_components/HubspotImportPicker";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Phase 2 — deliberately pull more HubSpot contacts onto the bench, beyond the
 // rule-D seed. Surfaces mirror contacts not yet benched; search + lifecycle
@@ -10,6 +11,8 @@ import HubspotImportPicker from "./_components/HubspotImportPicker";
 export const dynamic = "force-dynamic";
 
 export default async function ImportFromHubspotPage() {
+  const roleGate = await requirePagePermission("fundraising.read", "Fundraising");
+  if (!roleGate.ok) return roleGate.page;
   const supabase = getSupabaseAdmin();
   // Org fence: hs_contacts carries org_id and the service-role client bypasses
   // RLS, so scope the lifecycle read to the active org (empty for orgs with no

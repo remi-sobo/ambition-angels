@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import ConfigEditor, { type FinConfig } from "./_components/ConfigEditor";
 import PageHeader from "../../_components/PageHeader";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Read live every request so the form always seeds from the latest saved row
 // (the service-role read otherwise risks Next's Data Cache). Matches the rest
@@ -10,6 +11,8 @@ import PageHeader from "../../_components/PageHeader";
 export const dynamic = "force-dynamic";
 
 export default async function ConfigPage() {
+  const roleGate = await requirePagePermission("finance.read", "Finance");
+  if (!roleGate.ok) return roleGate.page;
   const ctx = await getOrgContext();
   const supabase = getSupabaseAdmin();
   const { data } = ctx

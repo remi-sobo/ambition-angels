@@ -26,12 +26,15 @@ import { getOrgContext } from "@/lib/admin/auth";
 import { TYPE } from "@/lib/admin/typeScale";
 import Alert from "@/app/admin/_components/ui/Alert";
 import { fetchAll } from "@/lib/supabase/fetchAll";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Cohort dashboard: enrollment vs capacity, sessions, per-member dosage
 // (modules/02-program.md "Cohorts" + "Attendance & dosage").
 export const dynamic = "force-dynamic";
 
 export default async function CohortPage({ params }: { params: { id: string } }) {
+  const roleGate = await requirePagePermission("program.read", "Programs");
+  if (!roleGate.ok) return roleGate.page;
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();
   const supabase = getSupabaseAdmin();
   // Org fence: the service-role client bypasses RLS. Scope the cohort read to

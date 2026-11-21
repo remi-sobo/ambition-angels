@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import AttendanceSheet, { type RosterEntry } from "./_components/AttendanceSheet";
 import { TYPE } from "@/lib/admin/typeScale";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Session check-in: the roster-tap attendance screen for one session.
 export const dynamic = "force-dynamic";
@@ -15,6 +16,8 @@ export default async function SessionAttendancePage({
 }: {
   params: { id: string; sessionId: string };
 }) {
+  const roleGate = await requirePagePermission("program.read", "Programs");
+  if (!roleGate.ok) return roleGate.page;
   if (!isUuid(params.id) || !isUuid(params.sessionId)) notFound();
   const supabase = getSupabaseAdmin();
   // Org fence: service-role client bypasses RLS. Scope the session read to the

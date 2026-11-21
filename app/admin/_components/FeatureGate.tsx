@@ -30,21 +30,24 @@ export default async function FeatureGate({
   const keys = Array.isArray(feature) ? feature : [feature];
   const ents = ctx ? await getEntitlements(ctx.orgId) : null;
   const enabled = !!ents && keys.some((k) => hasFeature(ents, k));
-  if (!enabled) {
-    return (
-      <div className="px-4 lg:px-8 py-20 flex justify-center">
-        <div className="max-w-md text-center">
-          <div className="text-xs font-medium uppercase tracking-[0.04em] text-ink-2 mb-3">{label}</div>
-          <h1 className={`${TYPE.sectionTitle} mb-2`}>
-            This module isn&rsquo;t enabled
-          </h1>
-          <p className="text-sm text-ink-2 leading-relaxed">
-            {label} isn&rsquo;t part of your organization&rsquo;s BloomOS setup. An owner can
-            turn it on from the plan settings, or reach out to support.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  if (!enabled) return <ModuleNotEnabled label={label} />;
   return <>{children}</>;
+}
+
+/** The standard not-authorized panel, shared with AaOnlyGate. */
+export function ModuleNotEnabled({ label }: { label: string }) {
+  return (
+    <div className="px-4 lg:px-8 py-20 flex justify-center">
+      <div className="max-w-md text-center">
+        <div className="text-xs font-medium uppercase tracking-[0.04em] text-ink-2 mb-3">{label}</div>
+        <h1 className={`${TYPE.sectionTitle} mb-2`}>
+          This module isn&rsquo;t enabled
+        </h1>
+        <p className="text-sm text-ink-2 leading-relaxed">
+          {label} isn&rsquo;t part of your organization&rsquo;s BloomOS setup. An owner can
+          turn it on from the plan settings, or reach out to support.
+        </p>
+      </div>
+    </div>
+  );
 }

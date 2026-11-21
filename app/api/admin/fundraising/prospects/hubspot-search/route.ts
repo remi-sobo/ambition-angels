@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { requireEnvIntegrationOwner } from "@/lib/integrations/env-owner";
+import { requireAaOnly } from "@/lib/admin/aaOnly";
 
 // GET /api/admin/fundraising/prospects/hubspot-search?q=&lifecycle=&offset=
 // HubSpot mirror contacts NOT already on the bench, for the import picker.
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 const PAGE = 50;
 
 export async function GET(req: NextRequest) {
-  const gate = await requireEnvIntegrationOwner("hubspot");
+  const gate = await requireAaOnly("aa.hubspot_mirror");
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 
   const { searchParams } = new URL(req.url);

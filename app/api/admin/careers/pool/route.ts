@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
+import { requireAaOnly } from "@/lib/admin/aaOnly";
 import { eligibilityIssues, REVEAL_LINE_MAX } from "@/lib/games/pool";
 
 // Play-pool review actions (specs/teen-games-v1.md Phase 1). Approve is the
@@ -14,8 +14,9 @@ type Action = "approve" | "revoke" | "flags";
 const SOC_RE = /^\d{2}-\d{4}$/;
 
 export async function POST(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const gate = await requireAaOnly("aa.career_library", { write: true });
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
+  const ctx = gate.ctx;
 
   const body = await req.json().catch(() => ({}));
   const { soc_code, action } = body;

@@ -11,8 +11,9 @@ import { appOrigin } from "@/lib/origins";
  *  - { email, magic: true }    → emails a one-time sign-in link that lands
  *                                on /auth/callback.
  *
- * Users are provisioned in the Supabase dashboard (Auth → Add user) or via
- * magic-link self-signup; org membership is granted automatically by the
+ * Users are provisioned by an invite (Settings → People and roles) or in the
+ * Supabase dashboard (Auth → Add user); a magic link never creates one
+ * (shouldCreateUser: false). Org membership is granted automatically by the
  * on_auth_user_created trigger for allowlisted emails/domains. A session
  * without a membership is treated as unauthenticated by lib/admin/auth.ts.
  */
@@ -35,7 +36,12 @@ export async function POST(req: NextRequest) {
     const origin = appOrigin();
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${origin}/auth/callback?next=/admin` },
+      options: {
+        emailRedirectTo: `${origin}/auth/callback?next=/admin`,
+        // A sign-in never creates a user (pre-SafeSpace item D): accounts come
+        // from an invite (Settings → People and roles) or the dashboard.
+        shouldCreateUser: false,
+      },
     });
     if (error) {
       console.error("Magic link error:", error.message);

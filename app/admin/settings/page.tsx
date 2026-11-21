@@ -11,6 +11,7 @@ import PageHeader from "../_components/PageHeader";
 import { DisplayNameForm, ConnectCalendarControls, ChangePasswordForm, SignOutAllButton } from "./_components/AccountControls";
 import CalendarPrefsCard from "./_components/CalendarPrefsCard";
 import HubspotSyncPanel from "./_components/HubspotSyncPanel";
+import TwoStepFactorsCard from "./_components/TwoStepFactorsCard";
 import { TYPE } from "@/lib/admin/typeScale";
 
 // BloomOS account settings. Centerpiece is a password change that requires the
@@ -239,6 +240,14 @@ export default async function SettingsPage({
               </div>
             )}
           </div>
+        </Card>
+
+        <Card
+          id="two-step"
+          title="Two-step login"
+          description="Every sign-in asks for a code from an authenticator app. Keep a second one set up so a lost phone never locks you out."
+        >
+          <TwoStepFactorsCard />
         </Card>
 
         <Card

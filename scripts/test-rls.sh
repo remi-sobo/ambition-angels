@@ -252,6 +252,7 @@ ordered=(
   fin_categories_org_scope.sql
   add_owner_id_assignment.sql
   entitlements_operator_only_writes.sql
+  seed_operator_email_optin.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

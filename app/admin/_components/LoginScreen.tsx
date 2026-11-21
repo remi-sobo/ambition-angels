@@ -12,9 +12,9 @@ import { clearAdminCaches } from "@/lib/admin/swCache";
 // sidebar IA — a shared host shows no tenant identity before auth, which is
 // also why every string here is generic BloomOS, never an org name.
 //
-// On success we router.refresh() so the server layout and the /admin page
-// re-render with the new Supabase session and the Command Center replaces
-// this screen.
+// On success we navigate to /admin in full, so middleware sees the new
+// Supabase session and sends it through two-step login (enroll or verify)
+// before the app opens.
 //
 // `sessionEmail` is set when a valid session exists but holds no org
 // membership (e.g. a Google account outside the allowlist) — without the
@@ -48,7 +48,10 @@ export default function LoginScreen({
         body: JSON.stringify({ email, password }),
       });
       if (res.ok) {
-        router.refresh();
+        // A full navigation, not router.refresh(): middleware must see the new
+        // session and send it on to the two-step screen (enroll or verify),
+        // which a refresh of this page would not follow.
+        window.location.assign("/admin");
       } else {
         setLoginError("Invalid email or password.");
       }

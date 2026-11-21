@@ -35,6 +35,7 @@ const DISPLAY_BLACK_ALLOWLIST: { file: string; reason: string }[] = [
   { file: "app/admin/programs/overview/page.tsx", reason: "display metrics (headline band numerals, Spec Programs P2)" },
   { file: "app/admin/ops/friday/CloseSection.tsx", reason: "display metric (close count — the page body extracted at Spec Work W1, entry moved with it)" },
   { file: "app/admin/_components/LoginScreen.tsx", reason: "D5 exemption: marketing-style dark surface" },
+  { file: "app/admin/_components/twoStep/TwoStepFrame.tsx", reason: "the BloomOS wordmark on the pre-auth two-step screens, as on LoginScreen" },
   { file: "app/admin/AnalyticsView.tsx", reason: "display metrics (orange stat numerals)" },
   { file: "app/admin/finance/model/ModelSection.tsx", reason: "display metric (model numerals — the page body extracted at Spec Finance N2, entry moved with it)" },
   { file: "app/admin/finance/_components/ReconcileCard.tsx", reason: "display metric (computed cash)" },

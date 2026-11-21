@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { assigneeSlug } from "@/lib/admin/assignees";
 import { ACTIVE_ORG_COOKIE, resolveActiveMembership } from "@/lib/admin/activeOrg";
+import { hasVerifiedFactor, jwtAal, twoStepStatus } from "@/lib/auth/twoStep";
 
 /**
  * BloomOS Ring 1 auth helpers, backed by Supabase Auth.
@@ -11,7 +12,10 @@ import { ACTIVE_ORG_COOKIE, resolveActiveMembership } from "@/lib/admin/activeOr
  * user holds a membership in at least one org (memberships are provisioned
  * by the on_auth_user_created trigger — see
  * supabase/migrations/create_membership_bootstrap.sql). A random self-signup
- * gets a session but no membership, and is rejected here.
+ * gets a session but no membership, and is rejected here. So is a session
+ * that has not finished two-step login (aal2, lib/auth/twoStep.ts): middleware
+ * sends those to the enroll/verify screens, and this is the backstop for any
+ * route it does not cover.
  *
  * The legacy `AdminUser` handle survives for display/attribution compat
  * (lowercase first-name handles live in ops task fields and UI). It is now
@@ -61,6 +65,17 @@ const getSessionMemberships = cache(
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return null;
+    // Two-step login: below aal2 is treated as signed out. The aal claim is
+    // read from the access token getUser() just validated.
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const status = twoStepStatus({
+      hasUser: true,
+      aal: jwtAal(session?.access_token),
+      verifiedFactor: hasVerifiedFactor(user),
+    });
+    if (status !== "ok") return null;
 
     const { data } = await supabase
       .from("memberships")

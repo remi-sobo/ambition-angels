@@ -35,6 +35,7 @@ import {
   type CardRow,
 } from "./apply";
 import { editCard } from "./edit";
+import { cardKindOf, filedElsewhere, isHeldKind } from "./cardKind";
 
 export type ActionDeps = {
   supabase: SupabaseClient;
@@ -67,7 +68,7 @@ async function loadCapture(supabase: SupabaseClient, captureId: string): Promise
 }
 
 /** 'done' when no card on the capture is still proposed or held. */
-async function settleCapture(supabase: SupabaseClient, captureId: string): Promise<void> {
+export async function settleCapture(supabase: SupabaseClient, captureId: string): Promise<void> {
   const { count } = await supabase
     .from("capture_cards")
     .select("id", { count: "exact", head: true })
@@ -122,6 +123,20 @@ export async function confirmCard(deps: ActionDeps, cardId: string, patch?: unkn
   if (!card) return fail(404, "Not found");
   const capture = await loadCapture(supabase, card.capture_id);
   if (!capture) return fail(404, "Not found");
+
+  // V4 §8: a gift or story card is never filed by an applier, whatever its
+  // status says. A gift is recorded in the gift drawer (never optimistic,
+  // never from here); a story is kept as a held draft (lib/capture/v4Cards.ts).
+  if (isHeldKind(card)) {
+    if (card.status === "confirmed" && filedElsewhere(card.payload)) return { ok: true, card };
+    return fail(
+      409,
+      cardKindOf(card) === "gift"
+        ? "Record this gift in the gift form. Capture never records money by itself."
+        : "Keep this story as a held draft instead. It can't be filed until consent is on file.",
+      card,
+    );
+  }
 
   // A pick or edit sent with the confirm is applied first (step d).
   if (patch !== undefined && patch !== null && (card.status === "proposed" || card.status === "held")) {

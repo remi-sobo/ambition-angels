@@ -13,6 +13,7 @@
 import { TASK_CATEGORIES } from "@/app/admin/ops/_types/ops";
 import { MAX_CARDS, MAX_TRANSCRIPT_CHARS } from "./constants";
 import { CAPTURE_DESTS, DRAFT_CHANNELS, INTERACTION_KINDS } from "./types";
+import { UNCERTAIN_FIELDS, V4_KINDS } from "./cardKind";
 import type { Candidate, ContextEntity, StaffMember } from "./types";
 
 export const CAPTURE_TOOL_NAME = "submit_capture_cards";
@@ -30,7 +31,7 @@ export const CAPTURE_TOOL = {
         items: {
           type: "object",
           properties: {
-            dest: { type: "string", enum: [...CAPTURE_DESTS] },
+            dest: { type: "string", enum: [...CAPTURE_DESTS, ...V4_KINDS] },
             source_sentence: {
               type: "string",
               description: "The transcript sentence(s) this card came from, verbatim, <= 300 chars.",
@@ -74,6 +75,18 @@ export const CAPTURE_TOOL = {
             channel: { type: ["string", "null"], enum: [...DRAFT_CHANNELS, null], description: "message_draft only." },
             subject: { type: ["string", "null"], description: "message_draft, email only." },
             body: { type: ["string", "null"], description: "message_draft only, in the operator's voice." },
+            gift_type: { type: ["string", "null"], enum: ["gift", "pledge", null], description: "gift only: money received (gift) or promised (pledge)." },
+            amount: { type: ["number", "null"], description: "gift only, US dollars as a number, only if an amount was said." },
+            amount_heard: { type: ["string", "null"], description: "gift only, the amount words as heard, e.g. \"fifteen thousand\"." },
+            gift_date: { type: ["string", "null"], description: "gift only, YYYY-MM-DD the money arrived, if said." },
+            expected: { type: ["string", "null"], description: "gift only, for a pledge: when it is expected, as said (\"December\")." },
+            about: { type: ["string", "null"], description: "story only: the participant's first name and last initial, if one is named. Never a full surname." },
+            identifiable: { type: ["boolean", "null"], description: "story only: true if the story names, shows or points to one specific participant." },
+            uncertain: {
+              type: "array",
+              items: { type: "string", enum: Array.from(new Set(Object.values(UNCERTAIN_FIELDS).flat())) },
+              description: "Field names you are not sure you heard right (who, amount, date, due_date, ...).",
+            },
           },
           required: ["dest", "source_sentence", "ref", "heard_name", "confidence"],
         },
@@ -94,6 +107,8 @@ Card destinations:
 - task: a concrete follow-up someone on staff should do. title is imperative. category is one of ${TASK_CATEGORIES.join(", ")}. assignee_ref is a staff ref when the note names who should do it, else null. due_date only when a date or day was said.
 - thought: an idea, lead, or parking-lot item with no owner or deadline. text only.
 - message_draft: the operator asked to draft a message. recipient is the person ref, channel is email or text, body is in the operator's voice. Never claim it was sent.
+- gift: a donor gave money (gift_type gift) or promised to (gift_type pledge). ref is the donor. amount only if a number was said; put the words you heard in amount_heard. Never guess an amount. A gift card is never filed by you; a person records it in the gift form.
+- story: a program moment that shows what the program does, worth telling a donor. text is two or three plain sentences of what happened. about is the participant's first name and last initial only. identifiable is true if it names, shows or points to one specific participant. Leave ref null.
 
 Rules:
 - One card per distinct thing to file. At most ${MAX_CARDS} cards. Do not split one fact into several cards.
@@ -101,7 +116,8 @@ Rules:
 - When a person is named together with their organization ("Maria Chen from the Koshland Foundation"), ref is the person and org_ref is the organization, each only if a listed candidate fits.
 - Never add facts that were not said: no amounts, dates, commitments, or sentiments the operator did not state. Resolve relative dates ("Friday", "next week", "end of month") against today's date in the operator's timezone and write them as YYYY-MM-DD.
 - Staff assignees ONLY by staff ref (s1, s2, ...). If the note says to have someone do something and that person is not on the staff list, leave assignee_ref null and keep their name in the title.
-- If something in the note is about a student, teen, youth participant, or their family, do NOT make a card for it. Count it in youth_skipped instead.
+- If something in the note is about a student, teen, youth participant, or their family, do NOT make a card for it. Count it in youth_skipped instead. The one exception is a story card about a program moment: keep it to what happened, first name and last initial only, and never include family, health, school records, addresses or contact details.
+- Put a field name in uncertain when you are not sure you heard it right (a hedge like "probably", a number that could be heard two ways, a name that could be two people).
 - Voice: plain sentences, no em dashes, no exclamation marks, no fundraising jargon.
 - confidence is your 0 to 1 estimate that ref is the right record for the name you heard. Use the candidate meta (type, last touch) to decide. When two candidates could both be it, pick the likelier one and lower the confidence.
 

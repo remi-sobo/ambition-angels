@@ -58,6 +58,8 @@ const PARSE_PATH = [
   "lib/capture/constants.ts",
   "lib/capture/types.ts",
   "lib/capture/evalScore.ts",
+  "lib/capture/cardKind.ts",
+  "lib/capture/redact.ts",
   "app/api/admin/capture/route.ts",
   "app/api/admin/capture/[id]/route.ts",
 ];
@@ -67,6 +69,7 @@ const ORCHESTRATION = [
   "lib/capture/edit.ts",
   "lib/capture/deps.ts",
   "lib/capture/fix.ts",
+  "lib/capture/v4Cards.ts",
   "app/api/admin/capture/cards/[id]/route.ts",
   "app/api/admin/capture/[id]/confirm-all/route.ts",
   "app/api/admin/capture/candidates/route.ts",
@@ -78,6 +81,8 @@ const APPLY_ALLOWED: Record<string, string[]> = {
   "lib/capture/apply/partnerInteraction.ts": ["partner_interactions", "partners"],
   "lib/capture/apply/task.ts": ["ops_tasks"],
   "lib/capture/apply/draft.ts": ["reed_drafts"],
+  // V4 §8: read-only check that a gift recorded in the gift drawer is real.
+  "lib/capture/apply/giftLink.ts": ["gifts"],
   "lib/capture/apply/shared.ts": [],
   "lib/capture/apply/index.ts": [],
 };

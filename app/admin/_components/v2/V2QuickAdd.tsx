@@ -22,11 +22,14 @@ export default function V2QuickAdd({
   currentUser,
   reedEnabled,
   captureEnabled = false,
+  storyEnabled = false,
 }: {
   currentUser: AdminUser | null;
   reedEnabled: boolean;
   /** Record (Capture, C4) behind ai.capture. */
   captureEnabled?: boolean;
+  /** V4 Stage D: Capture a story (modules.comms + comms.manage). */
+  storyEnabled?: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [modal, setModal] = useState<"task" | "report" | null>(null);
@@ -74,6 +77,14 @@ export default function V2QuickAdd({
           {captureEnabled && (
             <Chip label="Talk to log" onClick={act(() => openCapture())}>
               <MicGlyph />
+            </Chip>
+          )}
+          {storyEnabled && (
+            <Chip label="Capture a story" onClick={act(() => window.location.assign("/admin/comms/stories/new"))}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4" aria-hidden>
+                <path d="M5 4h11l3 3v13H5z" />
+                <path d="M8 10h8M8 14h6" />
+              </svg>
             </Chip>
           )}
           <Chip label="Search" kbd="⌘K" onClick={act(() => window.dispatchEvent(new CustomEvent("bloomos:search:open")))}>

@@ -3,7 +3,9 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import type { FinCategory } from "@/lib/finance/types";
 import RulesEditor from "./_components/RulesEditor";
+import NoCategories from "../_components/NoCategories";
 import PageHeader from "../../_components/PageHeader";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 type Rule = {
   id: string;
@@ -17,6 +19,8 @@ type Rule = {
 };
 
 export default async function RulesPage() {
+  const roleGate = await requirePagePermission("finance.read", "Finance");
+  if (!roleGate.ok) return roleGate.page;
   const supabase = getSupabaseAdmin();
 
   // Org fence: the service-role client bypasses RLS, so every read below is
@@ -70,7 +74,13 @@ export default async function RulesPage() {
         />
       </header>
 
-      <RulesEditor initialRules={rules} categories={categories} />
+      {categories.length === 0 ? (
+        <div className="mt-6">
+          <NoCategories />
+        </div>
+      ) : (
+        <RulesEditor initialRules={rules} categories={categories} />
+      )}
     </div>
   );
 }

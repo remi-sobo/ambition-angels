@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { isOrgCategory } from "@/lib/finance/categories";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 const PATTERN_TYPES = ["contains", "starts_with", "regex"] as const;
 type PatternType = (typeof PATTERN_TYPES)[number];
 
 // POST /api/admin/finance/rules — create a new category rule.
 export async function POST(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("finance.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 
@@ -39,6 +39,10 @@ export async function POST(req: NextRequest) {
     typeof body.priority === "number" && Number.isInteger(body.priority) ? body.priority : 0;
 
   const supabase = getSupabaseAdmin();
+  // Categories are per-org: a rule may only target this org's categories.
+  if (!(await isOrgCategory(supabase, ctx.orgId, category_id))) {
+    return NextResponse.json({ error: "Unknown category" }, { status: 400 });
+  }
   const { data, error } = await supabase
     .from("fin_category_rules")
     .insert({ org_id: ctx.orgId, pattern, pattern_type, category_id, restricted, priority })

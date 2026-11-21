@@ -5,12 +5,15 @@ import PageHeader from "../../_components/PageHeader";
 import HubSpotSettings from "./_components/HubSpotSettings";
 import { TYPE } from "@/lib/admin/typeScale";
 import { isEnvIntegrationOwner, NOT_OWNER_MESSAGE } from "@/lib/integrations/env-owner";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // X7 — fundraising integrations / settings. Reads the service-only connections
 // row directly (RLS deny-all → must use the service-role client server-side).
 export const dynamic = "force-dynamic";
 
 export default async function FundraisingSettingsPage() {
+  const roleGate = await requirePagePermission("fundraising.read", "Fundraising");
+  if (!roleGate.ok) return roleGate.page;
   let connected = false;
   let flags = { sync_out: false, sync_in: false, sync_gifts_as_deals: false };
   // Org fence: connections carries org_id and the service-role client bypasses
@@ -68,7 +71,7 @@ export default async function FundraisingSettingsPage() {
             <p className="text-xs text-ink-3">Stages are per-org configuration, not code</p>
           </div>
           <div className="px-5 py-4">
-            <Link href="/admin/fundraising/settings/stages" className="text-sm font-semibold text-orange hover:text-orange-dark transition-colors">
+            <Link href="/admin/settings/fundraising/stages" className="text-sm font-semibold text-orange hover:text-orange-dark transition-colors">
               Edit pipeline stages →
             </Link>
             <p className="text-xs text-ink-3 mt-1">Add, rename, reorder, and retype board columns; set default probabilities and HubSpot stage mapping.</p>
@@ -82,13 +85,13 @@ export default async function FundraisingSettingsPage() {
           </div>
           <div className="px-5 py-4 space-y-3">
             <div>
-              <Link href="/admin/fundraising/import" className="text-sm font-semibold text-orange hover:text-orange-dark transition-colors">
+              <Link href="/admin/settings/imports/donors" className="text-sm font-semibold text-orange hover:text-orange-dark transition-colors">
                 Import donors &amp; gifts from CSV →
               </Link>
               <p className="text-xs text-ink-3 mt-1">Map columns, preview, and commit. Dedupes by email against existing constituents.</p>
             </div>
             <div>
-              <Link href="/admin/fundraising/duplicates" className="text-sm font-semibold text-orange hover:text-orange-dark transition-colors">
+              <Link href="/admin/settings/fundraising/duplicates" className="text-sm font-semibold text-orange hover:text-orange-dark transition-colors">
                 Find &amp; merge duplicates →
               </Link>
               <p className="text-xs text-ink-3 mt-1">Surfaces constituents that share an email so you can merge their history into one record.</p>

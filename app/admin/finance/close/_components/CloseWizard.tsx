@@ -67,7 +67,7 @@ export default function CloseWizard(props: {
           Upload this week&apos;s Wells Fargo export. New transactions are de-duplicated and
           AI-categorized on import.
         </p>
-        <Link href="/admin/finance/upload" className="inline-block px-3 py-1.5 rounded-control bg-orange hover:bg-orange-dark text-white text-sm font-medium">
+        <Link href="/admin/settings/finance/upload" className="inline-block px-3 py-1.5 rounded-control bg-orange hover:bg-orange-dark text-white text-sm font-medium">
           Open importer →
         </Link>
       </Step>

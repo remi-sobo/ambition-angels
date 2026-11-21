@@ -83,14 +83,13 @@ const nextConfig = {
       // Fundraising cutover (Spec Fundraising, F6). Row-for-row with the
       // canonical map, same order. prospects is exact + uuid-child so
       // /prospects/import and /prospects/by-hubspot/* stay live; plan and
-      // acknowledgments are exact so their named children stay live too.
+      // the acknowledgments row was removed at V4 A2 (it is the Thank-yous tab).
       { source: "/admin/fundraising", destination: "/admin/fundraising/today", permanent: true },
       { source: "/admin/fundraising/plan", destination: "/admin/fundraising/campaigns", permanent: true },
       { source: "/admin/fundraising/donors/:path*", destination: "/admin/fundraising/donors-funders/:path*", permanent: true },
       { source: "/admin/fundraising/prospects", destination: "/admin/fundraising/donors-funders", permanent: true },
       { source: "/admin/fundraising/prospects/:id([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})", destination: "/admin/fundraising/donors-funders/:id", permanent: true },
       { source: "/admin/fundraising/asks/:path*", destination: "/admin/fundraising/pipeline/:path*", permanent: true },
-      { source: "/admin/fundraising/acknowledgments", destination: "/admin/fundraising/today", permanent: true },
       { source: "/admin/fundraising/recurring", destination: "/admin/fundraising/donors-funders", permanent: true },
       { source: "/admin/fundraising/journeys", destination: "/admin/fundraising/donors-funders", permanent: true },
       // Finance cutover (Spec Finance, N4). Row-for-row with the canonical
@@ -129,6 +128,23 @@ const nextConfig = {
       // ?t=<threadId> rides the 308, so every stored Inbox pointer lands
       // in-thread at the new seat.
       { source: "/admin/messages", destination: "/admin/inbox/messages", permanent: true },
+      // V4 Stage A2 (specs/bloomos-v4-product-readiness.md §4). Comms is its
+      // own destination: email campaigns become Comms → Emails (prefix, so a
+      // campaign detail lands too). Then the Settings home: every setup
+      // screen the map reserved for Settings moves onto its seat there.
+      { source: "/admin/fundraising/comms/:path*", destination: "/admin/comms/emails/:path*", permanent: true },
+      { source: "/admin/fundraising/settings", destination: "/admin/settings/fundraising/general", permanent: true },
+      { source: "/admin/fundraising/settings/stages", destination: "/admin/settings/fundraising/stages", permanent: true },
+      { source: "/admin/fundraising/duplicates", destination: "/admin/settings/fundraising/duplicates", permanent: true },
+      { source: "/admin/fundraising/import", destination: "/admin/settings/imports/donors", permanent: true },
+      { source: "/admin/finance/rules", destination: "/admin/settings/finance/rules", permanent: true },
+      { source: "/admin/finance/config", destination: "/admin/settings/finance/config", permanent: true },
+      { source: "/admin/finance/upload", destination: "/admin/settings/finance/upload", permanent: true },
+      { source: "/admin/finance/budget/import", destination: "/admin/settings/finance/budget-import", permanent: true },
+      { source: "/admin/imports", destination: "/admin/settings/imports/csv", permanent: true },
+      { source: "/admin/meetings/booking-page", destination: "/admin/settings/organization/booking-page", permanent: true },
+      { source: "/admin/strategic-plan/setup", destination: "/admin/settings/organization/strategy-setup", permanent: true },
+      { source: "/admin/howto", destination: "/admin/settings/help", permanent: true },
     ];
   },
   async rewrites() {

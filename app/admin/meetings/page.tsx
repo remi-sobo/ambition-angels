@@ -11,6 +11,7 @@ import MeetingAgendaButton from "./_components/MeetingAgendaButton";
 import FollowUpQuickActions from "./_components/FollowUpQuickActions";
 import CancelBookingButton from "./_components/CancelBookingButton";
 import PageHeader from "../_components/PageHeader";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 export const dynamic = "force-dynamic";
 
@@ -98,6 +99,8 @@ function BookedChip({ typeName }: { typeName?: string | null }) {
 }
 
 export default async function MeetingsPage() {
+  const roleGate = await requirePagePermission("ops.read", "Meetings");
+  if (!roleGate.ok) return roleGate.page;
   const now = new Date();
   const { past, upcoming } = await listMeetings(now);
   const ctx = await getOrgContext();

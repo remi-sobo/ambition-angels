@@ -1,8 +1,8 @@
 import type { FeatureKey } from "@/lib/admin/entitlements";
 
 // ── BloomOS V2 IA ───────────────────────────────────────────────────────────
-// The single source of truth for the admin information architecture: seven
-// destinations plus the Inbox utility, one tab row each, no third level.
+// The single source of truth for the admin information architecture: eight
+// destinations (Comms joined at V4 Stage A2) plus the Inbox utility, one tab row each, no third level.
 // The V1 model (NAV_SECTIONS, the sidebar sections and sub-topic bars) was
 // DELETED here — Spec B's named cleanup, discharged when the last
 // destination cut over (Spec Inbox X2): two live nav models drift, so the
@@ -20,7 +20,8 @@ export type IconName =
   | "finance" | "revenue" | "expenses" | "budget" | "cashflow"
   | "webanalytics" | "appanalytics" | "studentanalytics" | "surveys"
   | "week" | "tasks" | "monday" | "friday" | "projects" | "meetings" | "team" | "documents"
-  | "board" | "compliance" | "kpis" | "strategy";
+  | "board" | "compliance" | "kpis" | "strategy"
+  | "comms" | "settings";
 
 
 /** A nav entry's display label: the org's terminology when the entry is
@@ -39,9 +40,9 @@ function allowed(entry: { feature?: FeatureKey }, features?: string[] | null): b
 }
 
 // ── BloomOS V2 (Spec B, stage B1): the seven-destination model ──────────────
-// The locked route map (Handoff Spec §05): seven destinations, one tab row
-// each, no third level. Structure is code — a tenant cannot invent an eighth
-// destination — while visibility is data (org_entitlements) and labels are
+// The locked route map (Handoff Spec §05, extended by V4 §4 with Comms):
+// eight destinations, one tab row each, no third level. Structure is code —
+// a tenant cannot invent a ninth destination — while visibility is data (org_entitlements) and labels are
 // data (org_terminology via itemLabel()).
 //
 // Two rules this model exists to enforce (Spec B):
@@ -129,14 +130,34 @@ export const V2_DESTINATIONS: V2Destination[] = [
       { key: "pipeline", label: "Pipeline", href: "/admin/fundraising/pipeline", feature: "modules.fundraising" },
       { key: "grants", label: "Grants", href: "/admin/fundraising/grants", feature: "modules.fundraising" },
       { key: "campaigns", label: "Campaigns", href: "/admin/fundraising/campaigns", feature: "modules.fundraising" },
-      // Comms (email campaigns from the org's Gmail, specs/comms-v2-gmail-amendment.md).
-      // Gated on modules.comms, so orgs without it see one tab fewer; Remi
-      // ruled the seat on 2026-11-20 knowing the row width then varies.
-      { key: "comms", label: "Comms", href: "/admin/fundraising/comms", feature: "modules.comms" },
+      // V4 §4: the thank-you queue stays in Fundraising as daily donor work
+      // (the acknowledgments queue, AckQueue). Comms left this row for its
+      // own destination below.
+      { key: "thank-yous", label: "Thank-yous", href: "/admin/fundraising/acknowledgments", feature: "modules.fundraising" },
       // Prospect research (ai.prospect_research) is deliberately NOT a sixth
       // tab: only AA and YGB hold the key, and a tab present for two of four
       // orgs makes the row a different width per tenant. It is a full-height
       // drawer off Donors & Funders (signed ruling R1).
+    ],
+  },
+  {
+    // V4 §4 (approved spec, specs/bloomos-v4-product-readiness.md): Comms is
+    // the eighth destination. Every tab rides modules.comms, so an org
+    // without it still sees seven. Only Emails has a screen today (the email
+    // campaigns page, moved from Fundraising → Comms); the other tabs have
+    // no live seat in lib/admin/v2routes.ts, so the shell hides them until
+    // Stage D builds them. Automations is where journeys land once they have
+    // a page (today /admin/fundraising/journeys is a dead 308 source).
+    key: "comms",
+    label: "Comms",
+    icon: "comms",
+    tabs: [
+      { key: "home", label: "Home", href: "/admin/comms/home", feature: "modules.comms" },
+      { key: "stories", label: "Stories", href: "/admin/comms/stories", feature: "modules.comms" },
+      { key: "editions", label: "Editions", href: "/admin/comms/editions", feature: "modules.comms" },
+      { key: "emails", label: "Emails", href: "/admin/comms/emails", feature: "modules.comms" },
+      { key: "automations", label: "Automations", href: "/admin/comms/automations", feature: "modules.comms" },
+      { key: "settings", label: "Settings", href: "/admin/comms/settings", feature: "modules.comms" },
     ],
   },
   {
@@ -175,7 +196,7 @@ export const V2_DESTINATIONS: V2Destination[] = [
   },
 ];
 
-/** Inbox: a global utility below the divider, not one of the seven. Modeled
+/** Inbox: a global utility below the divider, not one of the eight. Modeled
  *  the same way so the Messages tab drops with modules.messages. */
 export const V2_INBOX: V2Destination = {
   key: "inbox",
@@ -183,7 +204,9 @@ export const V2_INBOX: V2Destination = {
   icon: "inbox",
   tabs: [
     { key: "inbox", label: "Inbox", href: "/admin/inbox" },
-    { key: "messages", label: "Messages", href: "/admin/inbox/messages", feature: "modules.messages" },
+    // V4 §4: labelled "Team chat" so it is never confused with Comms (donor
+    // email). Label only: the key and route stay.
+    { key: "messages", label: "Team chat", href: "/admin/inbox/messages", feature: "modules.messages" },
   ],
 };
 

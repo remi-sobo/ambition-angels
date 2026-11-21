@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { getOrgContext, isAuthed } from "@/lib/admin/auth";
 import { constituentName } from "@/lib/fundraising/display";
 import { fanOutTimeline } from "@/lib/meetings/match";
 import type { MatchedEntity } from "@/lib/meetings/types";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 export const dynamic = "force-dynamic";
 
@@ -12,9 +12,8 @@ export const dynamic = "force-dynamic";
 // meeting to a donor (constituent) or partner. User-session client (RLS), so a
 // hit is always a row the signed-in admin could already open.
 export async function GET(req: NextRequest) {
-  if (!(await isAuthed())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("ops.read");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
   // Strip characters that would break the PostgREST or() filter grammar.
   const q = (new URL(req.url).searchParams.get("q") ?? "").replace(/[(),*%]/g, " ").trim();
   if (q.length < 2) return NextResponse.json({ results: [] });
@@ -62,8 +61,9 @@ export async function GET(req: NextRequest) {
 // meeting appears on the donor/partner profile), keyed on the meeting record so
 // it's idempotent. Org-scoped explicitly.
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const ctx = await getOrgContext();
-  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requirePermission("ops.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
 
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const entityType = body?.entity_type;

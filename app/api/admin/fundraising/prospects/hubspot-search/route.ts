@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { requireAaOnly } from "@/lib/admin/aaOnly";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 // GET /api/admin/fundraising/prospects/hubspot-search?q=&lifecycle=&offset=
 // HubSpot mirror contacts NOT already on the bench, for the import picker.
@@ -11,6 +12,8 @@ export const dynamic = "force-dynamic";
 const PAGE = 50;
 
 export async function GET(req: NextRequest) {
+  const guard = await requirePermission("fundraising.read");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
   const gate = await requireAaOnly("aa.hubspot_mirror");
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 

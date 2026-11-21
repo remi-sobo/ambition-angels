@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
+import { getAdminUser } from "@/lib/admin/auth";
 import { isTaskCategory } from "@/app/admin/ops/_types/ops";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 // POST /api/admin/meetings/[id]/suggestions — accept or dismiss a staged
 // follow-up. Accepting inserts a real ops_task (linked to the donor/partner AND
 // carrying meeting_record_id for the coverage join) and flips the meeting to
 // has_follow_up. Reed never creates a live task silently — this is the human gate.
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const ctx = await getOrgContext();
-  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requirePermission("ops.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
 
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const suggestionId = typeof body?.suggestion_id === "string" ? body.suggestion_id : "";

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
+import { getAdminUser } from "@/lib/admin/auth";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 // POST /api/admin/finance/reconciliation — create (or refresh) a proposed
 // ledger entry in the reconciliation inbox. Used by the Cowork weekly sweep and
@@ -12,8 +13,9 @@ const SOURCES = ["hubspot", "gmail", "stripe", "manual"] as const;
 const CONFIDENCE = ["high", "medium", "low"] as const;
 
 export async function POST(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requirePermission("finance.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   const user = await getAdminUser();
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });

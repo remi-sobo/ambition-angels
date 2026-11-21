@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireEntitlement } from "@/lib/admin/entitlements";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { PERSON_STATUSES } from "@/lib/coach/program";
 import { newToken, sendPrivateLink, type CoachPerson } from "@/lib/coach/server";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 // Staff actions on one Ambition Coach person (BloomOS → Programs → Coach).
 // Fenced to aa.coach and scoped to the session org on every statement.
@@ -10,7 +10,7 @@ import { newToken, sendPrivateLink, type CoachPerson } from "@/lib/coach/server"
 //   send_link   email them their private page link
 //   reset_link  rotate the token (old link dies) and email the new one
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const ent = await requireEntitlement("aa.coach");
+  const ent = await requirePermission("program.write", { entitlement: "aa.coach" });
   if (!ent.ok) return NextResponse.json({ error: ent.error }, { status: ent.status });
   const orgId = ent.ctx.orgId;
   const db = getSupabaseAdmin();

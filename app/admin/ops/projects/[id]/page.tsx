@@ -7,6 +7,7 @@ import ProjectDescription from "./_components/ProjectDescription";
 import ProjectTaskList from "./_components/ProjectTaskList";
 import ProjectActivityLog from "./_components/ProjectActivityLog";
 import type { OpsProject, OpsTask } from "../../_types/ops";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,8 @@ export default async function ProjectDetailPage({
 }: {
   params: { id: string };
 }) {
+  const roleGate = await requirePagePermission("ops.read", "Operations");
+  if (!roleGate.ok) return roleGate.page;
   const supabase = getSupabaseAdmin();
   const ctx = await getOrgContext();
   // Org fence: the service-role client bypasses RLS. Without an org the project

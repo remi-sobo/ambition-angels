@@ -14,6 +14,7 @@ import ThisWeekView from "./_components/ThisWeekView";
 import ActiveProjectsList from "./_components/ActiveProjectsList";
 import CategoryCounts from "./_components/CategoryCounts";
 import PageHeader from "../_components/PageHeader";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Force dynamic — this page is task-state-dependent; we don't want a
 // stale ISR cache to lie about "what's due today."
@@ -24,6 +25,8 @@ export default async function OpsLandingPage({
 }: {
   searchParams?: { assignee?: string | string[] };
 }) {
+  const roleGate = await requirePagePermission("ops.read", "Operations");
+  if (!roleGate.ok) return roleGate.page;
   const supabase = getSupabaseAdmin();
   const today = todayISO();
   const currentUser = await getAdminUser();

@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
+import { getAdminUser } from "@/lib/admin/auth";
 import { constituentName } from "@/lib/fundraising/display";
 import {
   SCHEDULING_LABEL,
   SCHEDULING_TASK_CATEGORY,
 } from "@/app/admin/ops/_types/ops";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 // Disposition for an email-detected connection candidate (Phase 4). Shannon
 // confirms — nothing here runs on sync. Two actions:
@@ -22,10 +23,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("ops.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   const adminUser = await getAdminUser();
   if (!adminUser) {
     return NextResponse.json({ error: "Unknown admin user" }, { status: 401 });

@@ -19,7 +19,7 @@ export const GMAIL_CONNECT_SCOPES = [GMAIL_SEND_SCOPE, "openid", "email"];
 
 export const GMAIL_CONNECT_PATH = "/api/admin/comms/connect-gmail";
 export const GMAIL_STATE_COOKIE = "gmail_oauth_state";
-export const COMMS_PAGE_PATH = "/admin/fundraising/comms";
+export const COMMS_PAGE_PATH = "/admin/comms/emails";
 
 export function gmailRedirectUri(requestOrigin: string): string {
   return `${adminOrigin(requestOrigin)}${GMAIL_CONNECT_PATH}/callback`;

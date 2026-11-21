@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { OrgContext } from "@/lib/admin/auth";
+import { clearAdminCaches } from "@/lib/admin/swCache";
 import { activeShellKey, type ShellNav } from "@/lib/admin/v2shellNav";
 import { Icon } from "../Icon";
 import OrgSwitcher from "../OrgSwitcher";
@@ -12,8 +13,8 @@ import { useAdminBadges } from "../AdminBadges";
 import SidebarItem from "../ui/SidebarItem";
 
 /**
- * Spec B, stage B3 — the V2 sidebar: seven destinations, one row each, plus
- * Inbox below the divider. Renders from resolveShellNav() (the B1 model
+ * Spec B, stage B3 — the V2 sidebar: the destinations (eight since V4 A2
+ * added Comms), one row each, plus Inbox and Settings below the divider. Renders from resolveShellNav() (the B1 model
  * resolved against entitlements + the B2 map's live seats), so a destination
  * with no entitled tab is simply absent and every link opens a screen that
  * exists today. Desktop-first: below lg it collapses to the same top-bar +
@@ -49,6 +50,7 @@ export default function V2Sidebar({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { messages: msgUnread, notifications: unread } = useAdminBadges();
   const active = activeShellKey(pathname, nav);
+  const settingsActive = pathname === "/admin/settings" || pathname.startsWith("/admin/settings/");
 
   useEffect(() => {
     setDrawerOpen(false);
@@ -66,6 +68,7 @@ export default function V2Sidebar({
   const handleLogout = async () => {
     setLoggingOut(true);
     try { await fetch("/api/admin/logout", { method: "POST" }); } catch {}
+    await clearAdminCaches();
     router.push("/admin");
     router.refresh();
   };
@@ -115,12 +118,18 @@ export default function V2Sidebar({
 
       <nav className="flex-1 px-3 py-4 overflow-y-auto">
         <div className="space-y-px">{nav.destinations.map((d) => row(d))}</div>
-        {nav.inbox && (
-          <>
-            <div className="my-3 border-t border-white/[0.07]" aria-hidden />
-            <div className="space-y-px">{row(nav.inbox, unread + msgUnread)}</div>
-          </>
-        )}
+        <div className="my-3 border-t border-white/[0.07]" aria-hidden />
+        <div className="space-y-px">
+          {nav.inbox && row(nav.inbox, unread + msgUnread)}
+          {/* V4 §4: Settings is a real home with sections, so it sits in the
+              sidebar under Inbox (the approved prototype), not in the footer. */}
+          <SidebarItem
+            href="/admin/settings"
+            active={settingsActive}
+            label="Settings"
+            icon={<Icon name="settings" className="w-4 h-4" />}
+          />
+        </div>
       </nav>
 
       <div className="px-4 py-4 border-t border-white/[0.07] space-y-3 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
@@ -147,27 +156,14 @@ export default function V2Sidebar({
           </button>
         </div>
 
+        {/* The footer's dead "V2" link (/admin/v2, deleted in #524) is gone;
+            Settings moved up into the nav. Help is How-To's Settings seat. */}
         <div className="flex items-center gap-2 px-1 text-xs">
           <Link
-            href="/admin/settings"
+            href="/admin/settings/help"
             className="text-[color:var(--sidebar-muted)] hover:text-[color:var(--sidebar-text)] transition-colors"
           >
-            Settings
-          </Link>
-          <span className="text-[color:var(--sidebar-muted)]/50" aria-hidden>·</span>
-          <Link
-            href="/admin/howto"
-            className="text-[color:var(--sidebar-muted)] hover:text-[color:var(--sidebar-text)] transition-colors"
-          >
-            How-To
-          </Link>
-          <span className="text-[color:var(--sidebar-muted)]/50" aria-hidden>·</span>
-          <Link
-            href="/admin/v2"
-            className="text-[color:var(--sidebar-muted)] hover:text-[color:var(--sidebar-text)] transition-colors"
-            title="V2 shell settings"
-          >
-            V2
+            Help
           </Link>
         </div>
 
@@ -197,7 +193,7 @@ export default function V2Sidebar({
         </button>
         <div className="font-heading font-semibold tracking-tight text-[color:var(--sidebar-text)] text-base leading-none">
           {nav.destinations.find((d) => d.key === active)?.label ??
-            (active === "inbox" ? "Inbox" : "BloomOS")}
+            (active === "inbox" ? "Inbox" : settingsActive ? "Settings" : "BloomOS")}
         </div>
       </div>
 
@@ -234,14 +230,12 @@ export default function V2Sidebar({
         </aside>
       </div>
 
-      {/* Desktop sidebar (>= lg) */}
+      {/* Desktop sidebar (>= lg). V4 frame (approved prototype): flush to
+          the left window edge on the espresso background, no border and no
+          texture, so the working panel beside it reads as one inset surface. */}
       <aside
         data-sidebar
-        className="hidden lg:flex w-[248px] shrink-0 border-r border-black/30 bg-navy flex-col lg:sticky lg:top-0 lg:h-screen lg:pt-[env(safe-area-inset-top)]"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.022) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
-        }}
+        className="hidden lg:flex w-[248px] shrink-0 bg-navy flex-col lg:sticky lg:top-0 lg:h-screen lg:pt-[env(safe-area-inset-top)]"
       >
         {navPanel}
       </aside>

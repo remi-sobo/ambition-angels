@@ -6,6 +6,7 @@ import { loadRevenueSchedule, scheduleToRunwayPledges } from "@/lib/finance/sche
 import CloseWizard from "./_components/CloseWizard";
 import PageHeader from "../../_components/PageHeader";
 import { TYPE } from "@/lib/admin/typeScale";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // The Friday close. A guided, sequenced sweep that gets cash, transactions,
 // categories, pledges, balance, and baseline all current at once, then stamps
@@ -20,6 +21,8 @@ import { TYPE } from "@/lib/admin/typeScale";
 // unless a reports.approve holder waives (export_waivers + audit_log).
 
 export default async function CloseSection({ embedded = false }: { embedded?: boolean }) {
+  const roleGate = await requirePagePermission("finance.read", "Finance");
+  if (!roleGate.ok) return embedded ? null : roleGate.page;
   const supabase = getSupabaseAdmin();
   const snap = await getFinanceSnapshot();
   const cfg = snap.cfg;

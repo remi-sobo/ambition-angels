@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 const KINDS = ["school", "district", "nonprofit", "company", "other"] as const;
 const STATUSES = ["prospect", "outreach", "pilot", "active", "anchor", "lapsed"] as const;
 
 export async function POST(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("program.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const name = body && typeof body.name === "string" ? body.name.trim().slice(0, 200) : "";
   if (!name) return NextResponse.json({ error: "Name is required" }, { status: 400 });

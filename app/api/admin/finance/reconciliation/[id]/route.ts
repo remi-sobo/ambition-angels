@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
+import { getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 // PATCH /api/admin/finance/reconciliation/[id] — { action: 'accept' | 'dismiss' }
 // Accepting a 'commitment' item applies its payload to fin_revenue_commitments
@@ -13,8 +14,9 @@ const STATUSES = ["secured", "projected", "received"] as const;
 const isISODate = (v: unknown): v is string => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const ctx = await getOrgContext();
-  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requirePermission("finance.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   const user = await getAdminUser();
   const body = (await req.json().catch(() => null)) as { action?: unknown } | null;
   const action = body?.action === "accept" || body?.action === "dismiss" ? body.action : "";

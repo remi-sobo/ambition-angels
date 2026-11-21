@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
 import { getFieldDefs } from "@/lib/admin/customFields";
 import { parseCsvText, suggestMapping, SPINE_FIELDS } from "@/lib/admin/imports/engine";
 import { audit } from "@/lib/audit";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 /**
  * POST /api/admin/imports — start an import run (spec #5 E3).
@@ -21,8 +21,9 @@ const MAX_TEXT = 2_000_000;
 const STAGE_CHUNK = 500;
 
 export async function POST(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requirePermission(["program.write", "fundraising.write"]);
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
 
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });

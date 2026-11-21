@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
 import { getMetricCatalog } from "@/lib/admin/metrics/catalog";
 import { checkExportGate } from "@/lib/admin/metrics/exportGate";
 import {
@@ -11,6 +10,7 @@ import {
 } from "@/lib/finance/reportExport";
 import { DOCUMENTS_BUCKET } from "@/lib/documents/config";
 import { audit } from "@/lib/audit";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 // POST /api/admin/finance/reports/export — the Contract 7 EXIT for a
 // composed financial report (Spec Finance N3).
@@ -29,8 +29,9 @@ const isUuid = (v: unknown): v is string =>
   typeof v === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
 
 export async function POST(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requirePermission("finance.read");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
 
   const body = (await req.json().catch(() => null)) as {
     rid?: unknown; title?: unknown; keys?: unknown;

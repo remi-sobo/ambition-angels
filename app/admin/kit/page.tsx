@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getOrgContext } from "@/lib/admin/auth";
 import PageShell from "../_components/ui/PageShell";
 import KitGallery from "./_components/KitGallery";
+import KitDataTable from "./_components/KitDataTable";
 
 /**
  * /admin/kit: the V4 shared UI kit review page (Stage A1).
@@ -20,12 +21,13 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function KitPage({ searchParams }: { searchParams: { drawer?: string } }) {
+export default async function KitPage({ searchParams }: { searchParams: Record<string, string | undefined> }) {
   const ctx = await getOrgContext();
   if (!ctx || (ctx.role !== "owner" && ctx.role !== "admin")) notFound();
   return (
     <PageShell>
       <KitGallery initialDrawer={searchParams.drawer === "gift" ? "gift" : null} />
+      <KitDataTable searchParams={searchParams} />
     </PageShell>
   );
 }

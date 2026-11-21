@@ -167,11 +167,11 @@ export default function PhoneAttendance({
   const status = !online
     ? {
         tone: "warn" as const,
-        title: waiting > 0 ? "You are offline. Marks are saved on this phone." : "You are offline.",
+        title: waiting > 0 ? "You are offline. Marks are saved on this device." : "You are offline.",
         line:
           waiting > 0
-            ? `${waiting} mark${waiting === 1 ? "" : "s"} waiting${lastQueued ? `, last saved here ${clock(lastQueued)}` : ""}. They send when you are back online. If you close this page they stay on this phone until it is back online.`
-            : "Keep marking. Your marks stay on this phone until it is back online.",
+            ? `${waiting} mark${waiting === 1 ? "" : "s"} waiting${lastQueued ? `, last saved here ${clock(lastQueued)}` : ""}. They send when you are back online. If you close this page, they stay on this device until it is back online.`
+            : "Keep marking. Your marks stay on this device until it is back online.",
       }
     : waiting > 0
       ? { tone: "busy" as const, title: syncing ? "Sending…" : "Not sent yet", line: `${waiting} mark${waiting === 1 ? "" : "s"} waiting to send.` }
@@ -209,7 +209,7 @@ export default function PhoneAttendance({
             return (
               <li key={r.participantId} className="flex items-center gap-2 min-h-[60px] py-2 pl-3 pr-2">
                 <div className="min-w-0 flex-1">
-                  <div className="text-[15px] font-semibold text-ink-1 truncate">{r.name}</div>
+                  <div className="text-[15px] font-semibold text-ink-1 leading-snug line-clamp-2 break-words">{r.name}</div>
                   <div className="text-xs text-ink-2 truncate">
                     {e.assumed ? "Present unless you tap" : MARK_LABELS[e.status]}
                     {r.detail ? ` · ${r.detail}` : ""}

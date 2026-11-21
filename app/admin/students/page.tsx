@@ -47,7 +47,7 @@ export default async function StudentsPage({
   searchParams,
 }: {
   searchParams?: Record<string, string | string[] | undefined>;
-} = {}) {
+}) {
   const roleGate = await requirePagePermission("program.read", "Students");
   if (!roleGate.ok) return roleGate.page;
   const ctx = await getOrgContext();

@@ -1,6 +1,10 @@
 /**
  * Upserters from HubSpot v3 records into the hs_* mirror tables.
  *
+ * Every row is stamped with the org that owns the env HubSpot token (the
+ * caller passes it; see lib/integrations/env-owner.ts) instead of riding the
+ * hs_* org_id column default.
+ *
  * Each function maps the HubSpot record's promoted properties to typed
  * columns, sets synced_at = now(), and stuffs the full response into
  * raw_json. ON CONFLICT (hubspot_id) DO UPDATE means a re-sync refreshes
@@ -79,9 +83,10 @@ const SYNCED_AT = () => new Date().toISOString();
 
 // ── Contacts ───────────────────────────────────────────────────────────────
 
-export async function upsertContacts(records: HubSpotRecord[]): Promise<number> {
+export async function upsertContacts(orgId: string, records: HubSpotRecord[]): Promise<number> {
   if (records.length === 0) return 0;
   const rows = records.map((r) => ({
+    org_id: orgId,
     hubspot_id: r.id,
     email: str(r.properties, "email"),
     first_name: str(r.properties, "firstname"),
@@ -106,9 +111,10 @@ export async function upsertContacts(records: HubSpotRecord[]): Promise<number> 
 
 // ── Companies ──────────────────────────────────────────────────────────────
 
-export async function upsertCompanies(records: HubSpotRecord[]): Promise<number> {
+export async function upsertCompanies(orgId: string, records: HubSpotRecord[]): Promise<number> {
   if (records.length === 0) return 0;
   const rows = records.map((r) => ({
+    org_id: orgId,
     hubspot_id: r.id,
     name: str(r.properties, "name"),
     domain: str(r.properties, "domain"),
@@ -129,12 +135,13 @@ export async function upsertCompanies(records: HubSpotRecord[]): Promise<number>
 
 // ── Deals ──────────────────────────────────────────────────────────────────
 
-export async function upsertDeals(records: HubSpotRecord[]): Promise<number> {
+export async function upsertDeals(orgId: string, records: HubSpotRecord[]): Promise<number> {
   if (records.length === 0) return 0;
   const rows = records.map((r) => {
     const contactIds = assocIds(r, "contacts");
     const companyIds = assocIds(r, "companies");
     return {
+      org_id: orgId,
       hubspot_id: r.id,
       name: str(r.properties, "dealname"),
       amount: num(r.properties, "amount"),
@@ -220,12 +227,14 @@ function isJsonInputError(message: string): boolean {
 }
 
 export async function upsertEngagements(
+  orgId: string,
   subtype: EngagementSubtype,
   records: HubSpotRecord[]
 ): Promise<EngagementUpsertResult> {
   if (records.length === 0) return { inserted: 0, failed: [] };
   const type = ENGAGEMENT_TYPE_FOR_SUBTYPE[subtype];
   const rows = records.map((r) => ({
+    org_id: orgId,
     hubspot_id: r.id,
     engagement_type: type,
     subject: engagementSubject(subtype, r.properties),

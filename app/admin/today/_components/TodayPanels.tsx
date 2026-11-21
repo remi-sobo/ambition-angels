@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import Card, { CardHeader } from "../../_components/ui/Card";
 import Notice from "../../_components/ui/Notice";
 import Figure from "../../_components/ui/Figure";
+import EmptyState from "../../_components/EmptyState";
 import { TYPE } from "@/lib/admin/typeScale";
 import { dueLabel, type MineItem } from "@/lib/admin/todayPanels";
 import type { DonorNeed } from "@/lib/admin/todayDonors";
@@ -212,9 +213,11 @@ export function DonorsPanel({ items, owned, failed }: { items: DonorNeed[]; owne
         </div>
       )}
       {owned === 0 ? (
-        <p className={`${TYPE.bodyMuted} py-2`}>
-          No donors are assigned to you yet. Assign an owner on Donors &amp; Funders and they show up here.
-        </p>
+        <EmptyState
+          label="donors assigned to you"
+          hint="Assign an owner on Donors & Funders and your donors show up here when they need a touch."
+          action={<FooterLink href="/admin/fundraising/donors-funders">Open Donors &amp; Funders</FooterLink>}
+        />
       ) : shown.length === 0 ? (
         <p className={`${TYPE.bodyMuted} py-2`}>All {owned} of your donors are in good shape.</p>
       ) : (

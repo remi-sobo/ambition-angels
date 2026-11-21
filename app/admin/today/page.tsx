@@ -2,6 +2,7 @@ import Link from "next/link";
 import PageShell from "../_components/ui/PageShell";
 import Card, { CardHeader } from "../_components/ui/Card";
 import Metric from "../_components/Metric";
+import EmptyState from "../_components/EmptyState";
 import NeedsYou from "./_components/NeedsYou";
 import TalkToLog from "./_components/TalkToLog";
 import {
@@ -210,7 +211,19 @@ export default async function TodayPage() {
           )}
           {top.has("boardSummary") && board && (
             <BoardSummaryPanel next={board.next} last={board.last}>
-              {missionKeys.length > 0 && (
+              {missionKeys.length === 0 ? (
+                <div className="mt-3 border-t border-hairline pt-3">
+                  <EmptyState
+                    label="program metrics"
+                    hint="Mission figures read the Metric Catalog. Once a program metric is defined, it shows here."
+                    action={
+                      <Link href="/admin/impact/kpis" className="inline-flex min-h-[44px] items-center text-sm font-semibold text-orange hover:text-orange-dark">
+                        Open the Metric Catalog
+                      </Link>
+                    }
+                  />
+                </div>
+              ) : (
                 <div className="mt-3 border-t border-hairline pt-3">
                   <p className={`${TYPE.cardLabel} mb-2`}>Mission</p>
                   <ul className="space-y-3">

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import { complianceFor, complianceBlock, type ReceiptGift } from "../lib/fundraising/receipt";
+import { AA_TAX_STATEMENT as TAX } from "../lib/email/org-identity";
 import {
   evaluateStewardship,
   escalationsFor,
@@ -34,17 +35,17 @@ describe("complianceFor — the no-wrong-record guard", () => {
   const gift: ReceiptGift = { amount: 300, gift_date: "2026-06-01", method: "check", fair_market_value: null, deductible_amount: null };
 
   test("a real gift gets the 501(c)(3) receipt language", () => {
-    expect(complianceFor(gift)).toContain("501(c)(3)");
-    expect(complianceFor(gift)).toBe(complianceBlock(gift));
+    expect(complianceFor(gift, TAX)).toContain("501(c)(3)");
+    expect(complianceFor(gift, TAX)).toBe(complianceBlock(gift, TAX));
   });
 
   test("a non-gift acknowledgment (DAF grant, volunteer, milestone) gets nothing", () => {
-    expect(complianceFor(null)).toBe("");
-    expect(complianceFor(undefined)).toBe("");
+    expect(complianceFor(null, TAX)).toBe("");
+    expect(complianceFor(undefined, TAX)).toBe("");
   });
 
   test("no tax-deductible language is ever produced without a gift", () => {
-    expect(complianceFor(null)).not.toContain("deductible");
+    expect(complianceFor(null, TAX)).not.toContain("deductible");
   });
 });
 

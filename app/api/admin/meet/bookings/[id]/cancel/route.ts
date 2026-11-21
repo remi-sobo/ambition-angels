@@ -7,6 +7,7 @@ import { buildCancellationEmail } from "@/lib/email/templates/cancellation";
 import { getBookingHost } from "@/lib/meet/host";
 import type { Booking, MeetingType } from "@/lib/database.types";
 import { requirePermission } from "@/lib/admin/requirePermission";
+import { googleErrorSummary } from "@/lib/google/log-safe";
 
 const schema = z.object({
   reason: z.string().max(2000).optional(),
@@ -63,7 +64,7 @@ export async function POST(
     try {
       await cancelEvent(booking.google_event_id);
     } catch (err) {
-      console.error("admin cancel: cancelEvent failed", err);
+      console.error("admin cancel: cancelEvent failed", googleErrorSummary(err));
       return NextResponse.json(
         { error: "Could not cancel the calendar event." },
         { status: 502 }
@@ -97,7 +98,7 @@ export async function POST(
       subject: email.subject,
       html: email.html,
       text: email.text,
-    }).catch((e) => console.error("admin cancel email failed", e));
+    }).catch((e) => console.error("admin cancel email failed", googleErrorSummary(e)));
   }
 
   return NextResponse.json({ success: true });

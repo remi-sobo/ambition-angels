@@ -5,7 +5,8 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
  *
  * Google keeps one grant per (OAuth client, Google account). Revoking any
  * token from that grant revokes every token in it. BloomOS uses one OAuth
- * client for sign-in, Connect Gmail, Connect Calendar and the env
+ * client for sign-in, Connect Gmail, Connect Calendar, the scheduler Google
+ * account (/meet, lib/google/scheduler-connection.ts) and the env
  * GOOGLE_REFRESH_TOKEN the Gmail interaction sync reads with, so revoking
  * on one disconnect used to break the others for the same account (Nov 2026:
  * disconnecting Gmail silently killed that account's calendar connection, and
@@ -17,7 +18,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
  * grant at myaccount.google.com/permissions.
  */
 
-export const GOOGLE_PROVIDERS = ["google_gmail", "google_calendar"] as const;
+export const GOOGLE_PROVIDERS = ["google_gmail", "google_calendar", "google_scheduler"] as const;
 
 export type GrantRow = {
   id: string;
@@ -32,7 +33,7 @@ export function googleAccountStillInUse(args: {
   accountEmail: string | null;
   /** Connection rows being removed by this disconnect. */
   excludeIds: string[];
-  /** Every google_gmail / google_calendar connection row. */
+  /** Every google_gmail / google_calendar / google_scheduler connection row. */
   rows: GrantRow[];
   /** Mailbox the env GOOGLE_REFRESH_TOKEN belongs to, if known. */
   envAccountEmail: string | null;

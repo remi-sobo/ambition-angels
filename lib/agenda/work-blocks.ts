@@ -5,6 +5,7 @@ import {
   calendarClientFromRefreshToken,
 } from "@/lib/google/connection";
 import { dayStartInstant, laDateOf, mondayOf, ORG_TZ } from "@/lib/admin/ops/week";
+import { googleErrorSummary } from "@/lib/google/log-safe";
 
 /**
  * Work-block writes (Calendar & Time Blocking, Phase 3) — the block is the
@@ -205,7 +206,7 @@ export async function createWorkBlock(args: {
       }
     }
   } catch (e) {
-    console.error("[work-blocks] Google create failed (block kept local):", e);
+    console.error("[work-blocks] Google create failed (block kept local):", googleErrorSummary(e));
   }
 
   return { block, synced };
@@ -265,7 +266,7 @@ export async function moveWorkBlock(args: {
         }
       }
     } catch (e) {
-      console.error("[work-blocks] Google move failed (local move kept):", e);
+      console.error("[work-blocks] Google move failed (local move kept):", googleErrorSummary(e));
       synced = false;
     }
   }
@@ -312,7 +313,7 @@ export async function retitleWorkBlock(args: {
           .eq("id", block.calendar_event_id);
       }
     } catch (e) {
-      console.error("[work-blocks] Google retitle failed (local title kept):", e);
+      console.error("[work-blocks] Google retitle failed (local title kept):", googleErrorSummary(e));
     }
   }
 }
@@ -336,7 +337,7 @@ export async function deleteWorkBlock(args: {
     try {
       conn = await getActiveCalendarConnection(args.userId);
     } catch (e) {
-      console.error("[work-blocks] loading calendar connection failed:", e);
+      console.error("[work-blocks] loading calendar connection failed:", googleErrorSummary(e));
       throw new GoogleCalendarWriteFailed();
     }
     if (conn) {
@@ -353,7 +354,7 @@ export async function deleteWorkBlock(args: {
           (err as { code?: number; status?: number }).status;
         if (status !== 404 && status !== 410) {
           // 404/410: already gone, which is fine.
-          console.error("[work-blocks] Google delete failed (block kept):", err);
+          console.error("[work-blocks] Google delete failed (block kept):", googleErrorSummary(err));
           throw new GoogleCalendarWriteFailed();
         }
       }

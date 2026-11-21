@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getAvailableSlots } from "@/lib/availability";
 import type { MeetingType } from "@/lib/database.types";
+import { googleErrorSummary } from "@/lib/google/log-safe";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -65,7 +66,7 @@ export async function GET(req: NextRequest) {
       })),
     });
   } catch (err) {
-    console.error("availability error", err);
+    console.error("availability error", googleErrorSummary(err));
     return NextResponse.json(
       { error: "Could not load availability" },
       { status: 500 }

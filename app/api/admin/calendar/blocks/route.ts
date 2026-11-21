@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOrgContext, ctxHasPermission } from "@/lib/admin/auth";
 import { createWorkBlock, parseWindow } from "@/lib/agenda/work-blocks";
+import { googleErrorSummary } from "@/lib/google/log-safe";
 
 // Work-block create (Calendar & Time Blocking, Phase 3). Same window contract
 // as the rest of the rhythm: { day: YYYY-MM-DD, start_minute, duration_minute }
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ ok: true, block: res.block, synced: res.synced });
   } catch (e) {
-    console.error("[calendar/blocks POST] failed:", e);
+    console.error("[calendar/blocks POST] failed:", googleErrorSummary(e));
     return NextResponse.json({ error: "Couldn't create the block" }, { status: 502 });
   }
 }

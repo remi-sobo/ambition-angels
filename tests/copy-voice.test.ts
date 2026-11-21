@@ -34,6 +34,7 @@ const FILES = [
   "lib/fundraising/gift-table-workbook.ts",
   "lib/fundraising/grantContacts.ts",
   "lib/comms/settings.ts",
+  "lib/email/org-identity.ts",
   "lib/meetings/dossier.ts",
   "lib/hubspot/client.ts",
   "lib/google/oauth.ts",

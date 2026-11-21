@@ -146,7 +146,7 @@ async function emailRecipient(row: NotificationRow): Promise<void> {
     : "";
   const bodyHtml = `${row.body ? `<p style="margin:0;">${row.body}</p>` : ""}${linkHtml}`;
 
-  const ok = await sendOperatorEmailTo(email, row.title, operatorEmailShell(row.title, bodyHtml));
+  const ok = await sendOperatorEmailTo(email, row.title, operatorEmailShell(row.title, bodyHtml), row.org_id);
   if (!ok) {
     console.error("[notify] sendOperatorEmailTo returned false for", email);
     return;

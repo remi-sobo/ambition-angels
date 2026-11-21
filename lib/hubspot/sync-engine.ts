@@ -195,20 +195,25 @@ export function missingScopeMessage(subtype: EngagementSubtype): string {
 
 const supabase = () => getSupabaseAdmin();
 
-export async function loadJob(id: string): Promise<JobRow | null> {
+// Every job query is scoped to the org that owns the env HubSpot token
+// (lib/integrations/env-owner.ts); callers resolve it and pass it in.
+
+export async function loadJob(orgId: string, id: string): Promise<JobRow | null> {
   const { data, error } = await supabase()
     .from("hs_sync_jobs")
     .select("*")
+    .eq("org_id", orgId)
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error(`load job: ${error.message}`);
   return (data as JobRow | null) ?? null;
 }
 
-export async function loadLatestJob(): Promise<JobRow | null> {
+export async function loadLatestJob(orgId: string): Promise<JobRow | null> {
   const { data, error } = await supabase()
     .from("hs_sync_jobs")
     .select("*")
+    .eq("org_id", orgId)
     .order("started_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -234,8 +239,9 @@ async function fetchTotals(): Promise<Counts | null> {
   }
 }
 
-export async function createJob(triggeredBy: AdminUser | null): Promise<JobRow> {
+export async function createJob(orgId: string, triggeredBy: AdminUser | null): Promise<JobRow> {
   const initial = {
+    org_id: orgId,
     status: "running" as const,
     triggered_by: triggeredBy,
     current_step: "contacts" as Step,
@@ -276,6 +282,7 @@ async function saveJob(job: JobRow): Promise<JobRow> {
       errors: job.errors,
       updated_at: new Date().toISOString(),
     })
+    .eq("org_id", job.org_id)
     .eq("id", job.id)
     .select("*")
     .single();
@@ -355,25 +362,25 @@ type ProcessResult = {
   stepError?: { message: string; subtype?: string; kind?: ErrorEntry["kind"] };
 };
 
-async function processContactsPage(cursor: string | null): Promise<ProcessResult> {
+async function processContactsPage(orgId: string, cursor: string | null): Promise<ProcessResult> {
   const page: Page = await fetchContacts(cursor);
-  const n = await upsertContacts(page.records);
+  const n = await upsertContacts(orgId, page.records);
   return { processed: n, nextCursor: page.nextCursor };
 }
 
-async function processCompaniesPage(cursor: string | null): Promise<ProcessResult> {
+async function processCompaniesPage(orgId: string, cursor: string | null): Promise<ProcessResult> {
   const page: Page = await fetchCompanies(cursor);
-  const n = await upsertCompanies(page.records);
+  const n = await upsertCompanies(orgId, page.records);
   return { processed: n, nextCursor: page.nextCursor };
 }
 
-async function processDealsPage(cursor: string | null): Promise<ProcessResult> {
+async function processDealsPage(orgId: string, cursor: string | null): Promise<ProcessResult> {
   const page: Page = await fetchDeals(cursor);
-  const n = await upsertDeals(page.records);
+  const n = await upsertDeals(orgId, page.records);
   return { processed: n, nextCursor: page.nextCursor };
 }
 
-async function processEngagementsPage(cursor: string | null): Promise<ProcessResult> {
+async function processEngagementsPage(orgId: string, cursor: string | null): Promise<ProcessResult> {
   const state = parseEngagementCursor(cursor);
   let page: Page;
   try {
@@ -397,7 +404,7 @@ async function processEngagementsPage(cursor: string | null): Promise<ProcessRes
     }
     throw e;
   }
-  const result = await upsertEngagements(state.subtype, page.records as HubSpotRecord[]);
+  const result = await upsertEngagements(orgId, state.subtype, page.records as HubSpotRecord[]);
 
   // Where do we go next?
   let next: string | null;
@@ -417,18 +424,19 @@ async function processEngagementsPage(cursor: string | null): Promise<ProcessRes
 }
 
 async function processOnePageForStep(
+  orgId: string,
   step: Step,
   cursor: string | null
 ): Promise<ProcessResult> {
   switch (step) {
     case "contacts":
-      return processContactsPage(cursor);
+      return processContactsPage(orgId, cursor);
     case "companies":
-      return processCompaniesPage(cursor);
+      return processCompaniesPage(orgId, cursor);
     case "deals":
-      return processDealsPage(cursor);
+      return processDealsPage(orgId, cursor);
     case "engagements":
-      return processEngagementsPage(cursor);
+      return processEngagementsPage(orgId, cursor);
   }
 }
 
@@ -460,7 +468,7 @@ export async function runChunk(jobInput: JobRow): Promise<JobRow> {
 
     let result: ProcessResult;
     try {
-      result = await processOnePageForStep(step, stepCursor);
+      result = await processOnePageForStep(job.org_id, step, stepCursor);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       job.errors = [

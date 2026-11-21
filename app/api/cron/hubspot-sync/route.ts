@@ -17,6 +17,7 @@ import {
   loadLatestJob,
   runJobToCompletion,
 } from "@/lib/hubspot/sync-engine";
+import { resolveEnvIntegrationOwner } from "@/lib/integrations/env-owner";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -28,10 +29,19 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
+  // The env token belongs to one org. No owner, or an ambiguous one → skip.
+  const owner = await resolveEnvIntegrationOwner("hubspot");
+  if (!owner.ok) {
+    return NextResponse.json({ status: "skipped", reason: owner.reason });
+  }
+  if (!process.env.HUBSPOT_ACCESS_TOKEN) {
+    return NextResponse.json({ status: "skipped", reason: "HUBSPOT_ACCESS_TOKEN is not set" });
+  }
+
   // Resume an in-flight job if one is mid-run, otherwise start a fresh sync.
-  let job = await loadLatestJob();
+  let job = await loadLatestJob(owner.orgId);
   if (!job || job.status !== "running") {
-    job = await createJob(null); // null triggered_by = system/cron
+    job = await createJob(owner.orgId, null); // null triggered_by = system/cron
   }
 
   // Leave ~10s headroom under maxDuration for the final saveJob/response.

@@ -5,8 +5,9 @@
  * resulting rows rather than a scripted call sequence.
  *
  * Supported: from().select(cols, { count, head }) / insert / update / delete,
- * filters eq (including `col->>key`), neq, in, is, not(col, "is", v), contains, lt, lte, gt, gte,
- * or("a.is.null,a.lt.X,a.ilike.%x%"), order, limit, range, then single /
+ * filters eq (including `col->>key`), neq, in, is, not(col, "is", v), contains,
+ * overlaps, ilike, lt, lte, gt, gte, or("a.is.null,a.lt.X") including ilike and
+ * nested and(), upsert (onConflict + ignoreDuplicates), order, limit, range, then single /
  * maybeSingle / await;
  * rpc(name, args) via a stub. Each statement runs atomically (no await inside),
  * so two concurrent conditional updates race exactly like two Postgres
@@ -69,8 +70,37 @@ const cmp = (a: unknown, b: unknown) =>
 
 type Filter = (row: Row) => boolean;
 
-function parseOr(expr: string): Filter {
-  const parts = expr.split(",").map((p) => {
+// PostgREST splits or()/and() lists on TOP-LEVEL commas only, like this.
+function splitTopLevel(expr: string): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let cur = "";
+  for (const ch of expr) {
+    if (ch === "(") depth++;
+    if (ch === ")") depth--;
+    if (ch === "," && depth === 0) {
+      out.push(cur);
+      cur = "";
+    } else cur += ch;
+  }
+  out.push(cur);
+  return out;
+}
+
+// LIKE semantics: % and PostgREST's * are any run, _ is any one character.
+function likeRegex(pattern: string): RegExp {
+  const body = pattern
+    .split("")
+    .map((c) => (c === "%" || c === "*" ? ".*" : c === "_" ? "." : c.replace(/[.+?^${}()|[\]\\]/g, "\\$&")))
+    .join("");
+  return new RegExp(`^${body}$`, "is");
+}
+
+function parseOr(expr: string, mode: "or" | "and" = "or"): Filter {
+  const parts = splitTopLevel(expr).map((p): Filter => {
+    const nested = p.match(/^(and|or)\(([\s\S]*)\)$/);
+    if (nested) return parseOr(nested[2], nested[1] as "or" | "and");
+    if (/[()]/.test(p)) throw new Error(`fakeDb: unparseable or() term ${p}`);
     const [col, op, ...rest] = p.split(".");
     const val = rest.join(".");
     return (row: Row) => {
@@ -88,19 +118,14 @@ function parseOr(expr: string): Filter {
           return v !== null && cmp(v, val) > 0;
         case "gte":
           return v !== null && cmp(v, val) >= 0;
-        case "ilike": {
-          const re = new RegExp(
-            "^" + val.split("%").map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join(".*") + "$",
-            "i"
-          );
-          return v !== null && re.test(String(v));
-        }
+        case "ilike":
+          return v !== null && likeRegex(val).test(String(v));
         default:
           throw new Error(`fakeDb: unsupported or op ${op}`);
       }
     };
   });
-  return (row) => parts.some((f) => f(row));
+  return mode === "or" ? (row) => parts.some((f) => f(row)) : (row) => parts.every((f) => f(row));
 }
 
 export function fakeDb(seed: Record<string, Row[]> = {}, opts: FakeDbOptions = {}): FakeDb {
@@ -113,7 +138,8 @@ export function fakeDb(seed: Record<string, Row[]> = {}, opts: FakeDbOptions = {
   const canSee = (t: string, row: Row) => (opts.visible?.[t] ? opts.visible[t](row) : true);
 
   function builder(t: string) {
-    let op: "select" | "insert" | "update" | "delete" = "select";
+    let op: "select" | "insert" | "update" | "delete" | "upsert" = "select";
+    let upsertOpts: { onConflict?: string; ignoreDuplicates?: boolean } = {};
     let payload: Row | Row[] | null = null;
     let returning = false;
     let countMode = false;
@@ -124,6 +150,23 @@ export function fakeDb(seed: Record<string, Row[]> = {}, opts: FakeDbOptions = {
     const filters: Filter[] = [];
 
     const run = (): Result => {
+      if (op === "upsert") {
+        const rows = (Array.isArray(payload) ? payload : [payload]) as Row[];
+        const keys = (upsertOpts.onConflict ?? "id").split(",").map((k) => k.trim());
+        const out: Row[] = [];
+        for (const r of rows) {
+          const existing = table(t).find((x) => keys.every((k) => getPath(x, k) !== null && getPath(x, k) === getPath(r, k)));
+          if (existing) {
+            if (!upsertOpts.ignoreDuplicates) Object.assign(existing, clone(r));
+            continue;
+          }
+          const row: Row = { id: randomUUID(), created_at: now(), updated_at: now(), ...clone(r) };
+          table(t).push(row);
+          inserts.push({ table: t, row: clone(row) });
+          out.push(clone(row));
+        }
+        return { data: returning ? out : null, error: null };
+      }
       if (op === "insert") {
         const rows = (Array.isArray(payload) ? payload : [payload]) as Row[];
         if (opts.denyInsert?.has(t)) {
@@ -196,6 +239,12 @@ export function fakeDb(seed: Record<string, Row[]> = {}, opts: FakeDbOptions = {
         payload = v;
         return b;
       },
+      upsert(v: Row | Row[], o?: { onConflict?: string; ignoreDuplicates?: boolean }) {
+        op = "upsert";
+        payload = v;
+        upsertOpts = o ?? {};
+        return b;
+      },
       update(v: Row) {
         op = "update";
         payload = v;
@@ -234,6 +283,17 @@ export function fakeDb(seed: Record<string, Row[]> = {}, opts: FakeDbOptions = {
           const arr = (getPath(r, col) as unknown[] | null) ?? [];
           return vals.every((v) => arr.includes(v));
         });
+        return b;
+      },
+      overlaps(col: string, vals: unknown[]) {
+        filters.push((r) => {
+          const arr = (getPath(r, col) as unknown[] | null) ?? [];
+          return vals.some((v) => arr.includes(v));
+        });
+        return b;
+      },
+      ilike(col: string, pattern: string) {
+        filters.push((r) => getPath(r, col) !== null && likeRegex(pattern).test(String(getPath(r, col))));
         return b;
       },
       lt(col: string, val: unknown) {

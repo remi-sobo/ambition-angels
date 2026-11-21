@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import EntityProfile from "./EntityProfile";
+import Modal from "../ui/Modal";
 import {
   GROUP_LABEL,
   GROUP_ORDER,
@@ -141,32 +142,11 @@ export default function GlobalSearch({ pages = [] }: { pages?: PageEntry[] }) {
     };
   }, [open]);
 
-  // Focus the field + lock body scroll while open.
+  // Focus the field while open (the Modal locks body scroll).
   useEffect(() => {
     if (!open) return;
     inputRef.current?.focus();
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
   }, [open]);
-
-  // Escape closes (or steps back from a profile), handled at the document level
-  // so it works wherever focus is — including after opening a profile, when the
-  // clicked result unmounts and focus falls back to <body>, outside the dialog
-  // (which is why a dialog-only keydown handler missed it).
-  useEffect(() => {
-    if (!open) return;
-    const onEsc = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      e.preventDefault();
-      if (profileId) closeProfile();
-      else close();
-    };
-    document.addEventListener("keydown", onEsc);
-    return () => document.removeEventListener("keydown", onEsc);
-  }, [open, profileId, close, closeProfile]);
 
   // ── Debounced, abortable DB fetch ──────────────────────────────────────
   useEffect(() => {
@@ -264,8 +244,8 @@ export default function GlobalSearch({ pages = [] }: { pages?: PageEntry[] }) {
   );
 
   const onKeyDown = (e: React.KeyboardEvent) => {
-    // Escape is handled at the document level (above) so it works even when
-    // focus has left the overlay. Here we only drive in-overlay navigation.
+    // Escape is handled by the Modal's shared trap (document level) so it
+    // works even when focus has left the overlay. Here we only drive in-overlay navigation.
     if (profileId) return; // profile (Mode B): nav keys inert
     if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -292,19 +272,11 @@ export default function GlobalSearch({ pages = [] }: { pages?: PageEntry[] }) {
   const showHint = term.length < 2 && groups.length === 0;
 
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-start justify-center bg-black/60 backdrop-blur-sm px-4 pt-[12vh]"
-      onClick={close}
-      role="presentation"
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl rounded-panel border-hairline bg-ink shadow-2xl overflow-hidden flex flex-col max-h-[70vh]"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Search BloomOS"
-        onKeyDown={onKeyDown}
-      >
+    // The kit Modal in its bare form: focus trap, scroll lock, scrim close,
+    // and Escape (which steps back from a profile before it closes), from
+    // the one shared trap, so it works wherever focus is.
+    <Modal open onClose={profileId ? closeProfile : close} title="Search BloomOS" size="lg" bare>
+      <div className="flex flex-col min-h-0 flex-1" onKeyDown={onKeyDown}>
         {profileId ? (
           profile ? (
             <EntityProfile data={profile} onBack={closeProfile} onOpen={navigate} />
@@ -347,6 +319,8 @@ export default function GlobalSearch({ pages = [] }: { pages?: PageEntry[] }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search people, deals, tasks, pages…"
+            aria-label="Search BloomOS"
+            data-autofocus
             className="flex-1 bg-transparent text-ink-1 placeholder-ink-3 text-base focus:outline-none"
             role="combobox"
             aria-expanded
@@ -478,7 +452,7 @@ export default function GlobalSearch({ pages = [] }: { pages?: PageEntry[] }) {
           </>
         )}
       </div>
-    </div>
+    </Modal>
   );
 }
 

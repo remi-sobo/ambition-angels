@@ -1,7 +1,8 @@
 "use client";
 
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
-import { TYPE } from "@/lib/admin/typeScale";
+import Modal from "../ui/Modal";
+import Button from "../ui/Button";
 
 // Quality Floor Q2 — the dialog that replaced the native browser confirm
 // (the audit's F2: 54 of them gating actions, permanent ones included). The
@@ -53,47 +54,28 @@ export default function ConfirmProvider({ children }: { children: ReactNode }) {
   return (
     <ConfirmContext.Provider value={confirm}>
       {children}
-      {pending && (
-        <div
-          className="fixed inset-0 z-[80] flex items-center justify-center p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-label={pending.title}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") settle(false);
-          }}
-        >
-          {/* Scrim: clicking away is a cancel, same as Escape. */}
-          <div className="absolute inset-0 bg-ink/50" onClick={() => settle(false)} />
-          <div className="relative w-full max-w-md rounded-panel-lg border-hairline bg-surface p-6">
-            <h2 className={TYPE.cardTitle}>{pending.title}</h2>
-            {pending.body && (
-              <p className="mt-2 text-sm text-ink-2 leading-relaxed">{pending.body}</p>
-            )}
-            <div className="mt-5 flex items-center justify-end gap-3">
-              <button
-                type="button"
-                autoFocus
-                onClick={() => settle(false)}
-                className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => settle(true)}
-                className={`text-xs font-semibold text-white rounded-full px-4 py-2 transition-colors ${
-                  pending.destructive
-                    ? "bg-expense hover:bg-expense/85"
-                    : "bg-orange hover:bg-orange-dark"
-                }`}
-              >
-                {pending.confirmLabel}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* The kit Modal (focus trap, Escape and scrim cancel, phone sheet),
+          stacked above any drawer the confirm was raised from. */}
+      <Modal
+        open={!!pending}
+        onClose={() => settle(false)}
+        title={pending?.title ?? ""}
+        description={pending?.body}
+        size="sm"
+        layer="top"
+        footer={
+          <>
+            <Button variant="secondary" size="sm" data-autofocus onClick={() => settle(false)}>
+              Cancel
+            </Button>
+            <Button variant={pending?.destructive ? "danger" : "primary"} size="sm" onClick={() => settle(true)}>
+              {pending?.confirmLabel}
+            </Button>
+          </>
+        }
+      >
+        {null}
+      </Modal>
     </ConfirmContext.Provider>
   );
 }

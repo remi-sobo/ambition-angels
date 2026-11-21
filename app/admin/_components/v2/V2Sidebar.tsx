@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Drawer from "../ui/Drawer";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { OrgContext } from "@/lib/admin/auth";
@@ -59,15 +60,6 @@ export default function V2Sidebar({
   useEffect(() => {
     setDrawerOpen(false);
   }, [pathname]);
-
-  useEffect(() => {
-    if (!drawerOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [drawerOpen]);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -214,37 +206,22 @@ export default function V2Sidebar({
         </div>
       </div>
 
-      {/* Mobile drawer + overlay */}
-      <div
-        className={[
-          "lg:hidden fixed inset-0 z-50 transition-opacity duration-200",
-          drawerOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
-        ].join(" ")}
-        aria-hidden={!drawerOpen}
-      >
-        <button
-          type="button"
-          aria-label="Close navigation"
-          onClick={() => setDrawerOpen(false)}
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-          tabIndex={drawerOpen ? 0 : -1}
-        />
-        <aside
-          className={[
-            "absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-navy border-r border-black/30 flex flex-col shadow-2xl",
-            "pt-[env(safe-area-inset-top)] transition-transform duration-200 ease-out will-change-transform",
-            drawerOpen ? "translate-x-0" : "-translate-x-full",
-          ].join(" ")}
-          style={{
-            backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.022) 1px, transparent 1px)",
-            backgroundSize: "22px 22px",
-          }}
-          role="dialog"
-          aria-label="BloomOS navigation"
-          data-sidebar
-        >
-          {navPanel}
-        </aside>
+      {/* Mobile navigation: the kit Drawer from the left (V4 P1), with the
+          shared focus trap, Escape and scrim close. The panel keeps the
+          sidebar's own espresso surface. */}
+      <div className="lg:hidden">
+        <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} title="BloomOS navigation" side="left" bare>
+          <div
+            data-sidebar
+            className="flex h-full flex-col overflow-y-auto bg-navy border-r border-black/30 shadow-2xl pt-[env(safe-area-inset-top)]"
+            style={{
+              backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.022) 1px, transparent 1px)",
+              backgroundSize: "22px 22px",
+            }}
+          >
+            {navPanel}
+          </div>
+        </Drawer>
       </div>
 
       {/* Desktop sidebar (>= lg). V4 frame (approved prototype): flush to

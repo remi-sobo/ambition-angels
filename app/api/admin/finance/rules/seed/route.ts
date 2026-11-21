@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { DEFAULT_RULES } from "@/lib/finance/default-rules";
+import { NO_CATEGORIES_MESSAGE, orgCategoryIds } from "@/lib/finance/categories";
 
 // POST /api/admin/finance/rules/seed
 //
@@ -11,6 +12,11 @@ import { DEFAULT_RULES } from "@/lib/finance/default-rules";
 // repeatedly without piling up dupes). Doesn't run rules against existing
 // transactions on its own; the user follows with "Apply to uncategorized"
 // to backfill.
+//
+// Categories are per-org, so only the default rules whose category exists in
+// the caller's org are seeded (the defaults were written against Ambition
+// Angels' chart; an org with a different chart gets the subset that fits,
+// or a clear message when none do).
 export async function POST(req: NextRequest) {
   const ctx = await getOrgContext();
   if (!ctx) {
@@ -33,7 +39,13 @@ export async function POST(req: NextRequest) {
     (existing ?? []).map((r) => `${r.pattern}|${r.category_id}`)
   );
 
-  const toInsert = DEFAULT_RULES.filter(
+  const known = await orgCategoryIds(supabase, ctx.orgId, DEFAULT_RULES.map((r) => r.category_id));
+  if (known.size === 0) {
+    return NextResponse.json({ error: NO_CATEGORIES_MESSAGE }, { status: 400 });
+  }
+  const applicable = DEFAULT_RULES.filter((r) => known.has(r.category_id));
+
+  const toInsert = applicable.filter(
     (r) => !existingSet.has(`${r.pattern}|${r.category_id}`)
   ).map((r) => ({
     org_id: ctx.orgId,
@@ -49,12 +61,12 @@ export async function POST(req: NextRequest) {
     await audit(req, {
       action: "finance.rules.seed",
       entityType: "fin_category_rules",
-      after: { inserted: 0, skipped: DEFAULT_RULES.length },
+      after: { inserted: 0, skipped: applicable.length },
     });
     return NextResponse.json({
       ok: true,
       inserted: 0,
-      skipped: DEFAULT_RULES.length,
+      skipped: applicable.length,
       message: "Default rule set is already seeded.",
     });
   }
@@ -69,7 +81,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "One or more default rules reference a category that doesn't exist in fin_categories. Run the create_fin_schema migration to seed the canonical category list first.",
+            "One or more default rules reference a category that doesn't exist in your organization's finance categories.",
         },
         { status: 400 }
       );
@@ -85,6 +97,6 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     inserted: count ?? toInsert.length,
-    skipped: DEFAULT_RULES.length - toInsert.length,
+    skipped: applicable.length - toInsert.length,
   });
 }

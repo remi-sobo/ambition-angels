@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
     hits.set(r.id, (hits.get(r.id) ?? 0) + 1);
   }
 
-  await bumpHitCounts(supabase, hits);
+  await bumpHitCounts(supabase, orgId, hits);
 
   await audit(req, {
     action: "finance.rules.apply_all",

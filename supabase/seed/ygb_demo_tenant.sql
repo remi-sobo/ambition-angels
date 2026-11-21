@@ -806,7 +806,8 @@ commit;
 -- ════════════════════════════════════════════════════════════════════════════
 begin;
 
--- fin_categories.id is a GLOBAL text PK — hence the ygb.* prefix.
+-- fin_categories is keyed (org_id, id) since fin_categories_org_scope.sql; the
+-- ygb.* prefix dates from when the id was a global PK and is kept as-is.
 insert into public.fin_categories (id, org_id, group_name, display_name, kind, functional_class, sort_order)
 select c.id, md5('ygb:org')::uuid, c.grp, c.dn, c.kind, c.fc, c.o
 from (values

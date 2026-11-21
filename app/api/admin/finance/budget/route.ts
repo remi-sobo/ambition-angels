@@ -2,17 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { FIN_BUDGET_CONFLICT, isOrgCategory } from "@/lib/finance/categories";
 
 // POST /api/admin/finance/budget
 //
-// Upsert a single (year, category_id) budget row. Body:
+// Upsert a single (org, year, category_id) budget row. Body:
 //   { year: number, category_id: string,
 //     base_amount?: number, contingency_t1?: number,
 //     contingency_t2?: number, activated_contingency?: number,
 //     notes?: string | null }
 //
 // Missing amount fields default to 0 (on insert) or are left alone (on
-// update). Idempotent for the same (year, category_id) — used by the
+// update). Idempotent for the same (org, year, category_id) — used by the
 // inline editor on /admin/finance/budget.
 export async function POST(req: NextRequest) {
   const ctx = await getOrgContext();
@@ -55,9 +56,14 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = getSupabaseAdmin();
+  // Categories are per-org; the conflict target includes org_id so one
+  // org's upsert can never land on another org's budget row.
+  if (!(await isOrgCategory(supabase, ctx.orgId, category_id))) {
+    return NextResponse.json({ error: "Unknown category" }, { status: 400 });
+  }
   const { data, error } = await supabase
     .from("fin_budget")
-    .upsert(update, { onConflict: "year,category_id" })
+    .upsert(update, { onConflict: FIN_BUDGET_CONFLICT })
     .select("*")
     .single();
   if (error) {

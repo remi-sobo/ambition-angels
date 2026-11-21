@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
+import { NO_CATEGORIES_MESSAGE } from "@/lib/finance/categories";
 import {
   suggestCategories,
   SUGGEST_BATCH,
@@ -47,6 +48,11 @@ export async function POST() {
   ]);
 
   const categories = (catsRaw ?? []) as CategoryForAI[];
+  // Categories are per-org; an org with none has nothing to suggest from
+  // (and no reason to spend an AI call).
+  if (categories.length === 0) {
+    return NextResponse.json({ error: NO_CATEGORIES_MESSAGE }, { status: 400 });
+  }
   const txns = (txnsRaw ?? []).map((t) => ({
     id: t.id as string,
     txn_date: t.txn_date as string,

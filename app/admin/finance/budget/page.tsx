@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import type { FinCategory } from "@/lib/finance/types";
 import BudgetEditor, { type BudgetRow } from "./_components/BudgetEditor";
+import NoCategories from "../_components/NoCategories";
 import PageHeader from "../../_components/PageHeader";
 
 type SearchParams = { year?: string };
@@ -114,7 +115,13 @@ export default async function BudgetPage({
         />
       </header>
 
-      <BudgetEditor year={year} categories={categories} initialBudget={initialBudget} />
+      {categories.length === 0 ? (
+        <div className="mt-6">
+          <NoCategories />
+        </div>
+      ) : (
+        <BudgetEditor year={year} categories={categories} initialBudget={initialBudget} />
+      )}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { orgCategoryIds } from "@/lib/finance/categories";
 
 type ApplyItem = { id: string; category_id: string; create_rule?: boolean; pattern?: string };
 
@@ -20,7 +21,7 @@ export async function POST(req: NextRequest) {
   const itemsRaw = body && Array.isArray(body.items) ? body.items : null;
   if (!itemsRaw) return NextResponse.json({ error: "items[] required" }, { status: 400 });
 
-  const items: ApplyItem[] = [];
+  let items: ApplyItem[] = [];
   for (const r of itemsRaw) {
     if (!r || typeof r !== "object") continue;
     const o = r as Record<string, unknown>;
@@ -37,6 +38,12 @@ export async function POST(req: NextRequest) {
   if (items.length === 0) return NextResponse.json({ error: "No valid items." }, { status: 400 });
 
   const supabase = getSupabaseAdmin();
+
+  // Categories are per-org: drop any item whose category isn't this org's.
+  const known = await orgCategoryIds(supabase, ctx.orgId, items.map((it) => it.category_id));
+  const rejected = items.filter((it) => !known.has(it.category_id)).length;
+  items = items.filter((it) => known.has(it.category_id));
+  if (items.length === 0) return NextResponse.json({ error: "Unknown category" }, { status: 400 });
 
   // Org fence: the service-role client bypasses RLS, so every write/read below
   // is constrained to the caller's org (a bare .eq("id") update would let one
@@ -90,5 +97,5 @@ export async function POST(req: NextRequest) {
     after: { updated, rulesCreated },
   });
 
-  return NextResponse.json({ ok: true, updated, rulesCreated, errors: updateErrors.slice(0, 5) });
+  return NextResponse.json({ ok: true, updated, rulesCreated, rejected, errors: updateErrors.slice(0, 5) });
 }

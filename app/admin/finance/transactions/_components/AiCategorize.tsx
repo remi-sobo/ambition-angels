@@ -2,12 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Drawer from "@/app/admin/_components/ui/Drawer";
+import Button from "@/app/admin/_components/ui/Button";
+import { Checkbox } from "@/app/admin/_components/ui/Input";
+import Notice from "@/app/admin/_components/ui/Notice";
+import { useSaveAction } from "@/app/admin/_lib/useSaveAction";
 import { TYPE } from "@/lib/admin/typeScale";
 
-// "Suggest categories (AI)" — asks the server for Claude's category suggestions
-// for the uncategorized transactions, then lets the user review, toggle which
-// to accept, and choose whether to also save a rule so future imports
-// auto-categorize. Applying writes through /categorize/apply and refreshes.
+// "Suggest categories" — asks the server for AI category suggestions for the
+// uncategorized transactions, then lets the person review, choose which to
+// accept, and choose whether to also save a rule so future imports
+// categorize themselves. Opens in the kit Drawer (V4 Stage G2). Applying
+// writes through /categorize/apply via saveAction, with no optimistic change.
 
 type Suggestion = {
   id: string;
@@ -26,14 +32,15 @@ function fmtMoney(n: number): string {
   return n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 });
 }
 
-function confColor(c: number): string {
-  if (c >= 0.8) return "bg-revenue-bg text-revenue border-revenue/30";
-  if (c >= 0.5) return "bg-status-watch-bg text-status-watch-text border-status-watch/40";
-  return "bg-expense-bg text-expense border-expense/30";
+function confidence(c: number): { label: string; cls: string } {
+  if (c >= 0.8) return { label: `Likely, ${Math.round(c * 100)}%`, cls: "bg-status-healthy-bg text-status-healthy-text" };
+  if (c >= 0.5) return { label: `Maybe, ${Math.round(c * 100)}%`, cls: "bg-status-watch-bg text-status-watch-text" };
+  return { label: `Unsure, ${Math.round(c * 100)}%`, cls: "bg-status-critical-bg text-status-critical-text" };
 }
 
 export default function AiCategorize({ uncategorizedCount }: { uncategorizedCount: number }) {
   const router = useRouter();
+  const save = useSaveAction();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<"idle" | "suggesting" | "applying">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -47,27 +54,23 @@ export default function AiCategorize({ uncategorizedCount }: { uncategorizedCoun
     setError(null);
     setRows([]);
     setDone(null);
-    try {
-      const r = await fetch("/api/admin/finance/categorize/suggest", { method: "POST" });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok) {
-        setError(j.error ?? "Couldn't get suggestions.");
-        return;
-      }
-      const suggestions = (j.suggestions ?? []) as Suggestion[];
-      setRows(
-        suggestions.map((s) => ({
-          ...s,
-          include: s.confidence >= 0.5,
-          createRule: s.confidence >= 0.8 && s.rule_pattern.length >= 3,
-        }))
-      );
-      setRemaining(j.remaining ?? 0);
-    } catch {
-      setError("Network error. Try again.");
-    } finally {
-      setBusy("idle");
+    const r = await save<{ suggestions?: Suggestion[]; remaining?: number }>({
+      request: { url: "/api/admin/finance/categorize/suggest", method: "POST" },
+      failure: false,
+    });
+    setBusy("idle");
+    if (!r.ok) {
+      setError(r.message);
+      return;
     }
+    setRows(
+      (r.data.suggestions ?? []).map((s) => ({
+        ...s,
+        include: s.confidence >= 0.5,
+        createRule: s.confidence >= 0.8 && s.rule_pattern.length >= 3,
+      })),
+    );
+    setRemaining(r.data.remaining ?? 0);
   }
 
   async function apply() {
@@ -77,143 +80,132 @@ export default function AiCategorize({ uncategorizedCount }: { uncategorizedCoun
     if (items.length === 0) return;
     setBusy("applying");
     setError(null);
-    try {
-      const r = await fetch("/api/admin/finance/categorize/apply", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items }),
-      });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok) {
-        setError(j.error ?? "Apply failed.");
-        return;
-      }
-      setDone({ updated: j.updated ?? 0, rulesCreated: j.rulesCreated ?? 0 });
-      setRows([]);
-      router.refresh();
-    } finally {
-      setBusy("idle");
+    const r = await save<{ updated?: number; rulesCreated?: number }>({
+      request: { url: "/api/admin/finance/categorize/apply", method: "POST", body: { items } },
+      failure: false,
+    });
+    setBusy("idle");
+    if (!r.ok) {
+      setError(r.message);
+      return;
     }
+    setDone({ updated: r.data.updated ?? 0, rulesCreated: r.data.rulesCreated ?? 0 });
+    setRows([]);
+    router.refresh();
   }
 
   const includedCount = rows.filter((r) => r.include).length;
   const setAll = (include: boolean) => setRows((rs) => rs.map((r) => ({ ...r, include })));
+  const close = () => busy === "idle" && setOpen(false);
 
   return (
     <>
-      <button
-        type="button"
-        onClick={suggest}
-        disabled={uncategorizedCount === 0 || busy !== "idle"}
-        className="rounded-full bg-orange hover:bg-orange-dark text-white px-3 py-1 disabled:opacity-40"
+      <Button variant="secondary" onClick={suggest} disabled={uncategorizedCount === 0 || busy !== "idle"}>
+        Suggest categories
+      </Button>
+
+      <Drawer
+        open={open}
+        onClose={close}
+        width={560}
+        title="Suggested categories"
+        description="AI suggestions for uncategorized transactions. Review before applying: AI can be wrong."
+        footer={
+          rows.length > 0 ? (
+            <>
+              <Button variant="secondary" onClick={close} disabled={busy !== "idle"}>
+                Cancel
+              </Button>
+              <Button onClick={apply} disabled={includedCount === 0} loading={busy === "applying"}>
+                {busy === "applying" ? "Applying" : `Apply ${includedCount}`}
+              </Button>
+            </>
+          ) : done && remaining > 0 ? (
+            <Button onClick={suggest} loading={busy === "suggesting"}>
+              Suggest the next {Math.min(remaining, 60)}
+            </Button>
+          ) : (
+            <Button variant="secondary" onClick={close} disabled={busy !== "idle"}>
+              Close
+            </Button>
+          )
+        }
       >
-        ✦ Suggest categories (AI)
-      </button>
+        {busy === "suggesting" ? <p className={`${TYPE.bodyMuted} py-8 text-center`}>Reading your transactions</p> : null}
+        {error ? (
+          <Notice tone="danger" title="That did not work.">
+            {error}
+          </Notice>
+        ) : null}
+        {done ? (
+          <Notice tone="success" title={`Categorized ${done.updated} transaction${done.updated === 1 ? "" : "s"}.`}>
+            {done.rulesCreated > 0
+              ? `Saved ${done.rulesCreated} rule${done.rulesCreated === 1 ? "" : "s"} for next time.`
+              : "No new rules were saved."}
+            {remaining > 0 ? ` ${remaining} more are waiting.` : ""}
+          </Notice>
+        ) : null}
+        {busy !== "suggesting" && !done && rows.length === 0 && !error ? (
+          <p className={`${TYPE.bodyMuted} py-8 text-center`}>Nothing to categorize. Every transaction has a category.</p>
+        ) : null}
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4 overflow-y-auto" onClick={() => busy === "idle" && setOpen(false)}>
-          <div
-            className="mt-10 w-full max-w-3xl rounded-panel-lg border-hairline bg-surface"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="px-5 py-4 border-b border-hairline flex items-center justify-between gap-3">
-              <h2 className={TYPE.cardTitle}>Suggested categories</h2>
-              <button onClick={() => setOpen(false)} disabled={busy !== "idle"} className={`text-ink-2 hover:${TYPE.body} disabled:opacity-40`}>
-                ✕
-              </button>
+        {rows.length > 0 ? (
+          <>
+            <div className="flex items-center justify-between mb-3 text-[13px]">
+              <span className="text-ink-2">
+                {includedCount} of {rows.length} selected
+                {remaining > 0 ? `, ${remaining} more after this batch` : ""}
+              </span>
+              <div className="flex gap-1">
+                <Button variant="quiet" size="sm" onClick={() => setAll(true)}>
+                  Select all
+                </Button>
+                <Button variant="quiet" size="sm" onClick={() => setAll(false)}>
+                  Clear
+                </Button>
+              </div>
             </div>
-
-            <div className="p-5">
-              {busy === "suggesting" && <p className="text-sm text-ink-2 py-8 text-center">Reading your transactions…</p>}
-
-              {error && <p className="text-sm text-expense mb-3">{error}</p>}
-
-              {done && (
-                <div className="text-sm text-revenue py-6 text-center">
-                  Categorized <b>{done.updated}</b> transaction{done.updated === 1 ? "" : "s"}
-                  {done.rulesCreated > 0 && <> · saved <b>{done.rulesCreated}</b> rule{done.rulesCreated === 1 ? "" : "s"} for next time</>}.
-                  {remaining > 0 && (
-                    <div className="mt-3">
-                      <button onClick={suggest} className="rounded-full bg-orange hover:bg-orange-dark text-white px-4 py-1.5 text-xs font-medium">
-                        Suggest the next {Math.min(remaining, 60)} →
-                      </button>
+            <ul className="divide-y divide-hairline">
+              {rows.map((r, i) => {
+                const conf = confidence(r.confidence);
+                return (
+                  <li key={r.id} className="py-3 flex items-start gap-3">
+                    <Checkbox
+                      aria-label={`Apply ${r.category_name} to ${r.description}`}
+                      checked={r.include}
+                      onChange={(e) => setRows((rs) => rs.map((x, j) => (j === i ? { ...x, include: e.target.checked } : x)))}
+                      className="mt-0.5"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline gap-2 flex-wrap">
+                        <span className={`${TYPE.body} truncate`} title={r.description}>
+                          {r.description}
+                        </span>
+                        <span className="text-xs tabular-nums text-ink-2">{fmtMoney(r.amount)}</span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <span className="text-[13px] font-semibold text-ink-1">{r.category_name}</span>
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${conf.cls}`}>{conf.label}</span>
+                        {r.rule_pattern ? (
+                          <label className="text-xs text-ink-2 flex items-center gap-1.5 cursor-pointer min-h-[28px]">
+                            <Checkbox
+                              checked={r.createRule}
+                              onChange={(e) =>
+                                setRows((rs) => rs.map((x, j) => (j === i ? { ...x, createRule: e.target.checked } : x)))
+                              }
+                            />
+                            Save a rule for &ldquo;{r.rule_pattern}&rdquo;
+                          </label>
+                        ) : null}
+                      </div>
                     </div>
-                  )}
-                </div>
-              )}
-
-              {busy !== "suggesting" && !done && rows.length === 0 && !error && (
-                <p className="text-sm text-ink-2 py-8 text-center">Nothing to categorize. Every transaction has a category.</p>
-              )}
-
-              {rows.length > 0 && (
-                <>
-                  <div className="flex items-center justify-between mb-3 text-xs">
-                    <span className="text-ink-2">
-                      {includedCount} of {rows.length} selected
-                      {remaining > 0 && <span className="text-ink-3"> · {remaining} more after this batch</span>}
-                    </span>
-                    <div className="flex gap-3">
-                      <button onClick={() => setAll(true)} className="text-orange hover:text-orange-dark font-semibold">Select all</button>
-                      <button onClick={() => setAll(false)} className="text-ink-2 hover:text-ink-1">Clear</button>
-                    </div>
-                  </div>
-
-                  <ul className="divide-y divide-hairline max-h-[55vh] overflow-y-auto -mx-1 px-1">
-                    {rows.map((r, i) => (
-                      <li key={r.id} className="py-2.5 flex items-start gap-3">
-                        <input
-                          type="checkbox"
-                          checked={r.include}
-                          onChange={(e) => setRows((rs) => rs.map((x, j) => (j === i ? { ...x, include: e.target.checked } : x)))}
-                          className="mt-1 accent-orange"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-ink-1 truncate" title={r.description}>{r.description}</span>
-                            <span className={`text-xs font-mono ${r.amount >= 0 ? "text-revenue" : "text-ink-2"}`}>{fmtMoney(r.amount)}</span>
-                          </div>
-                          <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <span className="text-xs text-orange font-medium">→ {r.category_name}</span>
-                            <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full border ${confColor(r.confidence)}`}>
-                              {Math.round(r.confidence * 100)}%
-                            </span>
-                            {r.rule_pattern && (
-                              <label className="text-xs text-ink-2 flex items-center gap-1 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={r.createRule}
-                                  onChange={(e) => setRows((rs) => rs.map((x, j) => (j === i ? { ...x, createRule: e.target.checked } : x)))}
-                                  className="accent-orange"
-                                />
-                                rule: “{r.rule_pattern}”
-                              </label>
-                            )}
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <div className="flex items-center gap-3 pt-4 mt-2 border-t border-hairline">
-                    <button
-                      onClick={apply}
-                      disabled={includedCount === 0 || busy !== "idle"}
-                      className="px-4 py-2 rounded-control bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40"
-                    >
-                      {busy === "applying" ? "Applying…" : `Apply ${includedCount}`}
-                    </button>
-                    <button onClick={() => setOpen(false)} disabled={busy !== "idle"} className={`px-4 py-2 rounded-control text-ink-2 hover:${TYPE.body}`}>
-                      Cancel
-                    </button>
-                    <span className="text-xs text-ink-3 ml-auto">Review before applying. AI can be wrong.</span>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+                  </li>
+                );
+              })}
+            </ul>
+          </>
+        ) : null}
+      </Drawer>
     </>
   );
 }

@@ -7,10 +7,13 @@ import {
   type RunwayPledge,
 } from "@/lib/finance/runway";
 import { money } from "./charts";
-import InfoTip from "./InfoTip";
 import { TYPE } from "@/lib/admin/typeScale";
+import Figure from "@/app/admin/_components/ui/Figure";
+import Button from "@/app/admin/_components/ui/Button";
 
-// Three-tier forward runway, the headline of the Finance dashboard. All three
+// Three-tier forward runway (V4 Stage G2: kit Figures, each with its source).
+// On the snapshot it opens from "How runway is figured"; the Friday close
+// shows it before the stamp. All three
 // numbers come from the shared pure engine (lib/finance/runway): cash (bank net
 // of this month's remaining spend), due (+ unreceived pledges due by month end),
 // and projected (+ unreceived pledges within the horizon). Full value, never
@@ -24,14 +27,7 @@ import { TYPE } from "@/lib/admin/typeScale";
 const HORIZONS = [3, 6, 12] as const;
 type Horizon = (typeof HORIZONS)[number];
 
-function tone(months: number | null): { value: string; chipBg: string; chipText: string; label: string } {
-  if (months === null) return { value: "text-ink-2", chipBg: "bg-tile border-hairline", chipText: "text-ink-2", label: "no baseline" };
-  if (months < 1.5) return { value: "text-expense", chipBg: "bg-expense-bg border-expense/30", chipText: "text-expense", label: "critical" };
-  if (months < 3) return { value: "text-orange", chipBg: "bg-orange/15 border-orange/30", chipText: "text-orange", label: "tightening" };
-  return { value: "text-ink-1", chipBg: "bg-revenue-bg border-revenue/30", chipText: "text-revenue", label: "healthy" };
-}
-
-const fmtMonths = (m: number | null) => (m === null ? "—" : m.toFixed(1));
+const fmtMonths = (m: number | null) => (m === null ? null : `${m.toFixed(1)} months`);
 
 export default function RunwayTiers({
   baseline,
@@ -43,6 +39,7 @@ export default function RunwayTiers({
   defaultHorizon,
   pledges,
   restrictedInflows = 0,
+  framed = true,
 }: {
   baseline: number;
   baselineSource: "config" | "trailing";
@@ -58,8 +55,10 @@ export default function RunwayTiers({
    * projected pipeline already probability-weighted. summarize filters the rest.
    */
   pledges: RunwayPledge[];
-  /** Restricted inflows, excluded from every tier — shown as a carve-out note. */
+  /** Restricted inflows, excluded from every tier: shown as a carve-out note. */
   restrictedInflows?: number;
+  /** false inside a drawer, which supplies its own frame. */
+  framed?: boolean;
 }) {
   const initial: Horizon = (HORIZONS as readonly number[]).includes(defaultHorizon)
     ? (defaultHorizon as Horizon)
@@ -82,125 +81,83 @@ export default function RunwayTiers({
     };
   }, [pledges, endCurrentMonth, horizonEnds, horizon, baseline, baselineSource, bankBalance, mtdSpend]);
 
-  const cashTone = tone(runway.cash.months);
   const monthLabel = new Date(endCurrentMonth + "T00:00:00").toLocaleDateString("en-US", { month: "long" });
+  const per = `${money(baseline)} a month (${baselineSource === "config" ? "your burn baseline" : "3-month average spend"})`;
+  const noBurn = "No monthly spending to divide by yet.";
 
   return (
-    <section className="rounded-panel-lg border-hairline bg-surface p-5 sm:p-6">
-      <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
-        <div>
-          <div className={TYPE.cardLabel}>
-            Forward runway
-            <InfoTip heading="Forward runway">
-              How many months the money lasts, three ways, all divided by the monthly
-              burn baseline ({money(baseline)}/mo).{" "}
-              <b>Cash</b> = bank balance − what&apos;s left to spend this month.{" "}
-              <b>With pledges due</b> = cash + unreceived pledges due by month-end.{" "}
-              <b>Projected</b> = + unreceived pledges due within the horizon. Full value
-              (never weighted); received, restricted, and undated inflows are excluded.
-            </InfoTip>
-          </div>
-          <p className="mt-1 text-xs text-ink-2 max-w-xl">
-            How long the money lasts, three ways. Cash today, plus what&apos;s owed and pledged. Months
-            beyond the current month, at{" "}
-            <span className="text-ink-1 font-medium">{money(baseline)}/mo</span>{" "}
-            {baselineSource === "config" ? "burn baseline" : "trailing 3-month burn"}.
-          </p>
-        </div>
-        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${cashTone.chipBg} ${cashTone.chipText}`}>
-          {cashTone.label}
-        </span>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Tier
-          label="Cash runway"
-          months={fmtMonths(runway.cash.months)}
-          valueClass={cashTone.value}
-          base={runway.cash.base}
-          note="bank net of this month's remaining spend"
+    <section
+      aria-label="Runway three ways"
+      className={framed ? "bg-surface border border-hairline rounded-panel p-5" : ""}
+    >
+      <p className={`${TYPE.bodyMuted} mb-4`}>
+        How many months the money lasts beyond this month, at {per}. Pledges count at full value; received,
+        restricted and undated money is left out.
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <Figure
+          layout="card"
+          label="Cash only"
+          value={fmtMonths(runway.cash.months)}
+          source={runway.cash.months === null ? noBurn : `${money(runway.cash.base)}: bank balance less what is left to spend this month.`}
         />
-        <Tier
+        <Figure
+          layout="card"
           label="With pledges due"
-          months={fmtMonths(runway.due.months)}
-          valueClass="text-ink-1"
-          base={runway.due.base}
-          note={`+ unreceived pledges due by end of ${monthLabel}`}
+          value={fmtMonths(runway.due.months)}
+          source={runway.due.months === null ? noBurn : `${money(runway.due.base)}: adds pledges due by the end of ${monthLabel}.`}
         />
-        <Tier
-          label="Projected"
-          months={fmtMonths(runway.projected.months)}
-          valueClass="text-ink-1"
-          base={runway.projected.base}
-          note={`+ unreceived pledges due within ${horizon} months`}
-          trailing={
-            <div className="inline-flex rounded-control border border-hairline overflow-hidden mt-2">
+        <Figure
+          layout="card"
+          label={`Projected, ${horizon} months`}
+          value={fmtMonths(runway.projected.months)}
+          source={
+            runway.projected.months === null
+              ? noBurn
+              : `${money(runway.projected.base)}: adds pledges due within ${horizon} months.`
+          }
+          extra={
+            <div role="group" aria-label="Projection window" className="flex gap-1">
               {HORIZONS.map((h) => (
-                <button
+                <Button
                   key={h}
-                  type="button"
+                  size="sm"
+                  variant={h === horizon ? "strong" : "secondary"}
+                  aria-pressed={h === horizon}
                   onClick={() => setHorizon(h)}
-                  className={`px-2 py-0.5 text-xs font-medium transition-colors ${
-                    h === horizon ? "bg-orange text-white" : "text-ink-2 hover:bg-tile"
-                  }`}
                 >
-                  {h}m
-                </button>
+                  {h} months
+                </Button>
               ))}
             </div>
           }
         />
       </div>
 
-      <div className="mt-4 pt-4 border-t border-hairline space-y-1.5 text-xs text-ink-2">
+      <div className="mt-4 space-y-1.5 text-[13px] text-ink-2">
         <p>
-          <span className="text-status-watch-text">Projected ignores timing within the window</span>. A pledge
-          late in the horizon can paper over a gap earlier in it. Read it with the cash-flow chart below,
-          not on its own.
+          Projected ignores timing inside the window: a pledge late in it can hide a gap earlier on. Read it with the
+          cash chart, not on its own.
         </p>
-        {undated > 0 && (
+        {undated > 0 ? (
           <p>
-            <span className="text-status-watch-text">{undated} pledge{undated === 1 ? "" : "s"} missing a date</span>, not counted in any tier. Add expected dates on{" "}
-            <a href="/admin/finance/revenue" className="underline hover:text-ink-1">Revenue</a> to include them.
+            <span className="text-status-watch-text font-semibold">
+              {undated} pledge{undated === 1 ? "" : "s"} missing a date
+            </span>
+            , not counted in any tier. Add expected dates on{" "}
+            <a href="/admin/finance/forecast" className="underline underline-offset-2 hover:text-ink-1">
+              Forecast
+            </a>{" "}
+            to include them.
           </p>
-        )}
-        {restrictedInflows > 0 && (
+        ) : null}
+        {restrictedInflows > 0 ? (
           <p>
-            <span className="text-ink-1 font-medium">{money(restrictedInflows)} restricted</span>. Excluded
-            from every tier above. Restricted money can&apos;t cover general operating, so runway never
-            counts it.
+            <span className="text-ink-1 font-semibold">{money(restrictedInflows)} restricted</span> is left out of every
+            tier. Restricted money cannot cover general operating costs.
           </p>
-        )}
+        ) : null}
       </div>
     </section>
-  );
-}
-
-function Tier({
-  label,
-  months,
-  valueClass,
-  base,
-  note,
-  trailing,
-}: {
-  label: string;
-  months: string;
-  valueClass: string;
-  base: number;
-  note: string;
-  trailing?: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-panel border-hairline bg-tile p-4">
-      <div className={`${TYPE.cardLabel} mb-1`}>{label}</div>
-      <div className="flex items-baseline gap-1.5">
-        <span className={`font-display font-black text-4xl leading-none ${valueClass}`}>{months}</span>
-        <span className="text-xs text-ink-2">mo</span>
-      </div>
-      <div className="mt-2 text-xs text-ink-2">{note}</div>
-      <div className="mt-1 text-xs font-mono text-ink-2">{money(base)} runway base</div>
-      {trailing}
-    </div>
   );
 }

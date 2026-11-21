@@ -2,10 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext, ctxHasPermission } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
-import { startCampaign } from "@/lib/comms/queue";
+import { startCampaign, previewCampaign } from "@/lib/comms/queue";
 import { parseScheduleAt } from "@/lib/comms/queue-plan";
 
 const isUuid = (v: string) => /^[0-9a-f-]{36}$/i.test(v);
+
+// GET: the recipient-count preview the send and schedule confirm shows
+// before anything is queued. Same resolution as POST; read-only.
+export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+  const ctx = await getOrgContext();
+  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!isUuid(params.id)) return NextResponse.json({ error: "Bad id" }, { status: 400 });
+  const result = await previewCampaign(createServerSupabase(), ctx.orgId, params.id);
+  if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
+  return NextResponse.json(result);
+}
 
 // Send now or schedule a draft campaign (G2). This only queues: one pending
 // email_sends row per recipient. The every-minute worker

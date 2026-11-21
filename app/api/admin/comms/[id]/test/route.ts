@@ -39,9 +39,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   // falling back to a generic greeting when there's no segment (or no match).
   let sampleFirstName = "there";
   if (c.segment_id) {
-    const { data: seg } = await supabase.from("segments").select("definition").eq("id", c.segment_id).maybeSingle();
+    const { data: seg } = await supabase.from("segments").select("definition").eq("org_id", ctx.orgId).eq("id", c.segment_id).maybeSingle();
     if (seg) {
-      const { recipients } = await resolveRecipients(supabase, (seg.definition ?? {}) as Record<string, string>, ctx.orgId);
+      // A definition the resolver can't apply resolves to nobody, so the
+      // generic greeting stands in. The real send refuses it.
+      const { recipients } = await resolveRecipients(supabase, seg.definition, ctx.orgId);
       if (recipients[0]) sampleFirstName = recipients[0].firstName;
     }
   }

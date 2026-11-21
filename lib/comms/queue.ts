@@ -1,5 +1,5 @@
 import type { createServerSupabase } from "@/lib/supabase/server";
-import { resolveRecipients } from "@/lib/fundraising/segments";
+import { resolveRecipients, type ResolvedRecipients } from "@/lib/fundraising/segments";
 import { loadOrgCommsSettings, sendBlocker } from "./settings";
 import { transportFor } from "./transport";
 import { MAX_RECIPIENTS, spreadMessage } from "./queue-plan";
@@ -43,19 +43,9 @@ export async function startCampaign(
   const resolved = await transportFor(settings);
   if ("blocked" in resolved) return { ok: false, status: 409, error: resolved.blocked };
 
-  const { data: seg } = await supabase
-    .from("segments")
-    .select("definition")
-    .eq("org_id", orgId)
-    .eq("id", campaign.segment_id)
-    .maybeSingle();
-  if (!seg) return { ok: false, status: 400, error: "Segment not found" };
-
-  const { recipients, excluded } = await resolveRecipients(
-    supabase,
-    (seg.definition ?? {}) as Record<string, string>,
-    orgId
-  );
+  const seg = await resolveCampaignSegment(supabase, orgId, campaign.segment_id);
+  if (!seg.ok) return seg;
+  const { recipients, excluded } = seg;
   if (recipients.length === 0) return { ok: false, status: 400, error: "Segment has no emailable recipients" };
   if (recipients.length > MAX_RECIPIENTS) {
     return {
@@ -111,6 +101,49 @@ export async function startCampaign(
 
   const note = await capNote(supabase, orgId, recipients.length, settings.daily_send_cap, !!scheduledAt);
   return { ok: true, queued: recipients.length, scheduledAt: scheduledAt?.toISOString() ?? null, excluded, note };
+}
+
+/** Load a campaign's segment and resolve it (org-pinned). A definition the
+ *  resolver can't apply is a refusal, never a wider send. */
+async function resolveCampaignSegment(
+  supabase: SupabaseClient,
+  orgId: string,
+  segmentId: string
+): Promise<({ ok: true } & ResolvedRecipients) | { ok: false; status: number; error: string }> {
+  const { data: seg } = await supabase
+    .from("segments")
+    .select("definition")
+    .eq("org_id", orgId)
+    .eq("id", segmentId)
+    .maybeSingle();
+  if (!seg) return { ok: false, status: 400, error: "Segment not found" };
+  const resolved = await resolveRecipients(supabase, seg.definition, orgId);
+  if (resolved.error) return { ok: false, status: 400, error: resolved.error };
+  return { ok: true, ...resolved };
+}
+
+export type PreviewResult =
+  | { ok: true; recipients: number; excluded: ResolvedRecipients["excluded"]; maxRecipients: number }
+  | { ok: false; status: number; error: string };
+
+/** The recipient-count preview the send and schedule confirm shows: the same
+ *  resolution startCampaign queues, without queuing anything. */
+export async function previewCampaign(
+  supabase: SupabaseClient,
+  orgId: string,
+  campaignId: string
+): Promise<PreviewResult> {
+  const { data: campaign } = await supabase
+    .from("email_campaigns")
+    .select("id, segment_id")
+    .eq("org_id", orgId)
+    .eq("id", campaignId)
+    .maybeSingle();
+  if (!campaign) return { ok: false, status: 404, error: "Not found" };
+  if (!campaign.segment_id) return { ok: false, status: 400, error: "Attach a segment first" };
+  const seg = await resolveCampaignSegment(supabase, orgId, campaign.segment_id);
+  if (!seg.ok) return seg;
+  return { ok: true, recipients: seg.recipients.length, excluded: seg.excluded, maxRecipients: MAX_RECIPIENTS };
 }
 
 async function capNote(

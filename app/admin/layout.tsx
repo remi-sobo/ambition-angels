@@ -20,6 +20,7 @@ import { getShellTermLabels } from "@/lib/admin/terminology";
 import { resolveShellNav } from "@/lib/admin/v2shellNav";
 import { visibleSettingsSections } from "@/lib/admin/settingsSections";
 import { navPageIndex } from "@/lib/admin/navIndex";
+import { getRolePermissions } from "@/lib/admin/rolePermissions";
 
 export const metadata: Metadata = {
   title: {
@@ -109,7 +110,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     // B4: the shell resolves its labels through the V2 term map (an org's
     // own renames win; V2 names like People/Team are never clobbered by
     // generic registry nouns).
-    const nav = resolveShellNav(features, await getShellTermLabels());
+    // V4 A2: the nav also hides what the ROLE cannot open (matching the
+    // #593 server guard), e.g. Finance for staff without finance.read.
+    const perms = ctx ? await getRolePermissions(ctx.role) : null;
+    const nav = resolveShellNav(features, await getShellTermLabels(), perms);
     // V4 A2: global search's page list is generated from the same nav (and
     // the Settings sections this person can see), never a hand-kept list.
     const searchPages = navPageIndex(nav, visibleSettingsSections(ctx?.role ?? null, features));

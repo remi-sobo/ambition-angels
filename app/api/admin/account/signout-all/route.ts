@@ -19,6 +19,9 @@ export async function POST(req: NextRequest) {
     actorUserId: user.id,
   });
   const res = NextResponse.json({ ok: true });
+  // Wipe this browser's HTTP cache and the service worker's CacheStorage
+  // (audit finding 8); the client also calls clearAdminCaches().
+  res.headers.set("Clear-Site-Data", '"cache"');
   res.cookies.set("admin_auth", "", { maxAge: 0, path: "/" });
   res.cookies.set("admin_user", "", { maxAge: 0, path: "/" });
   return res;

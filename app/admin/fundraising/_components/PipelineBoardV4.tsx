@@ -306,7 +306,7 @@ function BoardCard({
         </span>
       </div>
 
-      <div className="flex items-end justify-between gap-2 mt-2 pt-2 border-t border-hairline">
+      <div className="mt-2 pt-2 border-t border-hairline">
         <div className="min-w-0">
           {opp.nextStep ? (
             <div className="text-ink-1 leading-snug">{opp.nextStep}</div>
@@ -323,18 +323,27 @@ function BoardCard({
             </div>
           ) : null}
         </div>
-        <span className="shrink-0 max-w-[45%]" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-          <OwnerChip
-            entity="opportunities"
-            id={opp.id}
-            ownerId={opp.ownerId}
-            fallbackText={opp.owner}
-            members={members}
-            meId={meId}
-            canEdit={canAssign}
-            variant="compact"
-          />
-        </span>
+      </div>
+
+      {/* The owner: the member (owner_id), else the old free-text owner. Its
+          own row so the name and the Change menu never crowd the next step.
+          Clicks stay off the drag handle. */}
+      <div
+        className="mt-2 flex items-center gap-1.5 min-w-0"
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <span className="text-xs text-ink-3 shrink-0" aria-hidden>Owner</span>
+        <OwnerChip
+          entity="opportunities"
+          id={opp.id}
+          ownerId={opp.ownerId}
+          fallbackText={opp.owner}
+          members={members}
+          meId={meId}
+          canEdit={canAssign}
+          variant="compact"
+        />
       </div>
 
       <div className="grid gap-1.5 mt-2.5">

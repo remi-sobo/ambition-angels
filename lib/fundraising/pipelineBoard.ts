@@ -2,6 +2,7 @@
 // totals, the one urgency signal per card, the built-in views and search.
 // Shared by the board and its tests.
 import { daysBetween, shortDay } from "./donorRecord";
+import { isMine, type Me } from "@/lib/admin/todayPanels";
 
 export type BoardOpp = {
   id: string;
@@ -12,7 +13,10 @@ export type BoardOpp = {
   expectedClose: string | null;
   nextStep: string | null;
   nextStepDue: string | null;
+  /** Free-text owner (a first-name handle), shown until ownerId is set. */
   owner: string | null;
+  /** The member who owns the ask (add_owner_id_opportunities.sql). */
+  ownerId?: string | null;
 };
 
 export type BoardStage = { key: string; label: string; stageType: "open" | "won" | "lost" | "on_hold" | string };
@@ -60,10 +64,11 @@ export function quarterEnd(today: string): string {
   return `${y}-${String(endMonth).padStart(2, "0")}-${String(last).padStart(2, "0")}`;
 }
 
-/** Built-in saved views. "Mine" needs an owner on each ask, which waits on
- *  the assignment migration; until then the views are about the work. */
+/** Built-in saved views. "My asks" is owner_id = me, falling back to the
+ *  free-text owner only where owner_id is null (Stage C's isMine). */
 export const BOARD_VIEWS = [
   { key: "all", label: "All asks" },
+  { key: "mine", label: "My asks" },
   { key: "open", label: "Open asks" },
   { key: "quarter", label: "Closing this quarter" },
 ] as const;
@@ -82,16 +87,24 @@ export const QUICK_FILTERS = [
 export type QuickKey = (typeof QUICK_FILTERS)[number]["key"];
 export const LARGE_ASK = 10000;
 
-/** Apply a saved view, then every active quick filter, then the search. */
+/** Is this card mine? owner_id first; the text owner only when it is null. */
+export function isMyAsk(opp: Pick<BoardOpp, "owner" | "ownerId">, me: Me | null | undefined): boolean {
+  if (!me) return false;
+  return isMine({ owner_id: opp.ownerId ?? null, owner_text: opp.owner }, me);
+}
+
+/** Apply a saved view, then every active quick filter, then the search.
+ *  "My asks" needs `me`; without it the view is empty, never everyone's. */
 export function filterBoard(
   opps: readonly BoardOpp[],
-  opts: { view: BoardViewKey; quick: readonly QuickKey[]; q: string },
+  opts: { view: BoardViewKey; quick: readonly QuickKey[]; q: string; me?: Me | null },
   stageTypeOf: (stage: string) => string,
   today: string,
 ): BoardOpp[] {
   const open = (o: BoardOpp) => stageTypeOf(o.stage) === "open";
   let out = [...opps];
   if (opts.view === "open") out = out.filter(open);
+  if (opts.view === "mine") out = out.filter((o) => isMyAsk(o, opts.me));
   if (opts.view === "quarter") {
     const start = quarterStart(today);
     const end = quarterEnd(today);
@@ -106,9 +119,9 @@ export function filterBoard(
 }
 
 /** The columns a view shows: "Open asks" and "Closing this quarter" hide
- *  the won, lost and on-hold columns. */
+ *  the won, lost and on-hold columns; "All asks" and "My asks" show all. */
 export function columnsForView<S extends BoardStage>(stages: readonly S[], view: BoardViewKey): S[] {
-  return view === "all" ? [...stages] : stages.filter((s) => s.stageType === "open");
+  return view === "all" || view === "mine" ? [...stages] : stages.filter((s) => s.stageType === "open");
 }
 
 /** The first day of today's calendar quarter. */
@@ -117,12 +130,13 @@ export function quarterStart(today: string): string {
   return `${today.slice(0, 4)}-${String(q * 3 + 1).padStart(2, "0")}-01`;
 }
 
-/** Case-insensitive match on the ask, donor, next step and owner text. */
-export function searchOpps(opps: readonly BoardOpp[], q: string): BoardOpp[] {
+/** Case-insensitive match on the ask, donor, next step and owner text
+ *  (`ownerName`: the resolved member name, when the caller has one). */
+export function searchOpps(opps: readonly (BoardOpp & { ownerName?: string | null })[], q: string): BoardOpp[] {
   const needle = q.trim().toLowerCase();
   if (!needle) return [...opps];
   return opps.filter((o) =>
-    [o.label, o.constituentName, o.nextStep, o.owner].some((f) => (f ?? "").toLowerCase().includes(needle)),
+    [o.label, o.constituentName, o.nextStep, o.owner, o.ownerName].some((f) => (f ?? "").toLowerCase().includes(needle)),
   );
 }
 

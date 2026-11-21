@@ -47,7 +47,7 @@ export default async function LookupPage({ searchParams }: { searchParams?: Sear
     ctxHasPermission(ctx, "program.read"),
     getEntitlements(ctx.orgId),
   ]);
-  const captureOn = hasFeature(ents, "ai.capture") && (await ctxHasPermission(ctx, "ops.write"));
+  const captureOn = hasFeature(ents, "ai.capture") && (await ctxHasPermission(ctx, "capture.use"));
   const supabase = createServerSupabase();
   const donorId = searchParams?.donor && /^[0-9a-f-]{36}$/i.test(searchParams.donor) ? searchParams.donor : null;
 

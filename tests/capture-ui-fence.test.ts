@@ -77,8 +77,9 @@ describe("Record entry points", () => {
 
   test("the layout computes captureEnabled from ai.capture and passes it to both", () => {
     expect(layout).toMatch(/const captureEnabled = !!ents && hasFeature\(ents, "ai\.capture"\);/);
-    // V4 Stage C: the entry points also need ops.write (captures RLS).
-    expect(layout).toMatch(/const canCapture = captureEnabled && !!perms\?\.includes\("ops\.write"\);/);
+    // Voice for every role: the entry points need capture.use (captures RLS,
+    // capture_use_permission.sql), which all five roles hold.
+    expect(layout).toMatch(/const canCapture = captureEnabled && !!perms\?\.includes\("capture\.use"\);/);
     expect(layout).toMatch(/<V2MobileBar [^>]*captureEnabled=\{canCapture\}/);
     expect(layout).toMatch(/<V2QuickAdd [^>]*captureEnabled=\{canCapture\}/);
   });

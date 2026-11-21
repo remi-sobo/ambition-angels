@@ -7,6 +7,7 @@ import { moveFiled, removeFiled, reviseFiled } from "@/lib/capture/fix";
 import { cardKindOf } from "@/lib/capture/cardKind";
 import { CARD_COLUMNS, type CardRow } from "@/lib/capture/apply";
 import { editStory, keepStory, markPledgeAdded, recordGiftFiled } from "@/lib/capture/v4Cards";
+import { sendToTeammate } from "@/lib/capture/handoff";
 import { requirePermission } from "@/lib/admin/requirePermission";
 import { getAdminUser } from "@/lib/admin/auth";
 import { bankFiler } from "@/lib/admin/comms/capture-server";
@@ -31,13 +32,16 @@ export const dynamic = "force-dynamic";
  *                                       else keep it as a held draft
  *   { action: 'edit', patch }           on a story: text, title, about, identifiable
  *
+ * Voice for every role: a card the caller cannot file (filingPermission)
+ *   { action: 'send_to_teammate' }      a note in the org owners' team inbox
+ *
  * Fix after confirm (C6), on a filed interaction or partner touch:
  *   { action: 'revise', patch: { kind?, occurred_at?, notes? } }
  *   { action: 'move', entity: { type, id } }
  *   { action: 'remove' } -> { card, removed: true }
  */
 
-const ACTIONS = ["confirm", "discard", "undo", "edit", "revise", "move", "remove", "record_gift", "pledge_added", "keep"] as const;
+const ACTIONS = ["confirm", "discard", "undo", "edit", "revise", "move", "remove", "record_gift", "pledge_added", "keep", "send_to_teammate"] as const;
 const FIX_ACTIONS: readonly Action[] = ["revise", "move", "remove"];
 type Action = (typeof ACTIONS)[number];
 
@@ -55,11 +59,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const action = body?.action as Action;
   if (!ACTIONS.includes(action)) {
     return NextResponse.json(
-      { error: "action must be confirm, discard, undo, edit, revise, move, remove, record_gift, pledge_added, or keep" },
+      { error: "action must be confirm, discard, undo, edit, revise, move, remove, record_gift, pledge_added, keep, or send_to_teammate" },
       { status: 400 },
     );
   }
   const hasPatch = body.patch !== undefined && body.patch !== null;
+
+  if (action === "send_to_teammate") {
+    if (hasPatch) return NextResponse.json({ error: "send_to_teammate takes no patch" }, { status: 400 });
+    const r = await sendToTeammate(await actionDeps(req, ent.ctx), params.id);
+    if (!r.ok) return NextResponse.json({ error: r.error, ...(r.card ? { card: r.card } : {}) }, { status: r.status });
+    return NextResponse.json({ card: r.card });
+  }
 
   if (action === "record_gift" || action === "pledge_added" || action === "keep") {
     if (hasPatch) return NextResponse.json({ error: `${action} takes no patch` }, { status: 400 });

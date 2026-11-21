@@ -16,7 +16,7 @@
  * Writes only capture_cards and captures, through the session client.
  */
 
-import { buildStoryFields, cardKindOf, filedElsewhere } from "./cardKind";
+import { buildStoryFields, cardKindOf, filedElsewhere, filingPermission } from "./cardKind";
 import { findGift } from "./apply/giftLink";
 import { CARD_COLUMNS, type CardRow } from "./apply/shared";
 import { settleCapture, type ActionDeps, type ActionResult } from "./confirm";
@@ -68,6 +68,9 @@ export async function markPledgeAdded(deps: ActionDeps, cardId: string): Promise
   if (cardKindOf(card) !== "gift" || card.payload.gift_type !== "pledge") return fail(409, "Only a pledge card can be marked added.", card);
   if (card.status === "confirmed" && filedElsewhere(card.payload)?.table === "pledges") return { ok: true, card };
   if (card.status !== "held") return fail(409, "This card was already handled.", card);
+  // Recording no longer needs ops.write (capture.use), so the destination's
+  // own permission is asked here, as recordGiftFiled does.
+  if (!(await deps.hasPermission(filingPermission(card)))) return fail(403, "You don't have permission to add pledges.", card);
   return markFiled(deps, card, { table: "pledges", manual: true });
 }
 
@@ -88,6 +91,10 @@ export async function keepStory(deps: ActionDeps, cardId: string, fileToBank?: S
   const already = filedElsewhere(card.payload)?.table;
   if (card.status === "confirmed" && (already === "capture_cards" || already === "stories")) return { ok: true, card };
   if (card.status !== "held") return fail(409, "This card was already handled.", card);
+  // Keeping a story (bank or held draft) needed ops.write under Stages C/D,
+  // when the capture tables asked for it; with capture.use for every role it
+  // is asked here instead. The bank path also needs comms.manage (the route).
+  if (!(await deps.hasPermission(filingPermission(card)))) return fail(403, "You don't have permission to keep stories.", card);
   if (fileToBank) {
     const p = card.payload;
     const filed = await fileToBank({

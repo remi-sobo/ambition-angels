@@ -5,14 +5,15 @@ import { decisionLine, dueLabel, isMine, panelsOf, rankMine, selectTodayPanels, 
 import { donorsNeedingMe } from "@/lib/admin/todayDonors";
 
 // V4 Stage C (spec §7): Today's panels are chosen by permission and filled by
-// assignment. Role permissions are the seed in create_bloomos_core.sql.
+// assignment. Role permissions are the seed in create_bloomos_core.sql, plus
+// capture.use for every role (capture_use_permission.sql).
 
 const ROLE: Record<string, string[]> = {
-  owner: ["org.manage", "members.manage", "program.read", "program.write", "fundraising.read", "fundraising.write", "finance.read", "finance.write", "ops.read", "ops.write", "board.read", "board.write", "compliance.read", "compliance.write", "reports.read"],
-  admin: ["org.manage", "members.manage", "program.read", "program.write", "fundraising.read", "fundraising.write", "finance.read", "finance.write", "ops.read", "ops.write", "board.read", "board.write", "compliance.read", "compliance.write", "reports.read"],
-  staff: ["program.read", "program.write", "fundraising.read", "fundraising.write", "finance.read", "ops.read", "ops.write", "compliance.read", "reports.read"],
-  finance: ["finance.read", "finance.write", "compliance.read", "reports.read"],
-  board_viewer: ["board.read", "reports.read", "metrics.read"],
+  owner: ["org.manage", "members.manage", "program.read", "program.write", "fundraising.read", "fundraising.write", "finance.read", "finance.write", "ops.read", "ops.write", "board.read", "board.write", "compliance.read", "compliance.write", "reports.read", "capture.use"],
+  admin: ["org.manage", "members.manage", "program.read", "program.write", "fundraising.read", "fundraising.write", "finance.read", "finance.write", "ops.read", "ops.write", "board.read", "board.write", "compliance.read", "compliance.write", "reports.read", "capture.use"],
+  staff: ["program.read", "program.write", "fundraising.read", "fundraising.write", "finance.read", "ops.read", "ops.write", "compliance.read", "reports.read", "capture.use"],
+  finance: ["finance.read", "finance.write", "compliance.read", "reports.read", "capture.use"],
+  board_viewer: ["board.read", "reports.read", "metrics.read", "capture.use"],
 };
 const ALL = ["modules.finance", "modules.fundraising", "modules.program", "ai.capture"];
 const layoutFor = (role: string, features = ALL) => selectTodayPanels({ permissions: ROLE[role], features });
@@ -31,12 +32,12 @@ describe("selectTodayPanels: by role", () => {
     expect(layoutFor("admin")).toEqual(layoutFor("owner"));
   });
 
-  test("finance: the books, money, my day; no Talk to log (captures need ops.write)", () => {
+  test("finance: the books, money, my day; Talk to log (voice for every role, capture.use)", () => {
     const l = layoutFor("finance");
     expect(l.kind).toBe("finance");
     expect(l.top).toEqual(["financeQueue", "money", "myDay"]);
     expect(l.below).toEqual(["mine"]);
-    expect(l.primary).toBeNull();
+    expect(l.primary).toBe("talk");
   });
 
   test("staff: their work, their donors and cohorts; never money, even with finance.read", () => {
@@ -48,13 +49,16 @@ describe("selectTodayPanels: by role", () => {
     expect(l.primary).toBe("talk");
   });
 
-  test("board viewer: a read-only summary, no money, no primary action", () => {
+  test("board viewer: a read-only summary, no money; Talk to log is the one thing they can add", () => {
     const l = layoutFor("board_viewer");
     expect(l.kind).toBe("readonly");
     expect(l.readOnly).toBe(true);
     expect(l.top).toEqual(["boardSummary"]);
     expect(l.below).toEqual([]);
-    expect(l.primary).toBeNull();
+    expect(l.primary).toBe("talk");
+    // Without ai.capture a board viewer gets no quick add (it needs ops.write).
+    expect(layoutFor("board_viewer", ["modules.finance"]).primary).toBeNull();
+    expect(layoutFor("finance", ["modules.finance"]).primary).toBeNull();
   });
 
   test("no money without the finance module, whatever the role", () => {

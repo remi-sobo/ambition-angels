@@ -17,7 +17,7 @@ async function loadRun(id: string, orgId: string) {
   // Org fence: service-role client bypasses RLS — scope to the caller's org.
   const { data } = await supabase.from("imports").select("*").eq("org_id", orgId).eq("id", id).maybeSingle();
   if (!data || (data as { org_id: string }).org_id !== orgId) return null;
-  return data as Record<string, unknown> & { id: string; status: string; mapping: { header?: string[]; map?: Record<string, string> } };
+  return data as Record<string, unknown> & { id: string; status: string; mapping: { header?: string[]; map?: Record<string, string>; cohort_id?: string | null } };
 }
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
@@ -60,7 +60,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: `Cannot remap a ${run.status} import` }, { status: 409 });
   }
 
-  const body = (await req.json().catch(() => null)) as { map?: unknown } | null;
+  const body = (await req.json().catch(() => null)) as { map?: unknown; cohort_id?: unknown } | null;
   if (!body?.map || typeof body.map !== "object" || Array.isArray(body.map)) {
     return NextResponse.json({ error: "map object is required" }, { status: 400 });
   }
@@ -69,9 +69,25 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (typeof target === "string" && target) map[col.slice(0, 200)] = target.slice(0, 100);
   }
 
+  // V4 Stage E: "put everyone in this cohort". A cohort id must be a cohort
+  // of the ACTIVE org; null clears it; absent leaves it as it was.
+  let cohortPatch: { cohort_id?: string | null } = {};
+  if (body.cohort_id === null || body.cohort_id === "") cohortPatch = { cohort_id: null };
+  else if (body.cohort_id !== undefined) {
+    if (!isUuid(body.cohort_id)) return NextResponse.json({ error: "Choose a cohort." }, { status: 400 });
+    const { data: cohort } = await getSupabaseAdmin()
+      .from("cohorts")
+      .select("id")
+      .eq("org_id", ctx.orgId)
+      .eq("id", body.cohort_id)
+      .maybeSingle();
+    if (!cohort) return NextResponse.json({ error: "That cohort is not in this organization." }, { status: 404 });
+    cohortPatch = { cohort_id: cohort.id as string };
+  }
+
   const { error } = await getSupabaseAdmin()
     .from("imports")
-    .update({ mapping: { ...(run.mapping ?? {}), map }, status: "mapping" })
+    .update({ mapping: { ...(run.mapping ?? {}), map, ...cohortPatch }, status: "mapping" })
     .eq("org_id", ctx.orgId)
     .eq("id", params.id);
   if (error) {

@@ -24,7 +24,7 @@ export type ImportEntityType = "student" | "constituent";
 // coercion; everything lands as a string except where noted. Custom fields
 // (the org's registry) extend this list at mapping time.
 
-export type SpineFieldKind = "text" | "email" | "phone" | "date" | "stage" | "enum";
+export type SpineFieldKind = "text" | "email" | "phone" | "date" | "stage" | "enum" | "cohort";
 
 export type SpineField = {
   key: string;
@@ -45,6 +45,9 @@ export const SPINE_FIELDS: Record<ImportEntityType, SpineField[]> = {
     { key: "location", label: "Location", kind: "text", maxLen: 120 },
     { key: "stage", label: "Stage", kind: "stage" },
     { key: "notes", label: "Notes", kind: "text", maxLen: 2000 },
+    // V4 Stage E: a cohort column enrolls each row in that cohort (matched by
+    // name in the org). It is never written to the participant row itself.
+    { key: "cohort", label: "Cohort", kind: "cohort" },
   ],
   constituent: [
     { key: "type", label: "Type", kind: "enum", options: ["person", "organization"] },
@@ -203,11 +206,25 @@ export type BuildContext = {
   defs: CustomFieldDef[];
   /** The org's stage keys (participants). Empty allowed if stage isn't mapped. */
   stageKeys: ReadonlySet<string>;
+  /** The org's open cohorts, lowercased name (and id) → id, for the cohort column. */
+  cohortsByName?: ReadonlyMap<string, string>;
+  /** "Put everyone in this cohort": used when a row's cohort cell is empty or unmapped. */
+  defaultCohortId?: string | null;
 };
 
 export type BuiltRow =
-  | { ok: true; spine: Record<string, unknown>; custom: Record<string, unknown> }
+  | { ok: true; spine: Record<string, unknown>; custom: Record<string, unknown>; cohortId?: string | null }
   | { ok: false; error: string };
+
+/** The cohort lookup the stage route builds: name and id, both lowercased. */
+export function cohortLookup(cohorts: { id: string; name: string }[]): Map<string, string> {
+  const m = new Map<string, string>();
+  for (const c of cohorts) {
+    m.set(c.id.toLowerCase(), c.id);
+    m.set(c.name.trim().replace(/\s+/g, " ").toLowerCase(), c.id);
+  }
+  return m;
+}
 
 /**
  * Validate one normalized row into insert-ready values. Spine fields follow
@@ -220,6 +237,7 @@ export function buildRow(normalized: Record<string, string>, ctx: BuildContext):
   const customByKey = new Map(ctx.defs.map((d) => [d.key, d]));
   const spine: Record<string, unknown> = {};
   const customRaw: Record<string, unknown> = {};
+  let cohortId: string | null = null;
 
   for (const [key, raw] of Object.entries(normalized)) {
     const sf = spineByKey.get(key);
@@ -248,6 +266,12 @@ export function buildRow(normalized: Record<string, string>, ctx: BuildContext):
             return { ok: false, error: `${sf.label}: "${raw}" is not one of this org's stages` };
           }
           spine[key] = raw;
+          break;
+        }
+        case "cohort": {
+          const id = ctx.cohortsByName?.get(raw.trim().replace(/\s+/g, " ").toLowerCase());
+          if (!id) return { ok: false, error: `${sf.label}: "${raw}" is not one of this org's open cohorts` };
+          cohortId = id;
           break;
         }
         case "enum": {
@@ -283,7 +307,10 @@ export function buildRow(normalized: Record<string, string>, ctx: BuildContext):
 
   const merged = validateAndMerge(ctx.defs, {}, customRaw, { requireAll: false });
   if (!merged.ok) return { ok: false, error: merged.error };
-  return { ok: true, spine, custom: merged.value };
+  // Only a row that joins a cohort carries cohortId (rows without one keep
+  // their old shape).
+  const joins = ctx.entity === "student" ? cohortId ?? ctx.defaultCohortId ?? null : null;
+  return joins ? { ok: true, spine, custom: merged.value, cohortId: joins } : { ok: true, spine, custom: merged.value };
 }
 
 // ── Fingerprint + dedupe verdict ────────────────────────────────────────────

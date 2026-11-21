@@ -38,7 +38,11 @@ vi.mock("@/lib/supabase/server", () => ({
       then: (resolve: (v: { data: unknown }) => void) => resolve({ data: state.rows }),
     };
     return {
-      auth: { getUser: async () => ({ data: { user: state.user } }) },
+      auth: {
+        getUser: async () => ({ data: { user: state.user } }),
+        // An aal2 access token: these sessions have finished two-step login.
+        getSession: async () => ({ data: { session: { access_token: "x.eyJhYWwiOiJhYWwyIn0.s" } } }),
+      },
       from: () => chain,
     };
   },

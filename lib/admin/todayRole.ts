@@ -1,6 +1,6 @@
 import "server-only";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { getDisplayNames } from "@/lib/admin/profile";
+import { listOrgMembers } from "@/lib/admin/owners-server";
 import { isMine, rankMine, weekStart, type Me, type MineItem } from "@/lib/admin/todayPanels";
 import { donorsNeedingMe, type DonorAsk, type DonorGift, type DonorNeed, type DonorRow } from "@/lib/admin/todayDonors";
 import { constituentName } from "@/lib/fundraising/display";
@@ -17,7 +17,8 @@ import { constituentName } from "@/lib/fundraising/display";
  * cohorts, programs; ops_tasks.assigned_to_id) wins; the older text owner
  * (ops_tasks.assigned_to, opportunities.owner, asks.owner) is the fallback
  * for rows that have no owner_id yet (isMine). The generated types do not
- * carry owner_id yet (Stage B2 adds it), so rows are typed locally here.
+ * carry owner_id on these joined selects, so rows are typed locally here;
+ * member names come from Stage B2's lib/admin/owners-server.ts.
  */
 
 type Sb = ReturnType<typeof createServerSupabase>;
@@ -203,8 +204,8 @@ export async function loadTeamWeek(supabase: Sb, orgId: string, me: Me, today: s
   const done = (doneRes.data ?? []) as T[];
   const stuck = (stuckRes.data ?? []) as T[];
   const notMine = (t: T) => !isMine({ owner_id: t.assigned_to_id, owner_text: t.assigned_to }, me);
-  const ids = Array.from(new Set([...done, ...stuck].map((t) => t.assigned_to_id).filter((x): x is string => !!x)));
-  const names = await getDisplayNames(ids);
+  // Member names from B2's owner helpers (the active org's memberships only).
+  const names: Record<string, string> = Object.fromEntries((await listOrgMembers(orgId)).map((m) => [m.userId, m.name]));
   const who = (t: T) => {
     const full = (t.assigned_to_id && names[t.assigned_to_id]) || t.assigned_to || "Unassigned";
     return full.split(/\s+/)[0].replace(/^./, (c) => c.toUpperCase());

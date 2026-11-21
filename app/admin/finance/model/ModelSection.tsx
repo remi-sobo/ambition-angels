@@ -2,13 +2,17 @@ import { unstable_cache } from "next/cache";
 import { loadFinanceModel } from "@/lib/google/finance-sheet";
 import { hasEntitlement } from "@/lib/admin/entitlements";
 import PageHeader from "../../_components/PageHeader";
+import PageShell from "../../_components/ui/PageShell";
+import Figure, { SummaryStrip } from "../../_components/ui/Figure";
+import Notice from "../../_components/ui/Notice";
+import Button from "../../_components/ui/Button";
 import { TYPE } from "@/lib/admin/typeScale";
 
 /**
  * /admin/finance/model — live KPIs from the founder finance model.
  *
  * Read-only. The full model lives in a Google Sheet that contains salaries,
- * so the page renders just the four headline metrics Remi cares about at the
+ * so the page renders just the four headline metrics the founder watches at the
  * top of every conversation. Anyone who needs the underlying math opens the
  * sheet directly via the "View full model" link.
  *
@@ -38,14 +42,14 @@ const loadFinanceModelHourly = unstable_cache(
 
 // USD with no cents — matches the rest of /admin/finance where headline
 // numbers are integer dollars and only transaction tables show cents.
-function money(n: number | null): string {
-  if (n === null) return "—";
+function money(n: number | null): string | null {
+  if (n === null) return null;
   const sign = n < 0 ? "−" : "";
   return `${sign}$${Math.round(Math.abs(n)).toLocaleString("en-US")}`;
 }
 
-function months(n: number | null): string {
-  if (n === null) return "—";
+function months(n: number | null): string | null {
+  if (n === null) return null;
   return `${n.toFixed(1)} mo`;
 }
 
@@ -62,145 +66,67 @@ export default async function ModelSection({ embedded = false }: { embedded?: bo
   if (!(await hasEntitlement("aa.finance_model"))) return null;
   const status = embedded ? await loadFinanceModelHourly() : await loadFinanceModel();
 
-  return (
-    <div className={embedded ? "space-y-4" : "max-w-5xl px-4 lg:px-8 py-6 lg:py-8 space-y-6"}>
-      {embedded ? (
+  // V4 Stage G2: the four numbers through the kit Figure, each sourced to
+  // the sheet with its fetch time; a blank cell reads "No data yet".
+  const body = (
+    <>
+      {status.kind === "not_configured" ? (
+        <Notice tone="warning" title="The founder model is not connected yet.">
+          Set these in the deployment settings: {status.missing.join(", ")}. The Apps Script source is in
+          scripts/finance-model-webhook.gs; paste it into the sheet&apos;s Apps Script editor.
+        </Notice>
+      ) : null}
+      {status.kind === "error" ? (
+        <Notice tone="danger" title="Could not reach the sheet.">
+          Usually the service account has no Viewer access, the spreadsheet id is wrong, or the private key is
+          escaped wrong. {status.message}
+        </Notice>
+      ) : null}
+      {status.kind === "ok" ? (
+        <>
+          <SummaryStrip label="Founder model figures">
+            {[
+              { label: "Cash balance", value: money(status.data.cashBalance) },
+              { label: "Monthly burn", value: status.data.monthlyBurn === null ? null : `${money(status.data.monthlyBurn)} a month` },
+              { label: "Runway", value: months(status.data.runwayMonths) },
+              { label: "Funding needed to survive", value: money(status.data.fundingNeeded) },
+            ].map((f) => (
+              <Figure
+                key={f.label}
+                label={f.label}
+                value={f.value}
+                source={`From the founder model sheet, fetched ${fmtTime(status.data.fetchedAt)}`}
+              />
+            ))}
+          </SummaryStrip>
+          <div className="flex justify-end">
+            <Button variant="secondary" size="sm" href={status.data.sheetUrl} target="_blank" rel="noreferrer">
+              View full model
+            </Button>
+          </div>
+        </>
+      ) : null}
+    </>
+  );
+
+  if (embedded) {
+    return (
+      <section className="space-y-3">
         <div>
           <h2 className={TYPE.cardTitle}>Model</h2>
-          <p className="text-xs text-ink-3 max-w-2xl">
-            The four numbers from the founder model sheet. Refreshes hourly.
-          </p>
+          <p className={`${TYPE.bodyMuted} mt-1`}>The four numbers from the founder model sheet. Refreshes hourly.</p>
         </div>
-      ) : (
-        <PageHeader
-          eyebrow="Live from the founder model"
-          title="Model"
-          subtitle={
-            <span className="block max-w-2xl">
-              The four numbers that decide whether we keep going. Pulled directly
-              from the source-of-truth Google Sheet. Refreshes hourly.
-            </span>
-          }
-        />
-      )}
-
-      {status.kind === "not_configured" && (
-        <NotConfigured missing={status.missing} />
-      )}
-      {status.kind === "error" && <ErrorPanel message={status.message} />}
-      {status.kind === "ok" && (
-        <>
-          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card
-              label="Cash balance"
-              value={money(status.data.cashBalance)}
-              accent="orange"
-            />
-            <Card
-              label="Monthly burn"
-              value={`${money(status.data.monthlyBurn)}/mo`}
-            />
-            <Card label="Runway" value={months(status.data.runwayMonths)} />
-            <Card
-              label="Funding needed to survive"
-              value={money(status.data.fundingNeeded)}
-              tone={
-                (status.data.fundingNeeded ?? 0) > 0 ? "warn" : undefined
-              }
-            />
-          </section>
-
-          <footer className="flex items-center justify-between gap-3 text-xs text-ink-2 pt-2">
-            <span>Last fetched {fmtTime(status.data.fetchedAt)}</span>
-            <a
-              href={status.data.sheetUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="font-semibold text-orange hover:text-orange-dark bg-orange/10 hover:bg-orange/15 border border-orange/30 px-3 py-2 rounded-control whitespace-nowrap"
-            >
-              View full model ↗
-            </a>
-          </footer>
-        </>
-      )}
-    </div>
-  );
-}
-
-// ── UI bits ──────────────────────────────────────────────────────────────
-
-function Card({
-  label,
-  value,
-  accent,
-  tone,
-}: {
-  label: string;
-  value: string;
-  accent?: "orange";
-  tone?: "warn";
-}) {
-  const valueClass =
-    tone === "warn"
-      ? "text-status-watch-text"
-      : accent === "orange"
-      ? "text-orange"
-      : "text-ink-1";
+        {body}
+      </section>
+    );
+  }
   return (
-    <div className="rounded-panel-lg border-hairline bg-surface p-5">
-      <div className={TYPE.cardLabel}>
-        {label}
-      </div>
-      <div
-        className={`mt-1 font-display font-black text-3xl leading-none ${valueClass}`}
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function NotConfigured({ missing }: { missing: string[] }) {
-  return (
-    <div className="rounded-panel border border-status-watch/40 bg-status-watch-bg p-6 space-y-3">
-      <div className="text-sm font-semibold text-status-watch-text">
-        Not configured yet
-      </div>
-      <p className="text-sm text-ink-1 leading-relaxed">
-        The Finance Model page is wired up but missing configuration. Once the
-        items below are set, this page will render live KPIs from the source
-        sheet on every visit (cached 1 hour).
-      </p>
-      <ul className="text-xs font-mono text-status-watch-text space-y-1 pl-4 list-disc">
-        {missing.map((m) => (
-          <li key={m}>{m}</li>
-        ))}
-      </ul>
-      <p className="text-xs text-ink-2 leading-relaxed">
-        Env vars belong in Vercel (Production + Preview + Development).
-        The Apps Script Web App source lives at{" "}
-        <code className="text-ink-1">scripts/finance-model-webhook.gs</code>. Paste it into the
-        sheet&apos;s Extensions → Apps Script editor.
-      </p>
-    </div>
-  );
-}
-
-function ErrorPanel({ message }: { message: string }) {
-  return (
-    <div className="rounded-panel border border-expense/30 bg-expense-bg p-6 space-y-2">
-      <div className="text-sm font-semibold text-expense">
-        Couldn&apos;t reach the sheet
-      </div>
-      <p className="text-sm text-ink-1 leading-relaxed">
-        Google Sheets API returned an error. The most likely causes are:
-        the service account hasn&apos;t been granted Viewer on the spreadsheet,
-        the spreadsheet ID is wrong, or the private key newline escaping is
-        off. Full error below.
-      </p>
-      <pre className="mt-2 text-xs text-expense font-mono bg-surface border border-hairline rounded-control p-3 overflow-x-auto whitespace-pre-wrap">
-        {message}
-      </pre>
-    </div>
+    <PageShell>
+      <PageHeader
+        title="Model"
+        subtitle="The four numbers that decide whether we keep going, from the source-of-truth Google Sheet. Refreshes hourly."
+      />
+      <div className="space-y-4">{body}</div>
+    </PageShell>
   );
 }

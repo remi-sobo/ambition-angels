@@ -1,16 +1,24 @@
 "use client";
 
-// Unified Revenue tab: one headline strip, one schedule (Committed vs Projected
-// with manual one-offs inline + editable), and a "Received this year" area —
-// replacing the old split of a read-only schedule above a parallel
-// manual-commitments ledger that didn't visibly relate.
+// Revenue (V4 Stage G2): one Figure strip with sources, the expected inflows
+// (committed and projected) and the money received this year on DataTable v2,
+// and the manual commitment form in the kit Drawer. Every write goes through
+// saveAction; money rule, nothing optimistic: the lists change after the
+// server confirms and the page re-reads.
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
-import { userMessage } from "@/lib/admin/errors";
 import type { RevenueScheduleRow } from "@/lib/finance/schedule";
 import { TYPE } from "@/lib/admin/typeScale";
+import Figure, { SummaryStrip } from "@/app/admin/_components/ui/Figure";
+import DataTable, { type DataTableColumn } from "@/app/admin/_components/ui/DataTable";
+import Drawer from "@/app/admin/_components/ui/Drawer";
+import Button from "@/app/admin/_components/ui/Button";
+import Badge, { type BadgeTone } from "@/app/admin/_components/ui/Badge";
+import Notice from "@/app/admin/_components/ui/Notice";
+import { CheckboxField, DateField, SelectField, TextField } from "@/app/admin/_components/ui/Field";
+import { useSaveAction } from "@/app/admin/_lib/useSaveAction";
 
 export type Commitment = {
   id: string;
@@ -29,31 +37,40 @@ export type Commitment = {
 export type ReceivedGift = { id: string; label: string; date: string; amount: number };
 
 const SOURCE_TYPES: Array<Commitment["source_type"]> = [
-  "foundation", "individual", "corporate", "government", "accelerator", "earned", "other",
+  "foundation",
+  "individual",
+  "corporate",
+  "government",
+  "accelerator",
+  "earned",
+  "other",
 ];
 
 const SOURCE_LABEL: Record<string, string> = {
-  pledge: "Pledge", grant: "Grant", pipeline: "Pipeline", commitment: "Commitment", manual: "Manual",
+  pledge: "Pledge",
+  grant: "Grant",
+  pipeline: "Pipeline",
+  commitment: "Commitment",
+  manual: "Manual",
 };
-const SOURCE_CHIP: Record<string, string> = {
-  pledge: "bg-revenue-bg text-revenue border-revenue/30",
-  grant: "bg-orange/15 text-orange border-orange/30",
-  pipeline: "bg-tile text-ink-2 border-hairline",
-  commitment: "bg-revenue-bg text-revenue border-revenue/30",
-  manual: "bg-tile text-ink-1 border-hairline",
+const SOURCE_TONE: Record<string, BadgeTone> = {
+  pledge: "success",
+  grant: "accent",
+  pipeline: "neutral",
+  commitment: "success",
+  manual: "neutral",
 };
+
+const SPEC = { sortable: [], defaultSort: null, pageSize: 1000 } as const;
 
 function money(n: number): string {
   if (Math.abs(n) >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
   if (Math.abs(n) >= 10_000) return `$${(n / 1_000).toFixed(0)}k`;
   return n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 }
-const monthLabel = (iso: string) =>
-  new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", year: "numeric" });
-const dayLabel = (iso: string) =>
-  new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
-
-const inputCls = "w-full bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1";
+const monthLabel = (iso: string) => new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", year: "numeric" });
+const dayLabel = (iso: string) => new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export default function RevenueManager({
   year,
@@ -72,6 +89,7 @@ export default function RevenueManager({
 }) {
   const router = useRouter();
   const confirm = useConfirm();
+  const save = useSaveAction();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -86,31 +104,30 @@ export default function RevenueManager({
   const [restricted, setRestricted] = useState(false);
   const [restrictedTo, setRestrictedTo] = useState("");
 
-  // ── Derived numbers (computed once) ────────────────────────────────────────
-  const committedRows = [...scheduleRows]
-    .filter((r) => r.confidence === "committed")
-    .sort((a, b) => (a.due_date < b.due_date ? -1 : 1));
-  const projectedRows = [...scheduleRows]
-    .filter((r) => r.confidence === "projected")
-    .sort((a, b) => (a.due_date < b.due_date ? -1 : 1));
+  const committedRows = [...scheduleRows].filter((r) => r.confidence === "committed").sort((a, b) => (a.due_date < b.due_date ? -1 : 1));
+  const projectedRows = [...scheduleRows].filter((r) => r.confidence === "projected").sort((a, b) => (a.due_date < b.due_date ? -1 : 1));
   const committedTotal = committedRows.reduce((s, r) => s + r.gross_amount, 0);
   const projectedTotal = projectedRows.reduce((s, r) => s + r.weighted_amount, 0);
 
   // Received money = the gifts ledger only (the single source of truth). A
   // "received" manual commitment duplicates its eventual gift, so it isn't
-  // counted or listed here — record landed money as a gift.
+  // counted or listed here: record landed money as a gift.
   const totalReceived = receivedGiftsTotal;
-
   const hard = totalReceived + committedTotal;
   const goalPct = goal > 0 ? (hard / goal) * 100 : 0;
   const goalPctProj = goal > 0 ? ((hard + projectedTotal) / goal) * 100 : 0;
 
-  // ── Manual-commitment CRUD (shared add/edit form) ──────────────────────────
   function resetForm() {
     setFormOpen(false);
     setEditingId(null);
-    setSrc("foundation"); setName(""); setAmount(""); setStat("secured");
-    setProb(""); setDate(""); setRestricted(false); setRestrictedTo("");
+    setSrc("foundation");
+    setName("");
+    setAmount("");
+    setStat("secured");
+    setProb("");
+    setDate("");
+    setRestricted(false);
+    setRestrictedTo("");
     setError(null);
   }
   function startAdd() {
@@ -130,7 +147,7 @@ export default function RevenueManager({
     setError(null);
     setFormOpen(true);
   }
-  async function save() {
+  async function submit() {
     if (!name.trim() || !amount) {
       setError("Source name and amount are required.");
       return;
@@ -140,25 +157,25 @@ export default function RevenueManager({
     const fields = {
       source_type: src,
       source_name: name.trim(),
-      amount: Number(amount.replace(/,/g, "")),
+      amount: Number(amount.replace(/[$,\s]/g, "")),
       status: stat,
       probability: prob === "" ? null : Number(prob) / 100,
       expected_date: date || null,
       restricted,
       restricted_to: restricted ? restrictedTo : null,
     };
-    const r = await fetch(
-      editingId ? `/api/admin/finance/revenue/${editingId}` : "/api/admin/finance/revenue",
-      {
+    const r = await save({
+      request: {
+        url: editingId ? `/api/admin/finance/revenue/${editingId}` : "/api/admin/finance/revenue",
         method: editingId ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editingId ? fields : { year, ...fields }),
-      }
-    );
-    const j = await r.json().catch(() => ({}));
+        body: editingId ? fields : { year, ...fields },
+      },
+      success: editingId ? "Commitment saved" : "Commitment added",
+      failure: false,
+    });
     setBusy(false);
     if (!r.ok) {
-      setError(userMessage(r, j));
+      setError(r.message);
       return;
     }
     resetForm();
@@ -173,233 +190,227 @@ export default function RevenueManager({
     });
     if (!ok) return;
     setBusy(true);
-    await fetch(`/api/admin/finance/revenue/${id}`, { method: "DELETE" });
+    const r = await save({ request: { url: `/api/admin/finance/revenue/${id}`, method: "DELETE" }, success: "Commitment deleted" });
     setBusy(false);
-    router.refresh();
+    if (r.ok) router.refresh();
   }
 
-  // A schedule row's editable manual commitment (by id), else null.
   const manualFor = (r: RevenueScheduleRow) =>
     r.source_type === "manual" ? commitments.find((c) => c.id === r.source_id) ?? null : null;
 
-  const scheduleRow = (r: RevenueScheduleRow) => {
-    const manual = manualFor(r);
-    return (
-      <li
-        key={`${r.source_type}-${r.source_id}`}
-        className="grid grid-cols-[5.5rem_1fr_auto] sm:grid-cols-[6rem_7rem_1fr_auto_auto] items-center gap-3 py-2 text-sm"
-      >
-        <span className="font-mono text-xs text-ink-2">{monthLabel(r.month)}</span>
-        <span className="hidden sm:block">
-          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${SOURCE_CHIP[r.source_type] ?? SOURCE_CHIP.manual}`}>
-            {SOURCE_LABEL[r.source_type] ?? r.source_type}
+  const scheduleColumns = (weighted: boolean): DataTableColumn<RevenueScheduleRow>[] => [
+    {
+      key: "label",
+      header: "Inflow",
+      card: "title",
+      render: (r) => (
+        <span className="min-w-0">
+          <span className="text-ink-1 font-semibold">{r.label}</span>
+          {r.needs_schedule ? (
+            <span className="block text-xs text-status-watch-text">Awarded but not split into payments: counted as one lump</span>
+          ) : null}
+          {r.restricted ? (
+            <span className="block text-xs text-status-watch-text">Restricted{r.restricted_to ? `: ${r.restricted_to}` : ""}</span>
+          ) : null}
+        </span>
+      ),
+    },
+    {
+      key: "type",
+      header: "Type",
+      render: (r) => <Badge tone={SOURCE_TONE[r.source_type] ?? "neutral"}>{SOURCE_LABEL[r.source_type] ?? r.source_type}</Badge>,
+    },
+    { key: "month", header: "Expected", className: "text-ink-2 tabular-nums whitespace-nowrap", render: (r) => monthLabel(r.month) },
+    {
+      key: "amount",
+      header: weighted ? "Weighted" : "Amount",
+      align: "right",
+      className: "tabular-nums",
+      render: (r) =>
+        weighted ? (
+          <span className="text-ink-2" title={`${money(r.gross_amount)} ask, weighted`}>
+            {money(r.weighted_amount)}
           </span>
-        </span>
-        <span className="min-w-0 truncate text-ink-1" title={r.label}>
-          {r.label}
-          {r.needs_schedule && (
-            <span className="ml-2 text-xs text-status-watch-text" title="Awarded but not tranched. Counted as a lump at the period start">
-              needs schedule
-            </span>
-          )}
-          {r.restricted && (
-            <span className="ml-2 text-xs text-status-watch-text">
-              restricted{r.restricted_to ? ` · ${r.restricted_to}` : ""}
-            </span>
-          )}
-        </span>
-        <span className="text-right font-mono [font-variant-numeric:tabular-nums]">
-          {r.confidence === "committed" ? (
-            <span className="text-ink-1">{money(r.gross_amount)}</span>
-          ) : (
-            <span className="text-ink-2" title={`${money(r.gross_amount)} ask, weighted`}>{money(r.weighted_amount)}</span>
-          )}
-        </span>
-        <span className="text-right whitespace-nowrap">
-          {manual ? (
-            <>
-              <button onClick={() => startEdit(manual)} className="text-xs text-ink-2 hover:text-orange mr-2">Edit</button>
-              <button onClick={() => void remove(manual.id)} className="text-xs text-ink-2 hover:text-expense">Delete</button>
-            </>
-          ) : (
-            <span className="text-xs text-ink-3">auto</span>
-          )}
-        </span>
-      </li>
-    );
-  };
+        ) : (
+          <span className="text-ink-1">{money(r.gross_amount)}</span>
+        ),
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      align: "right",
+      render: (r) => {
+        const manual = manualFor(r);
+        return manual ? (
+          <span className="inline-flex gap-1">
+            <Button size="sm" variant="quiet" onClick={() => startEdit(manual)} aria-label={`Edit ${r.label}`}>
+              Edit
+            </Button>
+            <Button size="sm" variant="quiet" onClick={() => void remove(manual.id)} disabled={busy} aria-label={`Delete ${r.label}`}>
+              Delete
+            </Button>
+          </span>
+        ) : (
+          <span className="text-xs text-ink-2">From {SOURCE_LABEL[r.source_type] ?? "its source"}</span>
+        );
+      },
+    },
+  ];
+
+  const giftColumns: DataTableColumn<ReceivedGift>[] = [
+    { key: "label", header: "From", card: "title", render: (g) => <span className="text-ink-1">{g.label}</span> },
+    { key: "date", header: "Date", className: "text-ink-2 tabular-nums", render: (g) => dayLabel(g.date) },
+    { key: "amount", header: "Amount", align: "right", className: "tabular-nums text-status-healthy-text font-semibold", render: (g) => money(g.amount) },
+  ];
 
   return (
     <div className="space-y-6">
-      {/* ── Headline strip ─────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Stat label="Received" value={money(totalReceived)} sub="landed this year" accent />
-        <Stat label="Committed" value={money(committedTotal)} sub="signed, not yet in" accent />
-        <Stat label="Projected" value={money(projectedTotal)} sub="pipeline, weighted" />
-        <Stat
-          label={`Toward ${money(goal)} goal`}
-          value={`${goalPct.toFixed(0)}%`}
-          sub={goal > 0 ? `${goalPctProj.toFixed(0)}% with pipeline` : "set a goal in Config"}
+      <SummaryStrip label="Revenue figures">
+        <Figure label="Received" value={money(totalReceived)} source={`From the gifts ledger, ${year} so far`} />
+        <Figure label="Committed" value={money(committedTotal)} source="Signed, not yet in the bank, at full value" />
+        <Figure label="Projected" value={money(projectedTotal)} source="Open pipeline, weighted by chance of closing" />
+        <Figure
+          label="Toward the goal"
+          value={goal > 0 ? `${goalPct.toFixed(0)}%` : null}
+          compare={goal > 0 ? `${goalPctProj.toFixed(0)}% with pipeline` : undefined}
+          source={goal > 0 ? `Received plus committed, of the ${money(goal)} goal` : "Set a fundraising goal in finance settings"}
         />
-      </div>
+      </SummaryStrip>
 
-      {goal > 0 && (
-        <div>
-          <div className="relative h-6 rounded-full bg-tile overflow-hidden">
-            <div className="absolute inset-y-0 left-0 bg-orange/25" style={{ width: `${Math.min(100, goalPctProj)}%` }} />
-            <div className="absolute inset-y-0 left-0 bg-orange" style={{ width: `${Math.min(100, goalPct)}%` }} />
+      <section aria-labelledby="inflows-title">
+        <div className="flex items-end justify-between gap-3 flex-wrap mb-3">
+          <div>
+            <h3 id="inflows-title" className={TYPE.cardTitle}>
+              Expected inflows
+            </h3>
+            <p className={`${TYPE.bodyMuted} mt-1 max-w-reading`}>
+              Dated money still to come. Grants, pledges and pipeline flow in on their own; rows marked Manual are one-offs
+              added here.
+            </p>
           </div>
-          <div className="mt-1.5 text-xs text-ink-2">
-            {money(hard)} received + committed toward {money(goal)} goal
-          </div>
+          <Button variant="secondary" onClick={startAdd}>
+            Add a commitment
+          </Button>
         </div>
-      )}
-
-      {/* ── Expected inflows ───────────────────────────────────────────── */}
-      <section className="rounded-panel-lg border-hairline bg-surface p-5 sm:p-6">
-        <div className="flex items-baseline justify-between gap-3 flex-wrap mb-1">
-          <h2 className={TYPE.sectionTitle}>Expected inflows</h2>
-          {!formOpen && (
-            <button onClick={startAdd} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors">
-              + Add commitment
-            </button>
-          )}
-        </div>
-        <p className="text-xs text-ink-2 mb-4">
-          Dated money still to come. Committed at full value, pipeline weighted by probability.
-          Grants, pledges and pipeline flow in automatically; rows tagged <b>Manual</b> are one-offs
-          you added here. Received money is below.
-        </p>
-
-        {formOpen && (
-          <div className="rounded-panel border-orange/40 bg-surface p-4 mb-5">
-            <div className={`${TYPE.cardLabel} mb-3`}>
-              {editingId ? "Edit commitment" : "New manual commitment"}
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <Field label="Source type">
-                <select value={src} onChange={(e) => setSrc(e.target.value as Commitment["source_type"])} className={inputCls}>
-                  {SOURCE_TYPES.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </Field>
-              <Field label="Source name">
-                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Mott Foundation" className={inputCls} />
-              </Field>
-              <Field label="Amount ($)">
-                <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" placeholder="50000" className={inputCls} />
-              </Field>
-              <Field label="Status">
-                <select value={stat} onChange={(e) => setStat(e.target.value as Commitment["status"])} className={inputCls}>
-                  <option value="secured">Secured</option>
-                  <option value="projected">Projected</option>
-                </select>
-              </Field>
-              <Field label="Probability % (projected only)">
-                <input value={prob} onChange={(e) => setProb(e.target.value)} inputMode="decimal" placeholder="50" className={inputCls} />
-              </Field>
-              <Field label="Expected date">
-                <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} />
-              </Field>
-              <Field label="Restricted?">
-                <div className="flex items-center gap-2">
-                  <input type="checkbox" checked={restricted} onChange={(e) => setRestricted(e.target.checked)} className="accent-orange" />
-                  {restricted && (
-                    <input value={restrictedTo} onChange={(e) => setRestrictedTo(e.target.value)} placeholder="restricted to…" className={inputCls} />
-                  )}
-                </div>
-              </Field>
-            </div>
-            {error && <p className="mt-3 text-xs text-expense">{error}</p>}
-            <div className="mt-4 flex items-center gap-2">
-              <button disabled={busy || !name || !amount} onClick={save}
-                className="px-3 py-1.5 rounded-control bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40">
-                {busy ? "Saving…" : editingId ? "Save changes" : "Add commitment"}
-              </button>
-              <button onClick={resetForm} className={`px-3 py-1.5 rounded-control text-ink-2 hover:${TYPE.body}`}>Cancel</button>
-            </div>
-          </div>
-        )}
-
         {committedRows.length === 0 && projectedRows.length === 0 ? (
-          <div className="text-sm text-ink-2 py-6 text-center border border-dashed border-hairline rounded-panel">
-            No dated inflows yet. Awarded grants, scheduled pledges, and weighted pipeline appear here
-            once they have an amount and a date.
-          </div>
+          <p className={`${TYPE.bodyMuted} bg-surface border border-hairline rounded-panel p-6`}>
+            No dated inflows yet. Awarded grants, scheduled pledges and weighted pipeline appear here once they have an amount and a
+            date.
+          </p>
         ) : (
-          <>
-            {committedRows.length > 0 && (
-              <>
-                <GroupHeader label="Committed" sub="grants, pledges & signed commitments. Full value" total={money(committedTotal)} />
-                <ul className="divide-y divide-hairline">{committedRows.map(scheduleRow)}</ul>
-              </>
-            )}
-            {projectedRows.length > 0 && (
-              <>
-                <GroupHeader label="Projected pipeline" sub="open asks, weighted by probability, not committed yet" total={money(projectedTotal)} muted />
-                <ul className="divide-y divide-hairline">{projectedRows.map(scheduleRow)}</ul>
-              </>
-            )}
-          </>
+          <div className="space-y-4">
+            {committedRows.length > 0 ? (
+              <div>
+                <p className="text-[13px] text-ink-2 mb-2">
+                  <span className="font-semibold text-ink-1">Committed, {money(committedTotal)}.</span> Grants, pledges and signed
+                  commitments at full value.
+                </p>
+                <DataTable
+                  label="Committed inflows"
+                  noun={{ one: "inflow", many: "inflows" }}
+                  columns={scheduleColumns(false)}
+                  data={{ rows: committedRows, total: committedRows.length, page: 0, pageSize: SPEC.pageSize }}
+                  getRowId={(r) => `${r.source_type}-${r.source_id}-${r.month}`}
+                  getRowLabel={(r) => r.label}
+                  spec={SPEC}
+                  state={{ page: 0, sort: null }}
+                  baseHref="/admin/finance/forecast"
+                />
+              </div>
+            ) : null}
+            {projectedRows.length > 0 ? (
+              <div>
+                <p className="text-[13px] text-ink-2 mb-2">
+                  <span className="font-semibold text-ink-1">Projected pipeline, {money(projectedTotal)}.</span> Open asks,
+                  weighted by their chance of closing, not committed yet.
+                </p>
+                <DataTable
+                  label="Projected pipeline"
+                  noun={{ one: "ask", many: "asks" }}
+                  columns={scheduleColumns(true)}
+                  data={{ rows: projectedRows, total: projectedRows.length, page: 0, pageSize: SPEC.pageSize }}
+                  getRowId={(r) => `${r.source_type}-${r.source_id}-${r.month}`}
+                  getRowLabel={(r) => r.label}
+                  spec={SPEC}
+                  state={{ page: 0, sort: null }}
+                  baseHref="/admin/finance/forecast"
+                />
+              </div>
+            ) : null}
+          </div>
         )}
       </section>
 
-      {/* ── Received this year ─────────────────────────────────────────── */}
-      <section className="rounded-panel-lg border-hairline bg-surface p-5 sm:p-6">
-        <div className="flex items-baseline justify-between gap-3 mb-1">
-          <h2 className={TYPE.sectionTitle}>Received this year</h2>
-          <span className="text-xs font-mono text-revenue [font-variant-numeric:tabular-nums]">{money(totalReceived)}</span>
-        </div>
-        <p className="text-xs text-ink-2 mb-4">
-          Money that has landed in {year}. Gifts from the ledger (the canonical record of
-          received money; HubSpot closed-won and manual gifts both land here).
+      <section aria-labelledby="received-title">
+        <h3 id="received-title" className={TYPE.cardTitle}>
+          Received this year
+        </h3>
+        <p className={`${TYPE.bodyMuted} mt-1 mb-3`}>
+          Money that has landed in {year}, from the gifts ledger (HubSpot closed-won and manual gifts both land there).
         </p>
-        {receivedGifts.length === 0 ? (
-          <div className="text-sm text-ink-2 py-6 text-center border border-dashed border-hairline rounded-panel">
-            Nothing received yet this year.
-          </div>
-        ) : (
-          <ul className="divide-y divide-hairline">
-            {receivedGifts.map((g) => (
-              <li key={`gift-${g.id}`} className="grid grid-cols-[5rem_1fr_auto] items-center gap-3 py-2 text-sm">
-                <span className="font-mono text-xs text-ink-2">{dayLabel(g.date)}</span>
-                <span className="min-w-0 truncate text-ink-1" title={g.label}>{g.label}</span>
-                <span className="text-right font-mono text-revenue [font-variant-numeric:tabular-nums]">{money(g.amount)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
+        <DataTable
+          label={`Received in ${year}`}
+          noun={{ one: "gift", many: "gifts" }}
+          columns={giftColumns}
+          data={{ rows: receivedGifts, total: receivedGifts.length, page: 0, pageSize: SPEC.pageSize }}
+          getRowId={(g) => g.id}
+          getRowLabel={(g) => g.label}
+          spec={SPEC}
+          state={{ page: 0, sort: null }}
+          baseHref="/admin/finance/forecast"
+          emptyMessage="Nothing received yet this year."
+        />
       </section>
-    </div>
-  );
-}
 
-function Stat({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: boolean }) {
-  return (
-    <div className="rounded-panel border-hairline bg-surface p-3">
-      <div className={`${TYPE.cardLabel} mb-1`}>{label}</div>
-      <div className={`text-lg font-medium ${accent ? "text-orange" : "text-ink-1"}`}>{value}</div>
-      {sub && <div className="mt-0.5 text-xs text-ink-2">{sub}</div>}
+      <Drawer
+        open={formOpen}
+        onClose={resetForm}
+        title={editingId ? "Edit commitment" : "Add a commitment"}
+        description="A one-off inflow that is not a grant, pledge or open ask. It counts toward runway once it has a date."
+        footer={
+          <>
+            <Button variant="secondary" onClick={resetForm} disabled={busy}>
+              Cancel
+            </Button>
+            <Button onClick={submit} disabled={!name || !amount} loading={busy}>
+              {busy ? "Saving" : editingId ? "Save changes" : "Add commitment"}
+            </Button>
+          </>
+        }
+      >
+        <div className="grid gap-4">
+          {error ? (
+            <Notice tone="danger" title="Not saved.">
+              {error}
+            </Notice>
+          ) : null}
+          <TextField label="Source name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Harlow Family Fund" />
+          <TextField label="Amount" required value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" placeholder="50000" />
+          <DateField label="Expected date" value={date} onChange={(e) => setDate(e.target.value)} hint="Undated money is left out of runway." />
+          <SelectField
+            label="Status"
+            value={stat}
+            onChange={(e) => setStat(e.target.value as Commitment["status"])}
+            options={[
+              { value: "secured", label: "Secured" },
+              { value: "projected", label: "Projected" },
+            ]}
+          />
+          {stat === "projected" ? (
+            <TextField label="Chance it closes (%)" value={prob} onChange={(e) => setProb(e.target.value)} inputMode="decimal" placeholder="50" />
+          ) : null}
+          <SelectField
+            label="Source type"
+            value={src}
+            onChange={(e) => setSrc(e.target.value as Commitment["source_type"])}
+            options={SOURCE_TYPES.map((s) => ({ value: s, label: cap(s) }))}
+          />
+          <CheckboxField label="Restricted to a purpose" checked={restricted} onChange={(e) => setRestricted(e.target.checked)} />
+          {restricted ? (
+            <TextField label="Restricted to" value={restrictedTo} onChange={(e) => setRestrictedTo(e.target.value)} placeholder="Summer program" />
+          ) : null}
+        </div>
+      </Drawer>
     </div>
-  );
-}
-
-function GroupHeader({ label, sub, total, muted }: { label: string; sub: string; total: string; muted?: boolean }) {
-  return (
-    <div className="flex items-baseline justify-between gap-3 mt-5 mb-1 pt-3 border-t border-hairline first:mt-0 first:pt-0 first:border-t-0">
-      <div>
-        <span className={`${TYPE.sectionHeader} ${muted ? "" : "!text-ink-1"}`}>{label}</span>
-        <span className="ml-2 text-xs text-ink-2">{sub}</span>
-      </div>
-      <span className={`text-xs font-mono [font-variant-numeric:tabular-nums] ${muted ? "text-ink-2" : "text-ink-1"}`}>{total}</span>
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className={`block ${TYPE.fieldLabel} mb-1`}>{label}</span>
-      {children}
-    </label>
   );
 }

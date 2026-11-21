@@ -524,7 +524,7 @@ export default async function DonorProfile({
         actions: (
           <>
             <EditGiftButton giftId={g.id} amountLabel={money(g.amount)} />
-            <GiftRowActions id={g.id} />
+            <GiftRowActions id={g.id} amountLabel={money(g.amount)} externalSource={g.external_source} />
           </>
         ),
         date: shortDay(g.gift_date, today),

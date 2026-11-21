@@ -77,8 +77,10 @@ describe("Record entry points", () => {
 
   test("the layout computes captureEnabled from ai.capture and passes it to both", () => {
     expect(layout).toMatch(/const captureEnabled = !!ents && hasFeature\(ents, "ai\.capture"\);/);
-    expect(layout).toMatch(/<V2MobileBar [^>]*captureEnabled=\{captureEnabled\}/);
-    expect(layout).toMatch(/<V2QuickAdd [^>]*captureEnabled=\{captureEnabled\}/);
+    // V4 Stage C: the entry points also need ops.write (captures RLS).
+    expect(layout).toMatch(/const canCapture = captureEnabled && !!perms\?\.includes\("ops\.write"\);/);
+    expect(layout).toMatch(/<V2MobileBar [^>]*captureEnabled=\{canCapture\}/);
+    expect(layout).toMatch(/<V2QuickAdd [^>]*captureEnabled=\{canCapture\}/);
   });
 
   test("mobile (V4 A2, spec §8): Capture IS the bar's centre button with ai.capture; without it the ＋ sheet stays", () => {
@@ -98,8 +100,8 @@ describe("Record entry points", () => {
     // The layout mounts exactly one launcher behind ai.capture; the sidebar's
     // Talk to log button and the Quick Add chip both open it, so desktop has
     // one Capture modal rather than one per entry point.
-    expect(layout).toMatch(/<CaptureLauncher enabled=\{captureEnabled\} \/>/);
-    expect(layout).toMatch(/<V2Sidebar[\s\S]*?captureEnabled=\{captureEnabled\}/);
+    expect(layout).toMatch(/<CaptureLauncher enabled=\{canCapture\} \/>/);
+    expect(layout).toMatch(/<V2Sidebar[\s\S]*?captureEnabled=\{canCapture\}/);
     const sidebar = read("app/admin/_components/v2/V2Sidebar.tsx");
     expect(sidebar).toMatch(/captureEnabled && \(\s*<button[\s\S]*?openCapture\(\)[\s\S]*?Talk to log/);
     expect(quick).toMatch(/captureEnabled && \(\s*<Chip label="Talk to log" onClick=\{act\(\(\) => openCapture\(\)\)\}/);

@@ -114,6 +114,11 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     // V4 A2: the nav also hides what the ROLE cannot open (matching the
     // #593 server guard), e.g. Finance for staff without finance.read.
     const perms = ctx ? await getRolePermissions(ctx.role) : null;
+    // V4 Stage C: a recording is saved to captures, whose RLS needs ops.write,
+    // so the Capture entry points also need the role (finance and board
+    // viewers get none). The entitlement is still the gate; the API is the
+    // boundary (402/403).
+    const canCapture = captureEnabled && !!perms?.includes("ops.write");
     const nav = resolveShellNav(features, await getShellTermLabels(), perms);
     // V4 A2: global search's page list is generated from the same nav (and
     // the Settings sections this person can see), never a hand-kept list.
@@ -138,7 +143,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           orgName={ctx?.orgName ?? null}
           orgs={orgs}
           activeOrgId={orgId}
-          captureEnabled={captureEnabled}
+          captureEnabled={canCapture}
         />
         <ReedLauncherProvider enabled={reedEnabled}>
           <RailEntityProvider>
@@ -167,13 +172,13 @@ export default async function AdminLayout({ children }: { children: ReactNode })
               More, derived from the same resolved nav as the sidebar. The
               centre is voice Capture behind ai.capture (V4 §8), else the ＋
               quick-add sheet. */}
-          <V2MobileBar nav={nav} currentUser={user} reedEnabled={reedEnabled} captureEnabled={captureEnabled} />
+          <V2MobileBar nav={nav} currentUser={user} reedEnabled={reedEnabled} captureEnabled={canCapture} />
           {/* B6: the shell-level Quick Add — capture, report-an-issue, and
               the search overlay, at every desktop width (V2 has no rail). */}
-          <V2QuickAdd currentUser={user} reedEnabled={reedEnabled} captureEnabled={captureEnabled} />
+          <V2QuickAdd currentUser={user} reedEnabled={reedEnabled} captureEnabled={canCapture} />
           {/* V4 §8: the one desktop Capture modal, opened by the sidebar's
               Talk to log button, Today, and record pages. */}
-          <CaptureLauncher enabled={captureEnabled} />
+          <CaptureLauncher enabled={canCapture} />
         </ReedLauncherProvider>
         <GlobalSearch pages={searchPages} />
       </div>

@@ -64,7 +64,7 @@ export function donorsNeedingMe(
     if (unthanked) {
       out.push({
         id: d.id, name: d.name, reason: "unthanked", urgent: true, href, action: "Thank",
-        why: `${usd(unthanked.amount)} gift on ${unthanked.gift_date} is not thanked yet`,
+        why: `${usd(unthanked.amount)} gift on ${MONTHS[Number(unthanked.gift_date.slice(5, 7)) - 1]} ${Number(unthanked.gift_date.slice(8, 10))} is not thanked yet`,
       });
       continue;
     }

@@ -6,7 +6,8 @@ import PageHeader from "../../_components/PageHeader";
 import OrganizationForm from "./_components/OrganizationForm";
 import { getEntitlements } from "@/lib/admin/entitlements";
 import { visibleSettingsSections } from "@/lib/admin/settingsSections";
-import { identityComplete, readOrgIdentity } from "@/lib/admin/orgIdentity";
+import { checklistDismissed, identityComplete, readOrgIdentity } from "@/lib/admin/orgIdentity";
+import { ShowChecklistAgain } from "../../today/_components/SetupChecklistControls";
 import { loadFiscalStartMonth, loadOrgRow } from "@/lib/admin/orgSettings-server";
 
 // V4 Stage F: Settings → Organization (spec §11 "Organization identity").
@@ -46,6 +47,13 @@ export default async function Page() {
           fiscalMonth,
         }}
       />
+
+      {checklistDismissed(org?.settings ?? null) ? (
+        <div className="rounded-panel border border-hairline bg-surface px-5 py-4 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-ink-2">The setup list on Home is hidden.</p>
+          <ShowChecklistAgain />
+        </div>
+      ) : null}
 
       {links.length > 0 ? (
         <ul className="rounded-panel border border-hairline bg-surface divide-y divide-outline">

@@ -12,6 +12,9 @@ import {
   BulkAttributeForm,
 } from "./_components/CampaignControls";
 import NewGiftTableForm from "./_components/GiftTableControls";
+import Link from "next/link";
+import { NewStrategyButton } from "../plan/_components/PlanControls";
+import { TYPE } from "@/lib/admin/typeScale";
 import GiftTablesSection, {
   type GiftTableRow,
   type GiftLevelRow,
@@ -42,7 +45,8 @@ export default async function CampaignsPage({
     );
   }
   const supabase = createServerSupabase();
-  const [campaignsRes, appealsRes, giftsRes, unattributedRes, giftTablesRes, giftLevelsRes] = await Promise.all([
+  const planYear = new Date().getFullYear();
+  const [campaignsRes, appealsRes, giftsRes, unattributedRes, giftTablesRes, giftLevelsRes, strategiesRes] = await Promise.all([
     supabase
       .from("campaigns")
       .select("id, name, goal, starts_on, ends_on")
@@ -83,7 +87,20 @@ export default async function CampaignsPage({
       .select("gift_table_id, amount, cadence, term_years, gifts_needed, prospects_per_gift")
       .eq("org_id", ctx.orgId)
       .limit(1000),
+    // Plan strategies (the old Fundraising Plan list 308s here): each links
+    // to its detail page, where asks, grants and campaigns are filed under it.
+    supabase
+      .from("fr_plan_strategies")
+      .select("id, plan_year, name, goal, owner")
+      .eq("org_id", ctx.orgId)
+      .gte("plan_year", planYear - 1)
+      .order("plan_year", { ascending: false })
+      .order("name")
+      .limit(50),
   ]);
+  const strategies = (strategiesRes.data ?? []) as Array<{
+    id: string; plan_year: number; name: string; goal: number | null; owner: string | null;
+  }>;
 
   const campaigns = (campaignsRes.data ?? []) as Array<{
     id: string; name: string; goal: number | null; starts_on: string | null; ends_on: string | null;
@@ -205,6 +222,36 @@ export default async function CampaignsPage({
           />
         )}
       </div>
+
+      <section id="plan" aria-labelledby="plan-heading" className="mt-8 bg-surface border-hairline rounded-panel p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <div>
+            <h2 id="plan-heading" className={TYPE.sectionHeader}>
+              Plan strategies
+            </h2>
+            <p className="text-xs text-ink-3 mt-0.5">The year&apos;s fundraising plan, one strategy at a time. Open one to file asks, grants and campaigns under it.</p>
+          </div>
+          <NewStrategyButton planYear={planYear} />
+        </div>
+        {strategies.length === 0 ? (
+          <p className="text-sm text-ink-3">No strategies for {planYear - 1} or {planYear} yet.</p>
+        ) : (
+          <ul className="divide-y divide-hairline">
+            {strategies.map((s) => (
+              <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
+                <Link href={`/admin/fundraising/plan/${s.id}`} className="font-medium text-ink-1 hover:text-orange transition-colors">
+                  {s.name}
+                </Link>
+                <span className="text-xs text-ink-3 [font-variant-numeric:tabular-nums]">
+                  {s.plan_year}
+                  {s.goal ? ` · goal ${money(Number(s.goal))}` : ""}
+                  {s.owner ? ` · ${s.owner}` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

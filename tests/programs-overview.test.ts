@@ -62,9 +62,9 @@ describe("P2 structural pins", () => {
     expect(src).toMatch(/getProgramTerms/);
   });
 
-  test("the V1 /admin/program placeholder is untouched behind its 308", () => {
-    const v1 = readFileSync(join(app, "admin", "program", "page.tsx"), "utf8");
-    expect(v1).toMatch(/Partners, teens, outcomes\./);
-    expect(v1).not.toMatch(/supabase/i);
+  // V4 B2: the dead /admin/program placeholder is deleted; its 308 stays.
+  test("/admin/program still 308s to the Overview (the placeholder page is gone)", () => {
+    const config = readFileSync(join(__dirname, "..", "next.config.mjs"), "utf8");
+    expect(config).toMatch(/source: "\/admin\/program", destination: "\/admin\/programs\/overview", permanent: true/);
   });
 });

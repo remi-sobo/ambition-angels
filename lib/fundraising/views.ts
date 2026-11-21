@@ -12,6 +12,7 @@
  */
 
 export type BuiltInView =
+  | "mine"
   | "all"
   | "donors"
   | "prospects"
@@ -21,6 +22,12 @@ export type BuiltInView =
   | "volunteers";
 
 export const BUILT_IN_VIEWS: readonly { value: BuiltInView; label: string }[] = [
+  // V4 B2 (spec §5: saved views as tabs, "mine" first): constituents whose
+  // owner_id is the person looking. An id set like Volunteers, because
+  // v_fr_rollups does not carry owner_id. Relative to the viewer, so Comms
+  // refuses it (lib/fundraising/segments.ts): an email must not depend on who
+  // presses Send.
+  { value: "mine", label: "My donors" },
   { value: "all", label: "All" },
   { value: "donors", label: "Donors" },
   { value: "prospects", label: "Prospects" },
@@ -75,7 +82,7 @@ export type RollupRow = {
  */
 export function matchesView(
   row: RollupRow,
-  view: Exclude<BuiltInView, "prospects" | "promoted" | "volunteers">,
+  view: Exclude<BuiltInView, "prospects" | "promoted" | "volunteers" | "mine">,
   todayISO: string,
 ): boolean {
   if (row.archived_at !== null) return false; // archived hidden everywhere

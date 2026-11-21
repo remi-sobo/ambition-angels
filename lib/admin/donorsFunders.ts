@@ -43,6 +43,8 @@ export type DfRow = {
   next_step: string | null;
   next_step_due: string | null;
   recurring_active: boolean;
+  /** V4 B2: read from constituents (v_fr_rollups does not carry it). */
+  owner_id: string | null;
 };
 
 export type ProspectRow = {
@@ -170,6 +172,27 @@ export async function getDonorsFunders(
     }
   }
 
+  // My donors (V4 B2): the constituents the viewer owns. Same id-set
+  // mechanism as Volunteers (v_fr_rollups has no owner_id, and B2's one
+  // migration added the column only). An empty set short-circuits.
+  let mineIds: string[] | null = null;
+  if (view === "mine") {
+    const { data: mineRows } = await supabase
+      .from("constituents")
+      .select("id")
+      .eq("org_id", ctx.orgId)
+      .eq("owner_id", ctx.userId)
+      .limit(2000);
+    mineIds = ((mineRows ?? []) as { id: string }[]).map((r) => r.id);
+    if (mineIds.length === 0) {
+      const savedViewsRes = await savedViewsQ;
+      return {
+        view, rows: [], prospects: [], total: 0, page, pageSize: PAGE_SIZE,
+        savedViews: (savedViewsRes.data ?? []) as SavedView[], error: null,
+      };
+    }
+  }
+
   let q = supabase
     .from("v_fr_rollups")
     .select(
@@ -179,6 +202,7 @@ export async function getDonorsFunders(
     .eq("org_id", ctx.orgId);
   if (promotedIds) q = q.in("id", promotedIds);
   if (volunteerIds) q = q.in("id", volunteerIds);
+  if (mineIds) q = q.in("id", mineIds);
   // Archived, view, type, min_total and q: the one shared implementation
   // (also used by the Comms recipient resolver), equivalent to matchesView().
   q = applyRollupFilters(q, def, todayISO);
@@ -188,11 +212,27 @@ export async function getDonorsFunders(
     savedViewsQ,
   ]);
 
+  // The page's owners, in one read pinned to the active org.
+  const pageRows = (data ?? []) as Omit<DfRow, "owner_id">[];
+  const owners = new Map<string, string | null>();
+  if (pageRows.length > 0) {
+    const { data: ownerRows } = await supabase
+      .from("constituents")
+      .select("id, owner_id")
+      .eq("org_id", ctx.orgId)
+      .in(
+        "id",
+        pageRows.map((r) => r.id),
+      );
+    for (const o of (ownerRows ?? []) as { id: string; owner_id: string | null }[]) owners.set(o.id, o.owner_id);
+  }
+
   return {
     view,
-    rows: ((data ?? []) as DfRow[]).map((r) => ({
+    rows: pageRows.map((r) => ({
       ...r,
       lifetime_total: Number(r.lifetime_total),
+      owner_id: owners.get(r.id) ?? null,
     })),
     prospects: [],
     total: count ?? 0,

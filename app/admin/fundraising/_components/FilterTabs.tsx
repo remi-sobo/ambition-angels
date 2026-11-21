@@ -14,6 +14,7 @@ export default function FilterTabs({
   extraParams,
   size = "md",
   wrap = false,
+  hash,
 }: {
   options: FilterOption[];
   current: string;
@@ -27,6 +28,8 @@ export default function FilterTabs({
   // Without it a strip wider than the container clips its trailing options,
   // which makes them unclickable (the documents type strip, 13 options).
   wrap?: boolean;
+  /** An anchor to land on (e.g. "ask-log" for a section lower on the page). */
+  hash?: string;
 }) {
   const pad = size === "sm" ? "px-2.5 py-1 text-xs" : "px-3 py-1.5 text-xs";
   return (
@@ -43,7 +46,8 @@ export default function FilterTabs({
         return (
           <Link
             key={o.value}
-            href={`${basePath}?${params.toString()}`}
+            href={`${basePath}?${params.toString()}${hash ? `#${hash}` : ""}`}
+            aria-current={active ? "true" : undefined}
             className={`shrink-0 whitespace-nowrap font-semibold rounded-full transition-colors ${pad} ${
               active ? "bg-orange text-white" : "text-ink-2 hover:text-ink-1"
             }`}

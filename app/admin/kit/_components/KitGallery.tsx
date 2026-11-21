@@ -90,7 +90,7 @@ const ENTRIES: TimelineEntry[] = [
         <TimelineChip tone="success">Clicked</TimelineChip>
       </>
     ),
-    meta: "Sent from Comms by Remi to Major donors (48 people). Opens are estimates.",
+    meta: "Sent from Comms by Maya to Major donors (48 people). Opens are estimates.",
     actions: <Button variant="secondary" size="sm">View email</Button>,
     date: "Nov 18",
   },
@@ -99,7 +99,7 @@ const ENTRIES: TimelineEntry[] = [
     kind: "conversation",
     icon: <Icon d={ICONS.talk} />,
     title: "Coffee with Dana",
-    meta: "Conversation logged by Remi. Set next step: Send year-end ask.",
+    meta: "Conversation logged by Maya. Set next step: Send year-end ask.",
     body: "Wants to see the coach program before year end. Open to a larger gift if it funds summer introships.",
     actions: <Button variant="secondary" size="sm">Edit</Button>,
     date: "Nov 6",
@@ -109,7 +109,7 @@ const ENTRIES: TimelineEntry[] = [
     kind: "task",
     icon: <Icon d={ICONS.task} />,
     title: "Task done: Send Q3 program report",
-    meta: "Done by Shannon, a day early",
+    meta: "Done by Lena, a day early",
     actions: <Button variant="secondary" size="sm">Open task</Button>,
     date: "Oct 20",
   },
@@ -124,7 +124,7 @@ const ENTRIES: TimelineEntry[] = [
         <TimelineChip>Receipt sent</TimelineChip>
       </>
     ),
-    meta: "Check #4471. General fund, Fall appeal 2026. Entered by Shannon.",
+    meta: "Check #4471. General fund, Fall appeal 2026. Entered by Lena.",
     actions: (
       <>
         <Button variant="secondary" size="sm">Edit</Button>
@@ -139,7 +139,7 @@ const ENTRIES: TimelineEntry[] = [
     icon: <Icon d={ICONS.thanks} />,
     title: "Thank-you for the $10,000 gift",
     chips: <TimelineChip tone="success">Opened</TimelineChip>,
-    meta: "Emailed by Remi from Gmail. Template: Major gift thanks.",
+    meta: "Emailed by Maya from Gmail. Template: Major gift thanks.",
     actions: <Button variant="secondary" size="sm">View email</Button>,
     date: "Oct 5",
   },
@@ -223,7 +223,7 @@ function DonorTop({ onRecordGift }: { onRecordGift: () => void }) {
           <>
             <IdentityChip>Person</IdentityChip>
             <IdentityChip>Major donor</IdentityChip>
-            <IdentityChip initials="RS">Owner: Remi</IdentityChip>
+            <IdentityChip initials="MO">Owner: Maya</IdentityChip>
             <span className={`${TYPE.bodyMuted} text-[13px] pl-1`}>Donor since 2019</span>
           </>
         }
@@ -238,7 +238,7 @@ function DonorTop({ onRecordGift }: { onRecordGift: () => void }) {
       <NextStepBar
         title="Send year-end ask."
         due={{ text: "12 days late.", late: true }}
-        meta="Was due Nov 9. Owner: Remi. For the Year-end ask, $25,000. Set after coffee on Nov 6."
+        meta="Was due Nov 9. Owner: Maya. For the Year-end ask, $25,000. Set after coffee on Nov 6."
         actions={[
           <Button key="d" variant="strong" className="!h-10">Mark done</Button>,
           <Button key="r" variant="secondary" className="!h-10">Reschedule</Button>,
@@ -478,7 +478,7 @@ export default function KitGallery({ initialDrawer }: { initialDrawer: "gift" | 
               { value: "intro", label: "Summer introships" },
             ]}
           />
-          <SelectField label="Owner" error="Pick who owns this donor." placeholder="Choose a person" options={[{ value: "rs", label: "Remi" }]} />
+          <SelectField label="Owner" error="Pick who owns this donor." placeholder="Choose a person" options={[{ value: "mo", label: "Maya" }]} />
           <DateField label="Gift date" required hint="Today, Pacific time" />
           <DateField label="Follow up by" error="Pick a date after today." />
           <TextareaField label="Note" hint="Shows on the donor timeline." placeholder="Met at the Fall kickoff." />
@@ -521,7 +521,7 @@ export default function KitGallery({ initialDrawer }: { initialDrawer: "gift" | 
                 chips={
                   <>
                     <IdentityChip>Foundation</IdentityChip>
-                    <IdentityChip initials="RS">Owner: Remi</IdentityChip>
+                    <IdentityChip initials="MO">Owner: Maya</IdentityChip>
                   </>
                 }
                 secondaryActions={<Button variant="secondary" size="lg">Log a conversation</Button>}
@@ -598,7 +598,7 @@ export default function KitGallery({ initialDrawer }: { initialDrawer: "gift" | 
           <NextStepBar
             title="Send year-end ask."
             due={{ text: "12 days late.", late: true }}
-            meta="Was due Nov 9. Owner: Remi."
+            meta="Was due Nov 9. Owner: Maya."
             actions={[
               <Button key="d" variant="strong" className="!h-10">Mark done</Button>,
               <Button key="r" variant="secondary" className="!h-10">Reschedule</Button>,
@@ -607,7 +607,7 @@ export default function KitGallery({ initialDrawer }: { initialDrawer: "gift" | 
           <NextStepBar
             title="Invite to site visit."
             due={{ text: "Due Nov 24." }}
-            meta="Owner: Remi. For Priya Raman."
+            meta="Owner: Maya. For Priya Raman."
             actions={[<Button key="d" variant="strong" className="!h-10">Mark done</Button>]}
           />
           <NextStepBar title={null} meta="Every donor should have one." actions={[<Button key="a" variant="strong" className="!h-10">Add a next step</Button>]} />
@@ -664,7 +664,7 @@ export default function KitGallery({ initialDrawer }: { initialDrawer: "gift" | 
 
       <Section id="notice" title="Notice" note="Inline messages. Each tone has its own glyph and a spoken label, so status is never color alone.">
         <div className="grid gap-2">
-          <Notice tone="info" title="Gmail is connected.">Thank-yous send from remi@example.org.</Notice>
+          <Notice tone="info" title="Gmail is connected.">Thank-yous send from maya@example.org.</Notice>
           <Notice tone="success" title="Import finished.">212 donors added, 4 duplicates skipped.</Notice>
           <Notice tone="warning" title="3 thank-yous are owed." action={<Button variant="secondary">Open the queue</Button>}>
             The oldest gift came in 6 days ago.

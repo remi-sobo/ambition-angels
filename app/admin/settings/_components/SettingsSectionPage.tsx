@@ -4,6 +4,7 @@ import { getOrgContext } from "@/lib/admin/auth";
 import { getEntitlements } from "@/lib/admin/entitlements";
 import { SETTINGS_SECTIONS, visibleSettingsSections } from "@/lib/admin/settingsSections";
 import PageHeader from "../../_components/PageHeader";
+import { supportHint } from "@/lib/admin/support";
 
 /**
  * One Settings section page (V4 Stage A2): the section title and blurb, an
@@ -34,7 +35,7 @@ export default async function SettingsSectionPage({
       {!section ? (
         <p className="rounded-panel border border-hairline bg-surface px-5 py-4 text-sm text-ink-2">
           {declared.features && !declared.features.some((k) => features.includes(k))
-            ? "This part of BloomOS is not turned on for your organization. Ask your BloomOS contact if you need it."
+            ? `This part of BloomOS is not turned on for your organization. If you need it, ${supportHint()}.`
             : "Only an owner or admin can change these settings. Ask the owner of your organization if something here needs to change."}
         </p>
       ) : (

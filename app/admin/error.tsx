@@ -4,6 +4,8 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { TYPE } from "@/lib/admin/typeScale";
+import { supportEmail } from "@/lib/admin/support";
+import ReportProblemButton from "./_components/ReportProblemButton";
 
 // Quality Floor Q1 — the route-level error boundary every admin route
 // inherits. Renders inside the shell (the sidebar and tab zone survive the
@@ -62,7 +64,14 @@ export default function AdminError({
           >
             Back to Today
           </Link>
+          <ReportProblemButton variant="quiet" />
         </div>
+        {supportEmail() ? (
+          <p className="mt-3 text-xs text-ink-2">
+            Or write to <span className="font-semibold select-all">{supportEmail()}</span>
+            {error.digest ? " and include the reference above" : ""}.
+          </p>
+        ) : null}
       </div>
     </div>
   );

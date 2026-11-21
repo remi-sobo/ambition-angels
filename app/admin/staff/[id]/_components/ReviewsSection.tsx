@@ -1,9 +1,9 @@
 "use client";
 
+import { saveAction } from "@/lib/admin/saveAction";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
-import { userMessage } from "@/lib/admin/errors";
 import SectionHeading from "../../../_components/SectionHeading";
 import EmptyState from "../../../_components/EmptyState";
 import { StatusChip } from "../../../_components/StatusChip";
@@ -37,17 +37,13 @@ function CycleBlock({
 
   async function save(share: boolean) {
     setBusy(true);
-    try {
-      const res = await fetch(`/api/admin/staff/reviews/${data.cycle.id}/summary/${subjectStaffId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ summary, notes, share }),
-      });
-      if (res.ok) router.refresh();
-      else toast.error(userMessage(res, (await res.json().catch(() => null)) as { error?: string } | null));
-    } finally {
-      setBusy(false);
-    }
+    const r = await saveAction({
+      request: { url: `/api/admin/staff/reviews/${data.cycle.id}/summary/${subjectStaffId}`, method: "PUT", body: { summary, notes, share } },
+      success: share ? "Saved and shared" : "Saved",
+      toast,
+    });
+    setBusy(false);
+    if (r.ok) router.refresh();
   }
 
   const submitted = data.feedback.filter((f) => f.status === "submitted");
@@ -65,11 +61,11 @@ function CycleBlock({
       {data.canSynthesize ? (
         <div className="flex flex-col gap-2">
           <label className="text-xs font-semibold text-ink-3">Synthesis (shared with subject)</label>
-          <textarea className={FIELD} rows={3} value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="Summarize the feedback for the subject…" />
+          <textarea aria-label="Synthesis (shared with subject)" className={FIELD} rows={3} value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="Summarize the feedback for the subject…" />
           <label className="text-xs font-semibold text-ink-3">
             Private manager notes (never shown to the subject)
           </label>
-          <textarea className={FIELD} rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="For your eyes / the org's record…" />
+          <textarea aria-label="Private manager notes" className={FIELD} rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="For your eyes / the org's record…" />
           <div className="flex items-center gap-2">
             <button type="button" disabled={busy} onClick={() => save(false)} className="rounded-control border border-hairline px-3 py-1 text-sm font-semibold text-ink-1 disabled:opacity-50">
               Save

@@ -53,7 +53,7 @@ const RULES = {
  *  Permanently exempt and never counted as offenders. */
 const KIT_FILES = {
   "raw-table": ["app/admin/_components/ui/DataTableFrame.tsx"],
-  overlay: ["app/admin/_components/ui/Drawer.tsx", "app/admin/_components/ui/Modal.tsx"],
+  overlay: ["app/admin/_components/ui/Drawer.tsx", "app/admin/_components/ui/Modal.tsx", "app/admin/_components/ui/Stage.tsx"],
   "unlabeled-input": [],
 };
 

@@ -1,10 +1,10 @@
 "use client";
 
+import { saveAction } from "@/lib/admin/saveAction";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
-import { userMessage } from "@/lib/admin/errors";
 import { StatusChip } from "../../../_components/StatusChip";
 import EmptyState from "../../../_components/EmptyState";
 import type { ReviewCycle } from "../../_lib/reviews";
@@ -49,49 +49,34 @@ export default function ReviewsAdminClient({
   async function create() {
     if (!form.name.trim()) return;
     setBusy(true);
-    try {
-      const res = await fetch("/api/admin/staff/reviews", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      if (res.ok) {
-        setForm({ name: "", anonymity_mode: "confidential", min_raters_for_anonymity: "3" });
-        router.refresh();
-      } else toast.error(userMessage(res, (await res.json().catch(() => null)) as { error?: string } | null));
-    } finally {
-      setBusy(false);
+    const r = await saveAction({ request: { url: "/api/admin/staff/reviews", method: "POST", body: form }, success: "Cycle created", toast });
+    setBusy(false);
+    if (r.ok) {
+      setForm({ name: "", anonymity_mode: "confidential", min_raters_for_anonymity: "3" });
+      router.refresh();
     }
   }
 
   async function generate(cycleId: string) {
     setBusy(true);
-    try {
-      const res = await fetch(`/api/admin/staff/reviews/${cycleId}/generate`, { method: "POST" });
-      const body = (await res.json().catch(() => null)) as
-        | { subjects?: SubjectAssignment[]; inserted?: number; error?: string }
-        | null;
-      if (res.ok && body?.subjects) {
-        setWarnings((w) => ({ ...w, [cycleId]: body.subjects!.filter((s) => s.thinGroup) }));
-        router.refresh();
-      } else toast.error(userMessage(res, body));
-    } finally {
-      setBusy(false);
+    const r = await saveAction<{ subjects?: SubjectAssignment[]; inserted?: number }>({
+      request: { url: `/api/admin/staff/reviews/${cycleId}/generate`, method: "POST" },
+      toast,
+    });
+    setBusy(false);
+    if (r.ok && r.data.subjects) {
+      const subjects = r.data.subjects;
+      setWarnings((w) => ({ ...w, [cycleId]: subjects.filter((s) => s.thinGroup) }));
+      router.refresh();
     }
   }
 
   async function setStatus(cycleId: string, status: string) {
     setBusy(true);
-    try {
-      const res = await fetch(`/api/admin/staff/reviews/${cycleId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-      if (res.ok) router.refresh();
-    } finally {
-      setBusy(false);
-    }
+    // Was silent on failure; saveAction says so now.
+    const r = await saveAction({ request: { url: `/api/admin/staff/reviews/${cycleId}`, method: "PATCH", body: { status } }, toast });
+    setBusy(false);
+    if (r.ok) router.refresh();
   }
 
   return (
@@ -100,13 +85,13 @@ export default function ReviewsAdminClient({
         <div className={`${CARD} p-4 flex flex-col gap-3`}>
           <p className="text-sm font-semibold text-ink-1">New review cycle</p>
           <div className="flex flex-wrap gap-2">
-            <input
+            <input aria-label="Cycle name"
               className={`${FIELD} flex-1 min-w-[180px]`}
               placeholder="Cycle name (FY26 Mid-year)"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
             />
-            <select
+            <select aria-label="Anonymity"
               className={FIELD}
               value={form.anonymity_mode}
               onChange={(e) => setForm({ ...form, anonymity_mode: e.target.value })}
@@ -173,7 +158,7 @@ export default function ReviewsAdminClient({
                     >
                       Generate assignments
                     </button>
-                    <select
+                    <select aria-label={`Status of ${c.name}`}
                       className={`${FIELD} text-xs`}
                       value={c.status}
                       disabled={busy}

@@ -1,13 +1,13 @@
 "use client";
 
+import { saveAction } from "@/lib/admin/saveAction";
+import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
-import { userMessage } from "@/lib/admin/errors";
 import { deriveHealth } from "@/lib/admin/plan/health";
 import { measureFreshness } from "@/lib/admin/plan/freshness";
 import { useTaskComplete } from "@/app/admin/_lib/useTaskComplete";
-import { TYPE } from "@/lib/admin/typeScale";
 
 // ── Types (mirror the plan_* tables) ──────────────────────────────────────
 export type PlanFoundation = {
@@ -130,17 +130,13 @@ async function apiRequest(
   body: unknown,
   onError: (message: string) => void,
 ): Promise<boolean> {
-  const res = await fetch(url, {
-    method,
-    headers: body ? { "Content-Type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
+  // V4 Stage G: every plan write goes through saveAction.
+  const r = await saveAction({
+    request: { url, method: method as "POST" | "PATCH" | "PUT" | "DELETE", body: body ?? undefined },
+    failure: false,
   });
-  if (!res.ok) {
-    const j = await res.json().catch(() => ({}));
-    onError(userMessage(res, j));
-    return false;
-  }
-  return true;
+  if (!r.ok) onError(r.message);
+  return r.ok;
 }
 
 // Components bind the module helper to their toast: `const api = useApi();`
@@ -242,80 +238,18 @@ function EditableText({
   );
 }
 
-// ── Delete confirmation dialog ─────────────────────────────────────────────
-// Every destructive action on the plan routes through this warning dialog
-// (replacing bare window.confirm), so a delete is always a deliberate,
-// two-step act. Esc or a backdrop click cancels.
-function ConfirmDialog({
-  message,
-  onConfirm,
-  onCancel,
-}: {
-  message: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onCancel();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onCancel]);
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Confirm delete"
-      onClick={onCancel}
-    >
-      <div
-        className="w-full max-w-sm bg-surface border-hairline rounded-panel p-5"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h3 className={`font-heading font-semibold ${TYPE.body}`}>Delete permanently?</h3>
-        <p className="text-sm text-ink-2 mt-2">{message}</p>
-        <div className="flex justify-end gap-2 mt-4">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="text-xs font-semibold text-ink-2 hover:text-ink-1 px-3 py-2"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            autoFocus
-            onClick={onConfirm}
-            className="text-xs font-semibold text-white bg-expense hover:opacity-90 px-4 py-2 rounded-full transition-opacity"
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Per-card confirm state: call confirmDelete(message, run) from a delete
-// button, render {confirmEl} anywhere in the card's tree.
+// ── Delete confirmation ────────────────────────────────────────────────────
+// Every destructive action on the plan asks first, so a delete is always a
+// deliberate, two-step act. V4 Stage G: the house confirm dialog (the kit
+// Modal behind useConfirm) replaces the hand-built overlay; the hook keeps
+// its old shape so the cards did not change.
 function useConfirmDialog() {
-  const [pending, setPending] = useState<{ message: string; run: () => void } | null>(null);
-  const confirmDelete = (message: string, run: () => void | Promise<void>) =>
-    setPending({ message, run: () => void run() });
-  const confirmEl = pending ? (
-    <ConfirmDialog
-      message={pending.message}
-      onCancel={() => setPending(null)}
-      onConfirm={() => {
-        const { run } = pending;
-        setPending(null);
-        run();
-      }}
-    />
-  ) : null;
+  const confirm = useConfirm();
+  const confirmDelete = async (message: string, run: () => void | Promise<void>) => {
+    const ok = await confirm({ title: "Delete permanently?", body: message, confirmLabel: "Delete", destructive: true });
+    if (ok) void run();
+  };
+  const confirmEl = null;
   return { confirmDelete, confirmEl };
 }
 
@@ -368,14 +302,13 @@ export function RefreshMetricsButton() {
       title="Recompute auto KPIs (grants, corporate, donor updates, active teens) from live data"
       onClick={async () => {
         setBusy(true);
-        try {
-          const res = await fetch("/api/admin/plan/kpis/refresh", { method: "POST" });
-          const j = await res.json().catch(() => ({}));
-          if (!res.ok) toast.error(userMessage(res, j));
-          router.refresh();
-        } finally {
-          setBusy(false);
-        }
+        const r = await saveAction({
+          request: { url: "/api/admin/plan/kpis/refresh", method: "POST" },
+          success: "Metrics refreshed",
+          toast,
+        });
+        setBusy(false);
+        if (r.ok) router.refresh();
       }}
       className="text-xs font-semibold text-ink-1 bg-tile hover:bg-tile px-4 py-2 rounded-full transition-colors disabled:opacity-50"
     >
@@ -443,7 +376,7 @@ function StatusOverride({
       {override && <span className="text-xs text-status-watch-text" title={reason ?? ""}>override</span>}
       {pendingVal !== null && (
         <span className="flex items-center gap-1">
-          <input
+          <input aria-label="Reason for the override"
             autoFocus
             value={reasonDraft}
             onChange={(e) => setReasonDraft(e.target.value)}
@@ -858,7 +791,7 @@ function ObjectiveTasks({
         <p className="text-xs text-ink-3">No tasks on this objective yet.</p>
       )}
       <div className="flex gap-2 mt-2">
-        <input
+        <input aria-label="New task"
           className={`${inputCls} flex-1 !py-1.5 !text-xs`}
           placeholder="Add task…"
           value={newTitle}
@@ -952,7 +885,7 @@ function ObjectiveNotes({ objectiveId, notes }: { objectiveId: string; notes: Pl
         <p className="text-xs text-ink-3">No notes on this objective yet.</p>
       )}
       <div className="flex gap-2 mt-2 items-start">
-        <textarea
+        <textarea aria-label="New note"
           className={`${inputCls} flex-1 !py-1.5 !text-xs`}
           rows={2}
           placeholder="Add a note…"
@@ -1251,7 +1184,7 @@ export function GoalCard({
         </div>
       )}
       <div className="flex gap-2 mt-3">
-        <input
+        <input aria-label="New initiative"
           className={`${inputCls} flex-1 !py-1.5 !text-xs`}
           placeholder="Add initiative…"
           value={newInit}
@@ -1342,7 +1275,7 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
       )}
       {editing ? (
         <span className="flex items-center gap-1">
-          <input
+          <input aria-label="Current value"
             autoFocus
             className={`${inputCls} !py-0.5 !px-1.5 !text-xs w-20`}
             value={val}
@@ -1355,7 +1288,7 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
         <span className="tabular-nums flex items-center">
           {editingBaseline ? (
             <span className="flex items-center gap-1 mr-1">
-              <input
+              <input aria-label="Starting value"
                 autoFocus
                 className={`${inputCls} !py-0.5 !px-1.5 !text-xs w-16`}
                 value={bval}
@@ -1385,7 +1318,7 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
           {editingTarget ? (
             <span className="flex items-center gap-1 ml-1">
               <span className="text-ink-3">/</span>
-              <input
+              <input aria-label="Target value"
                 autoFocus
                 className={`${inputCls} !py-0.5 !px-1.5 !text-xs w-20`}
                 value={tval}
@@ -1406,7 +1339,7 @@ function KpiRow({ kpi }: { kpi: PlanKpi }) {
           )}
         </span>
       )}
-      <select
+      <select aria-label={`Status of ${kpi.title}`}
         value={kpi.status}
         onChange={(e) => void patch({ status: e.target.value })}
         className={`text-xs font-semibold rounded-full px-1.5 py-0.5 border-0 cursor-pointer ${HEALTH_STYLES[kpi.status] ?? "bg-tile text-ink-2"}`}
@@ -1554,7 +1487,7 @@ function NewKpiForm({ goalId }: { goalId: string }) {
 
       {mode === "auto" ? (
         <div className="flex flex-wrap items-end gap-2">
-          <select
+          <select aria-label="Live metric"
             className={`${inputCls} flex-1 min-w-[200px] !py-1 !text-xs`}
             value={metricKey}
             required
@@ -1573,16 +1506,16 @@ function NewKpiForm({ goalId }: { goalId: string }) {
               </option>
             ))}
           </select>
-          <input className={`${inputCls} w-24 !py-1 !text-xs`} placeholder="target" value={target} onChange={(e) => setTarget(e.target.value)} />
+          <input aria-label="Target" className={`${inputCls} w-24 !py-1 !text-xs`} placeholder="target" value={target} onChange={(e) => setTarget(e.target.value)} />
           <button type="submit" disabled={busy || !chosen} className="text-xs bg-orange hover:bg-orange-dark text-white px-3 py-1 rounded-control disabled:opacity-50">Add</button>
           <button type="button" onClick={reset} className="text-xs text-ink-2 px-1">Cancel</button>
         </div>
       ) : (
         <div className="flex flex-wrap items-end gap-2">
-          <input className={`${inputCls} flex-1 min-w-[180px] !py-1 !text-xs`} placeholder="Measure (e.g. Processes documented)" value={title} required autoFocus onChange={(e) => setTitle(e.target.value)} />
-          <input className={`${inputCls} w-16 !py-1 !text-xs`} placeholder="unit" value={unit} onChange={(e) => setUnit(e.target.value)} />
-          <input className={`${inputCls} w-20 !py-1 !text-xs`} placeholder="start" value={baseline} onChange={(e) => setBaseline(e.target.value)} />
-          <input className={`${inputCls} w-20 !py-1 !text-xs`} placeholder="target" value={target} onChange={(e) => setTarget(e.target.value)} />
+          <input aria-label="Measure" className={`${inputCls} flex-1 min-w-[180px] !py-1 !text-xs`} placeholder="Measure (e.g. Processes documented)" value={title} required autoFocus onChange={(e) => setTitle(e.target.value)} />
+          <input aria-label="Unit" className={`${inputCls} w-16 !py-1 !text-xs`} placeholder="unit" value={unit} onChange={(e) => setUnit(e.target.value)} />
+          <input aria-label="Starting value" className={`${inputCls} w-20 !py-1 !text-xs`} placeholder="start" value={baseline} onChange={(e) => setBaseline(e.target.value)} />
+          <input aria-label="Target" className={`${inputCls} w-20 !py-1 !text-xs`} placeholder="target" value={target} onChange={(e) => setTarget(e.target.value)} />
           <button type="submit" disabled={busy} className="text-xs bg-orange hover:bg-orange-dark text-white px-3 py-1 rounded-control disabled:opacity-50">Add</button>
           <button type="button" onClick={reset} className="text-xs text-ink-2 px-1">Cancel</button>
         </div>

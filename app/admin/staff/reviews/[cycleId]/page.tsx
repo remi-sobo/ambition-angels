@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import PageHeader from "../../../_components/PageHeader";
 import EmptyState from "../../../_components/EmptyState";
@@ -17,16 +16,14 @@ export default async function CycleFormsPage({ params }: { params: { cycleId: st
   ]);
 
   return (
-    <div className="p-6 lg:p-8 max-w-2xl">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-reading">
       <PageHeader
+        breadcrumb={[
+          { label: "Team", href: "/admin/organization/team" },
+          { label: "Reviews", href: "/admin/staff/reviews" },
+        ]}
         title="Your review forms"
-        subtitle="Only your own assignments are shown."
-        eyebrow="Reviews"
-        actions={
-          <Link href="/admin/staff/reviews" className="text-xs font-semibold text-ink-2 hover:text-orange">
-            ← Cycles
-          </Link>
-        }
+        subtitle="Only your own assignments are shown"
       />
       {forms.length === 0 ? (
         <EmptyState

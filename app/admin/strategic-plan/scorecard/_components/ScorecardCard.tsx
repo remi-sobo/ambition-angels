@@ -10,9 +10,9 @@
 // live). One source, three surfaces. Structural editing (add/delete measures,
 // targets, baselines) stays on the plan.
 
+import { saveAction } from "@/lib/admin/saveAction";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { userMessage } from "@/lib/admin/errors";
 import { kpiProvenance } from "@/lib/admin/plan/provenance";
 
 export type ScorecardKpi = {
@@ -103,28 +103,14 @@ export default function ScorecardCard({ kpi }: { kpi: ScorecardKpi }) {
   const patch = async (fields: Record<string, unknown>): Promise<boolean> => {
     setBusy(true);
     setError(null);
-    try {
-      const res = await fetch(`/api/admin/plan/kpis/${kpi.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(fields),
-      });
-      if (!res.ok) {
-        setError(
-          res.status === 403
-            ? "Your account can't edit measures. Ask an admin for the manage permission."
-            : userMessage(res, await res.json().catch(() => null))
-        );
-        return false;
-      }
-      router.refresh();
-      return true;
-    } catch {
-      setError("Could not save. Check your connection and try again.");
+    const r = await saveAction({ request: { url: `/api/admin/plan/kpis/${kpi.id}`, method: "PATCH", body: fields }, failure: false });
+    setBusy(false);
+    if (!r.ok) {
+      setError(r.status === 403 ? "Your account can't edit measures. Ask an admin for the manage permission." : r.message);
       return false;
-    } finally {
-      setBusy(false);
     }
+    router.refresh();
+    return true;
   };
 
   const saveVal = async () => {
@@ -158,7 +144,7 @@ export default function ScorecardCard({ kpi }: { kpi: ScorecardKpi }) {
       <div className="flex items-end justify-between gap-2">
         {editing ? (
           <span className="flex items-center gap-1">
-            <input
+            <input aria-label="Current value"
               autoFocus
               inputMode="decimal"
               className="w-24 rounded-control border border-hairline bg-app px-2 py-1 text-lg font-bold tabular-nums text-ink-1 focus:outline-none focus:border-orange"
@@ -226,7 +212,7 @@ export default function ScorecardCard({ kpi }: { kpi: ScorecardKpi }) {
       {/* Notes — the "why" next to the number: context, blockers, expected movement. */}
       {editingNotes ? (
         <span className="flex items-start gap-1">
-          <textarea
+          <textarea aria-label="Notes on this number"
             autoFocus
             rows={2}
             className="flex-1 rounded-control border border-hairline bg-app px-2 py-1 text-xs text-ink-1 focus:outline-none focus:border-orange"
@@ -265,7 +251,7 @@ export default function ScorecardCard({ kpi }: { kpi: ScorecardKpi }) {
         <span className="min-w-0 flex-1">{prov.detail}</span>
         {editingOwner ? (
           <span className="flex items-center gap-1 shrink-0">
-            <input
+            <input aria-label="Owner"
               autoFocus
               className="w-20 rounded-control border border-hairline bg-app px-1.5 py-0.5 text-xs text-ink-1 focus:outline-none focus:border-orange"
               value={ownerVal}

@@ -1,9 +1,9 @@
 "use client";
 
+import { saveAction } from "@/lib/admin/saveAction";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
-import { userMessage } from "@/lib/admin/errors";
 
 // Unassigned vital signs (Phase C): live registry metrics not yet attached to a
 // goal. Each is either proving a goal or parked here pending a decision — a
@@ -38,30 +38,20 @@ export default function UnassignedMetrics({
   const attach = async (m: UnassignedMetric) => {
     if (!goalId) return;
     setBusy(true);
-    try {
-      const res = await fetch("/api/admin/plan/kpis", {
+    const r = await saveAction({
+      request: {
+        url: "/api/admin/plan/kpis",
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          goal_id: goalId,
-          title: m.label,
-          unit: m.unit || undefined,
-          source: "auto",
-          metric_key: m.key,
-          current: m.value ?? undefined,
-        }),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        toast.error(userMessage(res, j));
-        return;
-      }
-      setOpenKey(null);
-      setGoalId("");
-      router.refresh();
-    } finally {
-      setBusy(false);
-    }
+        body: { goal_id: goalId, title: m.label, unit: m.unit || undefined, source: "auto", metric_key: m.key, current: m.value ?? undefined },
+      },
+      success: "Attached",
+      toast,
+    });
+    setBusy(false);
+    if (!r.ok) return;
+    setOpenKey(null);
+    setGoalId("");
+    router.refresh();
   };
 
   return (
@@ -90,7 +80,7 @@ export default function UnassignedMetrics({
             </div>
             {openKey === m.key && (
               <div className="flex flex-wrap items-center gap-2 mt-2">
-                <select
+                <select aria-label="Attach to goal"
                   className="bg-tile border-hairline rounded-control px-2 py-1 text-xs text-ink-1 cursor-pointer focus:outline-none focus:border-orange/40 flex-1 min-w-[200px]"
                   value={goalId}
                   onChange={(e) => setGoalId(e.target.value)}

@@ -6,7 +6,7 @@ import { ASSIGN_MAX_IDS, OWNED_ENTITIES, isOwnedEntity, isUuid, parseOwnerId } f
 import { audit } from "@/lib/audit";
 
 /**
- * POST /api/admin/assign/{constituents|asks|cohorts|programs}
+ * POST /api/admin/assign/{constituents|asks|cohorts|programs|opportunities}
  *   { ids: string[], owner_id: string | null }
  *
  * Sets (or clears) the owner of one record or many: the donor record's owner
@@ -14,7 +14,8 @@ import { audit } from "@/lib/audit";
  * bulk action on Donors & Funders all come here (V4 Stage B2).
  *
  * Fences, in order:
- *  1. role: fundraising.write for donors and asks, program.write for cohorts
+ *  1. role: fundraising.write for donors, asks and Pipeline board cards
+ *     (opportunities), program.write for cohorts
  *     and programs (requirePermission; the active org comes from it);
  *  2. the new owner must be a member of the ACTIVE org (not a board viewer);
  *  3. every write is pinned to org_id = ctx.orgId, so an id from another org

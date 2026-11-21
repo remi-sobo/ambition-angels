@@ -1,5 +1,6 @@
 "use client";
 
+import { saveAction } from "@/lib/admin/saveAction";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import EmptyState from "../../_components/EmptyState";
 import { useRouter } from "next/navigation";
@@ -69,24 +70,26 @@ export default function ConnectionsBacklog({
       .filter((u) => u.order !== u.old);
     if (updates.length === 0) return;
     setBusy(true);
-    try {
-      await Promise.all(
-        updates.map((u) =>
-          fetch(`/api/admin/ops/tasks/${u.id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ display_order: u.order }),
-          })
-        )
-      );
-      startTransition(() => router.refresh());
-    } catch (e) {
-      console.error("Connection reorder failed:", e);
-      toast.error("Couldn't save the new order. Reloading.");
-      router.refresh();
-    } finally {
-      setBusy(false);
-    }
+    await saveAction({
+      request: async () => {
+        const responses = await Promise.all(
+          updates.map((u) =>
+            fetch(`/api/admin/ops/tasks/${u.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ display_order: u.order }),
+            }),
+          ),
+        );
+        return responses.find((x) => !x.ok) ?? responses[0] ?? new Response("{}", { status: 200 });
+      },
+      failure: "Couldn't save the new order. Reloading.",
+      toast,
+    });
+    setBusy(false);
+    // Re-read either way: on failure the server's order is the truth.
+    startTransition(() => router.refresh());
+
   }
 
   function onDrop(targetId: string) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useReedLauncher } from "@/app/admin/_components/reed/ReedLauncherProvider";
+import Button from "@/app/admin/_components/ui/Button";
 
 /**
  * "Prep with Reed" — opens Reed pre-aimed at building an agenda for an upcoming
@@ -30,10 +31,14 @@ export default function MeetingAgendaButton({
 }) {
   const reed = useReedLauncher();
   if (!reed.enabled) return null;
-  const dims = size === "md" ? "text-sm gap-1.5 px-4 py-2" : "text-xs gap-1.5 px-3 py-1.5";
-  const mark = size === "md" ? "w-3.5 h-3.5" : "w-3 h-3";
+  // V4 Stage G: the kit Button. On the prep page (md) it is the page's one
+  // primary action; on a list row (sm) it is a quiet secondary control.
   return (
-    <button
+    <Button
+      type="button"
+      variant={size === "md" ? "primary" : "secondary"}
+      size={size === "md" ? "md" : "sm"}
+      className="shrink-0"
       onClick={() =>
         reed.open({
           surface: "meeting_agenda",
@@ -41,11 +46,10 @@ export default function MeetingAgendaButton({
           contextRef: { type: "meeting_agenda", event_id: eventId, title, start },
         })
       }
-      className={`shrink-0 inline-flex items-center font-semibold text-white bg-navy hover:bg-navy-light rounded-full transition-colors ${dims}`}
     >
-      <ReedMark className={`${mark} text-orange-mid`} />
+      <ReedMark className={size === "md" ? "w-3.5 h-3.5" : "w-3 h-3"} />
       {label}
-    </button>
+    </Button>
   );
 }
 

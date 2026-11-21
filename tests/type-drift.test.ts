@@ -41,7 +41,6 @@ const DISPLAY_BLACK_ALLOWLIST: { file: string; reason: string }[] = [
   { file: "app/admin/finance/page.tsx", reason: "display metric (dashboard numerals)" },
   { file: "app/admin/finance/budget/_components/BudgetEditor.tsx", reason: "display metric (budget totals)" },
   { file: "app/admin/finance/forecast/_components/ForecastBoard.tsx", reason: "display metrics (scenario values)" },
-  { file: "app/admin/meetings/page.tsx", reason: "display metric (coverage-gap numeral)" },
   { file: "app/admin/meetings/_ui.tsx", reason: "display metric (section count numeral)" },
   { file: "app/admin/legacy/page.tsx", reason: "legacy dashboard, display-stat wall" },
 ];

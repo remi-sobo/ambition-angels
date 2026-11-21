@@ -1,9 +1,8 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getMeetingDetail } from "@/lib/meetings/read";
 import { StatusPill } from "../_ui";
 import MeetingDetailClient from "./MeetingDetailClient";
-import PageHeader from "../../_components/PageHeader";
+import PageHeader, { IdentityChip } from "../../_components/PageHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -27,20 +26,20 @@ export default async function MeetingDetailPage({ params }: { params: { id: stri
   const { record } = detail;
 
   return (
-    <div className="max-w-4xl px-4 lg:px-8 py-6 lg:py-8 space-y-6">
-      <header>
-        <Link
-          href="/admin/meetings"
-          className="text-xs text-ink-2 hover:text-ink-1 inline-flex items-center gap-1 mb-3"
-        >
-          ← Meetings
-        </Link>
-        <PageHeader
-          title={record.title ?? "Untitled meeting"}
-          subtitle={fmtDateTime(record.occurred_at)}
-          actions={<StatusPill status={record.follow_up_status} />}
-        />
-      </header>
+    <div className="max-w-reading px-4 lg:px-8 py-6 lg:py-8 space-y-6">
+      {/* V4 Stage G: breadcrumb, identity chips (when, follow-up state) and
+          the follow-up decision as the first panel below. */}
+      <PageHeader
+        breadcrumb={[{ label: "Meetings", href: "/admin/work/meetings" }]}
+        title={record.title ?? "Untitled meeting"}
+        chips={
+          <>
+            <IdentityChip>{fmtDateTime(record.occurred_at)}</IdentityChip>
+            <StatusPill status={record.follow_up_status} />
+          </>
+        }
+        moreActions={[{ label: "All meetings", href: "/admin/work/meetings" }]}
+      />
 
       <MeetingDetailClient detail={detail} />
     </div>

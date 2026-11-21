@@ -1,8 +1,8 @@
 "use client";
 
+import { saveAction } from "@/lib/admin/saveAction";
 import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { userMessage } from "@/lib/admin/errors";
 import {
   SCHEDULING_LABEL,
   SCHEDULING_TASK_CATEGORY,
@@ -78,19 +78,17 @@ export default function NewConnectionForm() {
     const sp = trimmed.indexOf(" ");
     const first = sp === -1 ? trimmed : trimmed.slice(0, sp);
     const last = sp === -1 ? "" : trimmed.slice(sp + 1).trim();
-    const r = await fetch("/api/admin/constituents", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: "person",
-        first_name: first,
-        last_name: last || undefined,
-        emails: email ? [email] : undefined,
-      }),
+    const r = await saveAction<{ id?: string }>({
+      request: {
+        url: "/api/admin/constituents",
+        method: "POST",
+        body: { type: "person", first_name: first, last_name: last || undefined, emails: email ? [email] : undefined },
+      },
+      failure: false,
     });
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok || !d?.id) throw new Error(d?.error ?? "Could not create the person");
-    return d.id as string;
+    if (!r.ok) throw new Error(r.message);
+    if (!r.data?.id) throw new Error("Could not create the person");
+    return r.data.id;
   }
 
   async function pick(res: SearchResult) {
@@ -144,11 +142,11 @@ export default function NewConnectionForm() {
     if (!chosen || !purpose.trim()) return;
     setBusy(true);
     setError(null);
-    try {
-      const r = await fetch("/api/admin/ops/tasks", {
+    const r = await saveAction({
+      request: {
+        url: "/api/admin/ops/tasks",
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: {
           title: purpose.trim(),
           category: SCHEDULING_TASK_CATEGORY,
           priority: "medium",
@@ -158,18 +156,18 @@ export default function NewConnectionForm() {
           linked_entity_type: "constituent",
           linked_entity_id: chosen.id,
           linked_label: chosen.name,
-        }),
-      });
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(userMessage(r, d));
-      reset();
-      setOpen(false);
-      router.refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not create the connection");
-    } finally {
-      setBusy(false);
+        },
+      },
+      failure: false,
+    });
+    setBusy(false);
+    if (!r.ok) {
+      setError(r.message);
+      return;
     }
+    reset();
+    setOpen(false);
+    router.refresh();
   }
 
   if (!open) {
@@ -218,6 +216,7 @@ export default function NewConnectionForm() {
       ) : (
         <div className="relative">
           <input
+            aria-label="Who is the meeting with?"
             value={q}
             onChange={(e) => search(e.target.value)}
             disabled={busy}
@@ -263,6 +262,7 @@ export default function NewConnectionForm() {
       {chosen && (
         <form onSubmit={create} className="space-y-3">
           <input
+            aria-label="Purpose"
             value={purpose}
             onChange={(e) => setPurpose(e.target.value)}
             placeholder={`Purpose: e.g. Intro call with ${chosen.name}`}

@@ -3,6 +3,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import FeatureGate from "@/app/admin/_components/FeatureGate";
 import DonorProfile from "../../donors/[id]/DonorProfile";
 import ProspectProfile from "../../prospects/[id]/ProspectProfile";
+import { resolveDonor360 } from "./resolve";
 
 // Spec Fundraising F2 — Donor 360: ONE URL shape over BOTH id spaces (spec
 // §The one-list rule). `constituents` and `fr_prospects` have disjoint
@@ -23,19 +24,11 @@ export default async function Donor360Page({ params }: { params: { id: string } 
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();
   const supabase = createServerSupabase();
 
-  const { data: c } = await supabase
-    .from("constituents")
-    .select("id")
-    .eq("id", params.id)
-    .maybeSingle();
-  if (c) return <DonorProfile id={params.id} v2 />;
-
-  const { data: p } = await supabase
-    .from("fr_prospects")
-    .select("id")
-    .eq("id", params.id)
-    .maybeSingle();
-  if (p) {
+  const kind = await resolveDonor360((table) =>
+    supabase.from(table).select("id").eq("id", params.id).maybeSingle(),
+  );
+  if (kind === "constituent") return <DonorProfile id={params.id} v2 />;
+  if (kind === "prospect") {
     return (
       <FeatureGate feature="ai.prospect_research" label="Prospect Research">
         <ProspectProfile id={params.id} v2 />

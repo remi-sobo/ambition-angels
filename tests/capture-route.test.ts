@@ -19,7 +19,11 @@ let candidates: unknown[] = [];
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/admin/entitlements", () => ({ requireEntitlement: vi.fn(async () => entitled) }));
 vi.mock("@/lib/supabase/server", () => ({ createServerSupabase: () => db.client }));
-vi.mock("@/lib/admin/auth", () => ({ getAdminUser: vi.fn(async () => "remi") }));
+let filingPerms = new Set(["ops.write", "fundraising.write", "program.write"]);
+vi.mock("@/lib/admin/auth", () => ({
+  getAdminUser: vi.fn(async () => "remi"),
+  ctxHasPermission: vi.fn(async (_c: unknown, p: string) => filingPerms.has(p)),
+}));
 vi.mock("@/lib/ai/cap", () => ({ orgOverAICap: vi.fn(async () => ({ over: capOver, spentUsd: 0, capUsd: 100 })) }));
 vi.mock("@/lib/ai/ledger", () => ({ logAICall: vi.fn(async () => "call-1") }));
 vi.mock("@/lib/ai/gateway", async (importOriginal) => {
@@ -214,8 +218,23 @@ describe("GET /api/admin/capture/[id]", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = await GET(new Request("http://localhost/api/admin/capture/x") as any, { params: { id: CAP_ID } });
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ capture: { id: CAP_ID, status: "ready" }, cards: [{ id: "card-1", position: 1 }] });
+    // Voice for every role: the filing permissions ride along so a card the
+    // caller cannot file offers "Send to a teammate" instead of Confirm.
+    expect(await res.json()).toEqual({
+      capture: { id: CAP_ID, status: "ready" },
+      cards: [{ id: "card-1", position: 1 }],
+      filing_permissions: ["ops.write", "fundraising.write", "program.write"],
+    });
     expect(db.calls.from).toEqual(["captures", "capture_cards"]);
+  });
+
+  test("a finance or board member is told they hold no filing permission", async () => {
+    filingPerms = new Set();
+    db = mockSupabase([{ data: { id: CAP_ID, status: "ready" } }, { data: [] }]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const res = await GET(new Request("http://localhost/api/admin/capture/x") as any, { params: { id: CAP_ID } });
+    expect((await res.json()).filing_permissions).toEqual([]);
+    filingPerms = new Set(["ops.write", "fundraising.write", "program.write"]);
   });
 
   test("404 when RLS hides the capture, and for a non-uuid id", async () => {

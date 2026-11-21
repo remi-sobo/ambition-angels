@@ -9,6 +9,7 @@ import PageHeader from "@/app/admin/_components/PageHeader";
 import { TYPE } from "@/lib/admin/typeScale";
 import Alert from "@/app/admin/_components/ui/Alert";
 import { fetchAll } from "@/lib/supabase/fetchAll";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Spec Programs P1 — Attendance, the model's one seatless screen (recon §G:
 // cohort_sessions + attendance, "bindable"). One surface across every
@@ -41,6 +42,8 @@ function fmtDate(iso: string): string {
 }
 
 export default async function AttendancePage() {
+  const roleGate = await requirePagePermission("program.read", "Programs");
+  if (!roleGate.ok) return roleGate.page;
   const ctx = await getOrgContext();
   if (!ctx) {
     return (

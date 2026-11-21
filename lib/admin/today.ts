@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
+import { getOrgContext, ctxHasPermission } from "@/lib/admin/auth";
 import { rankObligations, whyFallback, type ObligationRow } from "@/lib/admin/todayRank";
 import { SOURCE_FALLBACK_HREF } from "@/lib/admin/actionQueue";
 import { calendarDayFilter, todayInTZ } from "@/lib/admin/ops/week";
@@ -92,6 +92,7 @@ export const getTodayData = cache(async (): Promise<TodayData | null> => {
   const todayISO = todayInTZ();
   // The briefing cron keys its narrative by UTC date (lib/admin/briefing/narrate.ts).
   const briefDate = new Date().toISOString().slice(0, 10);
+  const canReadBriefing = await ctxHasPermission(ctx, "ops.read");
 
   const [obRes, narrativeRes, eventsRes, draftsRes] = await Promise.all([
     supabase
@@ -99,12 +100,17 @@ export const getTodayData = cache(async (): Promise<TodayData | null> => {
       .select("id, type, title, why_it_matters, due_date, state, module, related_entity_type, related_entity_id")
       .eq("org_id", ctx.orgId)
       .limit(500),
-    admin
-      .from("bloomos_briefing_narrative")
-      .select("headline")
-      .eq("org_id", ctx.orgId)
-      .eq("brief_date", briefDate)
-      .maybeSingle(),
+    // The briefing narrative summarizes every module (money included) and is
+    // read through the service role, so it follows the briefing's own gate
+    // (ops.read): board_viewer and finance never see it on Today.
+    canReadBriefing
+      ? admin
+          .from("bloomos_briefing_narrative")
+          .select("headline")
+          .eq("org_id", ctx.orgId)
+          .eq("brief_date", briefDate)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
     // Org + owner fence: service-role read, scoped like the agenda reads.
     admin
       .from("calendar_events")

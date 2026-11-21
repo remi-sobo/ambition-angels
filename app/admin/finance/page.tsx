@@ -28,6 +28,7 @@ import { CHART, CHART_SERIES } from "@/lib/admin/chartTokens";
 import { TYPE } from "@/lib/admin/typeScale";
 import Alert from "../_components/ui/Alert";
 import { fetchAll } from "@/lib/supabase/fetchAll";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Read live every request: the service-role client's reads go through the
 // global fetch Next caches by default, so without this a freshly-saved config
@@ -38,6 +39,8 @@ export const dynamic = "force-dynamic";
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default async function FinanceDashboardPage() {
+  const roleGate = await requirePagePermission("finance.read", "Finance");
+  if (!roleGate.ok) return roleGate.page;
   const supabase = getSupabaseAdmin();
 
   // Canonical numbers (cash, runway, burn, monthly series, YTD) come from the

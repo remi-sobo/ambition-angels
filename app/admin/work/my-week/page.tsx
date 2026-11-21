@@ -8,6 +8,7 @@ import WeekStatusLine from "@/app/admin/ops/_components/WeekStatusLine";
 import CalendarSyncBanner from "@/app/admin/ops/_components/CalendarSyncBanner";
 import PageHeader from "@/app/admin/_components/PageHeader";
 import { TYPE } from "@/lib/admin/typeScale";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Spec Work W2 — My Week becomes the week grid (the Handoff Spec folds
 // Calendar into My Week; recon §G: calendar_events + work_blocks +
@@ -25,6 +26,8 @@ export default async function MyWeekPage({
 }: {
   searchParams?: { week?: string; owner?: string };
 }) {
+  const roleGate = await requirePagePermission("ops.read", "My work");
+  if (!roleGate.ok) return roleGate.page;
   const mode = rhythmModeForToday();
   const snapshot = await loadRhythmSnapshot(mode);
 

@@ -245,11 +245,17 @@ export default function WeekGrid({
       setSelectedId(null);
       try {
         const r = await fetch(`/api/admin/calendar/blocks/${id}`, { method: "DELETE" });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        if (!r.ok) {
+          const j = (await r.json().catch(() => ({}))) as { error?: string; code?: string };
+          throw new Error(
+            j.code === "google_calendar_write_failed" && j.error ? j.error : `HTTP ${r.status}`
+          );
+        }
         refresh();
       } catch (e) {
         console.error("Delete block failed:", e);
-        toast.error("Couldn't delete the block. Try again.");
+        const msg = e instanceof Error && !e.message.startsWith("HTTP ") ? e.message : null;
+        toast.error(msg ?? "Couldn't delete the block. Try again.");
         refresh();
       }
     },

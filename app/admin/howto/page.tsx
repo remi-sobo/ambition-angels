@@ -7,6 +7,7 @@ import { getEntitlements, type FeatureKey } from "@/lib/admin/entitlements";
 import { getShellTermLabels } from "@/lib/admin/terminology";
 import { resolveShellNav } from "@/lib/admin/v2shellNav";
 import { navHelp } from "@/lib/admin/navIndex";
+import { getRolePermissions } from "@/lib/admin/rolePermissions";
 
 // A plain-language guide to BloomOS, served at Settings → Help (the route
 // map 308s /admin/howto there). V4 A2: generated from the nav model, one
@@ -58,7 +59,8 @@ export default async function HowToPage() {
   const ctx = await getOrgContext();
   const ents = ctx ? await getEntitlements(ctx.orgId) : null;
   const features = ents ? Array.from(ents) : [];
-  const sections = navHelp(resolveShellNav(features, await getShellTermLabels()));
+  const perms = ctx ? await getRolePermissions(ctx.role) : [];
+  const sections = navHelp(resolveShellNav(features, await getShellTermLabels(), perms));
   const globals = GLOBALS.filter((g) => !g.feature || features.includes(g.feature));
 
   return (

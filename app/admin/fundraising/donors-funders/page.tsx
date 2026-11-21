@@ -312,7 +312,8 @@ function ConstituentsTable({
       key: "lifetime",
       header: "Lifetime",
       align: "right",
-      className: `font-semibold text-ink-1 ${num}`,
+      className: `font-semibold text-ink-1 whitespace-nowrap ${num}`,
+      headerClassName: "whitespace-nowrap",
       render: (r) => (r.gift_count > 0 ? money(r.lifetime_total) : "—"),
     },
     {
@@ -322,13 +323,25 @@ function ConstituentsTable({
       className: `text-ink-2 ${num}`,
       render: (r) => (r.gift_count > 0 ? r.gift_count : "—"),
     },
-    { key: "last_gift", header: "Last gift", className: `text-ink-2 ${num}`, render: (r) => fmtDate(r.last_gift) },
-    { key: "last_touch", header: "Last touch", className: `text-ink-2 ${num}`, render: (r) => fmtDate(r.last_touch) },
+    // Dates never wrap (V4 P1: at 1440 the Owner column squeezed them onto
+    // two lines); Owner gives way instead, truncating with its full name in
+    // a title. Under 640px the rows are cards and none of this applies.
+    { key: "last_gift", header: "Last gift", className: `text-ink-2 whitespace-nowrap ${num}`, headerClassName: "whitespace-nowrap", render: (r) => fmtDate(r.last_gift) },
+    { key: "last_touch", header: "Last touch", className: `text-ink-2 whitespace-nowrap ${num}`, headerClassName: "whitespace-nowrap", render: (r) => fmtDate(r.last_touch) },
     {
       key: "owner",
       header: "Owner",
-      className: "text-ink-2",
-      render: (r) => ownerLabel(r.owner_id, members) ?? <span className="text-ink-3">Unassigned</span>,
+      className: "text-ink-2 max-w-[9rem]",
+      render: (r) => {
+        const owner = ownerLabel(r.owner_id, members);
+        return owner ? (
+          <span className="block truncate" title={owner}>
+            {owner}
+          </span>
+        ) : (
+          <span className="text-ink-3">Unassigned</span>
+        );
+      },
     },
   ];
 
@@ -349,7 +362,7 @@ function ConstituentsTable({
             <>
               <span className="truncate block">{r.next_step}</span>
               {r.next_step_due && (
-                <span className={`text-xs ${overdue ? "text-expense font-semibold" : "text-ink-3"} ${num}`}>
+                <span className={`text-xs whitespace-nowrap ${overdue ? "text-expense font-semibold" : "text-ink-3"} ${num}`}>
                   {overdue ? "overdue · " : "due "}
                   {fmtDate(r.next_step_due)}
                 </span>

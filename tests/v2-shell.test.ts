@@ -45,14 +45,9 @@ describe("liveSeatFor: every canonical tab route resolves to a screen that exist
     }
     expect(seatless.sort()).toEqual([
       // Empty from Spec Impact I2 until V4 A2, which declared the approved
-      // Comms tab row (spec §4). Only Emails has a screen; these five stay
-      // hidden until Stage D builds them, and each entry leaves this list
-      // as its screen ships.
+      // Comms tab row (spec §4). Stage D built Home, Stories, Editions and
+      // Settings; Automations stays hidden until journeys get a page.
       "/admin/comms/automations",
-      "/admin/comms/editions",
-      "/admin/comms/home",
-      "/admin/comms/settings",
-      "/admin/comms/stories",
     ]);
   });
 
@@ -290,15 +285,15 @@ describe("B3 shell invariants", () => {
     }
   });
 
-  test("Comms (V4 §4): its own destination with modules.comms, landing on Emails, the only seated tab today", () => {
+  test("Comms (V4 §4, Stage D): its own destination with modules.comms, landing on Home; Automations hidden", () => {
     for (const features of [AA, YGB]) {
       const nav = resolveShellNav(features);
       expect(nav.destinations.map((d) => d.key)).toEqual([
         "home", "work", "programs", "fundraising", "comms", "finance", "impact", "organization",
       ]);
       const comms = nav.destinations.find((d) => d.key === "comms")!;
-      expect(comms.href).toBe("/admin/comms/emails");
-      expect(comms.tabs.map((t) => t.label)).toEqual(["Emails"]);
+      expect(comms.href).toBe("/admin/comms/home");
+      expect(comms.tabs.map((t) => t.label)).toEqual(["Home", "Stories", "Editions", "Emails", "Settings"]);
     }
     // No modules.comms → no Comms destination at all (the 9-key orgs).
     expect(resolveShellNav(NINE_KEY).destinations.map((d) => d.key)).not.toContain("comms");

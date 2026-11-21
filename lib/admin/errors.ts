@@ -1,3 +1,4 @@
+import { supportHint } from "./support";
 /**
  * Quality Floor Q2 (specs/bloomos-v2-spec-quality-floor.md) — the one
  * function between a failed fetch and the person reading about it.
@@ -53,8 +54,8 @@ export function userMessage(
   if (s === 409) return "That couldn't be completed because something it depends on changed. Refresh to see the current state.";
   if (s === 422 || s === 400) return "Something in the form isn't valid. Check the fields and try again.";
   if (s === 429) return "Too many requests at once. Wait a moment and try again.";
-  if (s >= 500) return "Something failed on our side. Your changes were not saved. Try again, and tell Remi if it keeps happening.";
-  return "That didn't go through. Try again, and tell Remi if it keeps happening.";
+  if (s >= 500) return `Something failed on our side. Your changes were not saved. Try again, and if it keeps happening, ${supportHint()}.`;
+  return `That didn't go through. Try again, and if it keeps happening, ${supportHint()}.`;
 }
 
 /** For thrown fetches (network down, CORS, aborted) — no response at all. */

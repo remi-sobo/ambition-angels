@@ -1,5 +1,6 @@
 import type { FeatureKey } from "./entitlements";
 import type { OrgContext } from "./auth";
+import { askSupportSentence } from "./support";
 
 /**
  * V4 Stage A2 — the Settings home (specs/bloomos-v4-product-readiness.md §4
@@ -13,7 +14,7 @@ import type { OrgContext } from "./auth";
  * Sections link the setup screens that already exist (the audit's "about 12
  * scattered setup screens", now seated under /admin/settings by the route
  * map). Where a section has no screen yet, `comingNext` says so honestly and
- * names who to ask, rather than showing a form that does nothing.
+ * points at support (lib/admin/support.ts), rather than showing a form that does nothing.
  */
 
 export type SettingsRole = OrgContext["role"];
@@ -44,7 +45,7 @@ export type SettingsSection = {
   comingNext?: string;
 };
 
-const ASK = "Until then, ask your BloomOS contact and they will make the change for you.";
+const ASK = askSupportSentence();
 
 export const SETTINGS_SECTIONS: SettingsSection[] = [
   {
@@ -60,7 +61,6 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     href: "/admin/settings/organization",
     blurb: "Who you are as an organization, and the pages that speak for it.",
     roles: SETUP_ROLES,
-    comingNext: `Editing your organization's legal name, address and EIN is coming in the next stage. ${ASK}`,
     links: [
       {
         label: "Public booking page",
@@ -103,7 +103,6 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     href: "/admin/settings/terms",
     blurb: "The words BloomOS uses for your people and groups.",
     roles: SETUP_ROLES,
-    comingNext: `Renaming terms (for example "Cohorts" to "Groups") yourself is coming in the next stage. ${ASK}`,
     links: [],
   },
   {
@@ -112,7 +111,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     href: "/admin/settings/modules",
     blurb: "The parts of BloomOS your organization uses.",
     roles: SETUP_ROLES,
-    comingNext: `Turning modules on and off yourself is coming in the next stage. ${ASK}`,
+    comingNext: `Your plan sets which modules are on; you can't switch them yourself yet. ${ASK}`,
     links: [],
   },
   {
@@ -124,8 +123,8 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     links: [
       {
         label: "Gmail for emails",
-        href: "/admin/comms/emails",
-        blurb: "Connect the Google account your emails are sent from. Lives on Comms → Emails.",
+        href: "/admin/comms/settings",
+        blurb: "Connect the Google account your emails are sent from. Lives on Comms → Settings.",
         features: ["modules.comms"],
       },
       {

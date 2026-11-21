@@ -68,7 +68,7 @@ export default function OwnerChip({
       triggerText={variant === "compact" ? undefined : "Change"}
       dots="horizontal"
       size="sm"
-      align={variant === "compact" ? "right" : "left"}
+      align="right"
       disabled={busy}
       items={ownerOptions(members, meId).map((o) => ({
         label: o.label,

@@ -98,12 +98,13 @@ export type BookingInsert = Omit<
 };
 
 // ── Assignment (V4 Stage B2) ────────────────────────────────────────────────
-// Mirrored from supabase/migrations/add_owner_id_assignment.sql. Narrow on
+// Mirrored from supabase/migrations/add_owner_id_assignment.sql (and
+// add_owner_id_opportunities.sql for the Pipeline board's cards). Narrow on
 // purpose like the rest of this file: only the owner columns the B2 code
 // reads and writes, not the whole row of each table.
 
-/** The four tables that carry a nullable owner (auth.users, on delete set null). */
-export type OwnedTable = "constituents" | "asks" | "cohorts" | "programs";
+/** The tables that carry a nullable owner (auth.users, on delete set null). */
+export type OwnedTable = "constituents" | "asks" | "cohorts" | "programs" | "opportunities";
 
 /** The owner slice shared by constituents, asks, cohorts and programs. */
 export interface OwnerColumns {

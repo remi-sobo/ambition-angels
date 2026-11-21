@@ -190,7 +190,8 @@ export function buildFixtures({ profile = "populated", role = "owner", skipViews
   add("role_permissions", reference.role_permissions || []);
   // V4 Stage D: the story bank's two keys (comms_phase1_story_schema), until
   // reference.json is regenerated from the migrations.
-  for (const [role, permission] of [["owner", "comms.manage"], ["admin", "comms.manage"], ["staff", "comms.manage"], ["owner", "comms.subjects.read"], ["admin", "comms.subjects.read"]]) {
+  // Voice for every role: capture.use for all five (capture_use_permission).
+  for (const [role, permission] of [["owner", "comms.manage"], ["admin", "comms.manage"], ["staff", "comms.manage"], ["owner", "comms.subjects.read"], ["admin", "comms.subjects.read"], ...["owner", "admin", "staff", "finance", "board_viewer"].map((r) => [r, "capture.use"])]) {
     if (!tables.role_permissions.some((r) => r.role === role && r.permission === permission)) add("role_permissions", [{ role, permission }]);
   }
   add("entity_types", reference.entity_types || []);
@@ -422,6 +423,9 @@ function populate(T, add, tables, team) {
       probability: T.int(10, 90), capacity_rating: T.int(1, 5), affinity_rating: T.int(1, 5), owner: T.pick(["marcus", "dana"]),
       next_step: T.pick(["Send impact one-pager", "Schedule site visit", "Draft proposal", "Follow up on ask", "Invite to showcase"]),
       next_step_due: ymd(daysFromNow(T.int(-7, 21))), external_ids: {}, created_at: iso(daysAgo(T.int(10, 300))), updated_at: iso(daysAgo(T.int(0, 40))),
+      // add_owner_id_opportunities.sql: a third owned by id (you, or a
+      // teammate), the rest still on the free-text owner.
+      owner_id: i % 3 === 0 ? team[0].id : i % 3 === 1 ? team[1].id : null,
     };
   }));
 

@@ -77,6 +77,8 @@ export async function POST(req: NextRequest) {
     const created = await createOpportunity(supabase, ctx.orgId, {
       constituentId,
       owner: by ?? null,
+      // The person promoting it owns the new ask (V4 assignment default).
+      ownerId: ctx.userId,
     });
     if ("error" in created) {
       results.push({ id: p.id, error: created.error });

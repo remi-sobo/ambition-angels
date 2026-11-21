@@ -1585,11 +1585,13 @@ reset request.jwt.claim.sub;
 
 -- ════ Capture C1: captures + capture_cards (specs/bloomos-capture.md) ═════
 -- Personal, org-scoped staging rows. Every policy requires the caller's own
--- created_by on top of ops.read / ops.write, and a composite FK ties a card
+-- created_by on top of capture.use (capture_use_permission.sql: all five
+-- roles; it was ops.read / ops.write before), and a composite FK ties a card
 -- to a capture in the SAME org. Assertions: tenant-two sees and touches
 -- nothing of AA's; an AA staffer cannot read the AA owner's captures (but can
--- write her own); a board_viewer (no ops.write) cannot insert; anon sees
--- nothing; a card can never point at another org's capture.
+-- write her own); a board_viewer and a finance member can record their OWN
+-- capture and still cannot read anyone else's or write as someone else; anon
+-- sees nothing; a card can never point at another org's capture.
 reset role;
 reset request.jwt.claim.sub;
 
@@ -1725,18 +1727,79 @@ begin
 exception when insufficient_privilege then null; -- expected
 end $$;
 
--- AA board_viewer (no ops.write): cannot insert.
+-- AA board_viewer and AA finance (capture.use, no ops.write): each records
+-- her OWN capture and card, reads only those, never the owner's, and cannot
+-- write a row as someone else. Filing stays fenced by each destination's RLS.
+-- (example.org on purpose: an ambitionangels.org address would be
+-- auto-granted staff by the membership bootstrap's domain rule.)
+reset role;
+reset request.jwt.claim.sub;
+insert into auth.users (id, email) values
+  ('00000000-0000-0000-0000-000000000006','fin@example.org')
+on conflict do nothing;
+insert into memberships (user_id, org_id, role)
+select '00000000-0000-0000-0000-000000000006', id, 'finance'
+from orgs where slug = 'ambition-angels'
+on conflict do nothing;
+set role authenticated;
+
 set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000005';
+do $$
+declare aa uuid; aa_cap uuid := current_setting('leak.aa_capture_id')::uuid; cap uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  insert into captures (org_id, source_surface) values (aa, 'quick_add') returning id into cap;
+  insert into capture_cards (org_id, capture_id, position, dest) values (aa, cap, 0, 'thought');
+  if (select count(*) from captures) <> 1 then
+    raise exception 'board_viewer should read exactly her own capture (capture.use)';
+  end if;
+  if (select count(*) from capture_cards where capture_id = cap) <> 1 then
+    raise exception 'board_viewer cannot read her own capture_card';
+  end if;
+  if (select count(*) from captures where id = aa_cap) <> 0 then
+    raise exception 'LEAK: board_viewer reads the AA owner''s capture';
+  end if;
+end $$;
 do $$
 declare aa uuid;
 begin
   select id into aa from public.orgs where slug = 'ambition-angels';
-  insert into captures (org_id, source_surface) values (aa, 'quick_add');
-  raise exception 'LEAK: board_viewer inserted a capture';
+  insert into captures (org_id, source_surface, created_by)
+    values (aa, 'quick_add', '00000000-0000-0000-0000-000000000001');
+  raise exception 'LEAK: board_viewer inserted a capture as the owner';
 exception when insufficient_privilege then null; -- expected
 end $$;
-do $$ begin
-  if (select count(*) from captures) <> 0 then raise exception 'LEAK: board_viewer reads captures'; end if;
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  insert into ops_tasks (org_id, title, category, created_by) values (aa, 'leak-test board viewer task', 'other', 'remi');
+  raise exception 'LEAK: board_viewer filed an ops task (capture.use must not open destinations)';
+exception when insufficient_privilege then null; -- expected
+end $$;
+
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000006';
+do $$
+declare aa uuid; aa_cap uuid := current_setting('leak.aa_capture_id')::uuid; cap uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  insert into captures (org_id, source_surface) values (aa, 'mobile_plus') returning id into cap;
+  if (select count(*) from captures) <> 1 then
+    raise exception 'finance should read exactly her own capture (capture.use)';
+  end if;
+  if (select count(*) from captures where id = aa_cap) <> 0 then
+    raise exception 'LEAK: finance reads the AA owner''s capture';
+  end if;
+  update capture_cards set status = 'discarded' where capture_id = aa_cap;
+  if found then raise exception 'LEAK: finance updated the AA owner''s capture_cards'; end if;
+end $$;
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  insert into ops_tasks (org_id, title, category, created_by) values (aa, 'leak-test finance task', 'other', 'remi');
+  raise exception 'LEAK: finance filed an ops task (capture.use must not open destinations)';
+exception when insufficient_privilege then null; -- expected
 end $$;
 
 -- Stranger (session, no membership): nothing.

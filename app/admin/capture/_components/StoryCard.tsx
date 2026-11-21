@@ -25,11 +25,15 @@ export default function StoryCardBody({
   busy,
   onReplace,
   onError,
+  actions = true,
 }: {
   card: CardView;
   busy: boolean;
   onReplace: (card: CardView) => void;
   onError: (message: string) => void;
+  /** False when the person cannot file this card: words only, no actions
+   *  (the stack offers "Send to a teammate" instead). */
+  actions?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -102,7 +106,7 @@ export default function StoryCardBody({
         <p className={`${TYPE.metadata} mt-2`}>No one identifiable. It is kept as a story draft.</p>
       )}
 
-      {held && !editing && (
+      {held && actions && !editing && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <Button type="button" size="lg" disabled={busy || saving} onClick={() => void keep()}>
             {saving ? "Saving" : "Keep story"}

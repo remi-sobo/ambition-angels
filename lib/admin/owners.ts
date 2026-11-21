@@ -13,7 +13,8 @@ import type { Permission } from "@/lib/admin/requirePermission";
  *  - a record created through the app is owned by its creator unless the
  *    request names an owner (resolveCreateOwner);
  *  - ownership drives "mine" views; it never changes who can see a row;
- *  - asks.owner (free text) is shown until owner_id is set (ownerLabel).
+ *  - asks.owner and opportunities.owner (free text) are shown until
+ *    owner_id is set (ownerLabel).
  */
 
 export type OrgMember = {
@@ -28,6 +29,8 @@ export const OWNED_ENTITIES: Record<OwnedTable, { permission: Permission; noun: 
   asks: { permission: "fundraising.write", noun: { one: "ask", many: "asks" } },
   cohorts: { permission: "program.write", noun: { one: "cohort", many: "cohorts" } },
   programs: { permission: "program.write", noun: { one: "program", many: "programs" } },
+  // Pipeline board cards (add_owner_id_opportunities.sql).
+  opportunities: { permission: "fundraising.write", noun: { one: "ask", many: "asks" } },
 };
 
 export function isOwnedEntity(v: unknown): v is OwnedTable {

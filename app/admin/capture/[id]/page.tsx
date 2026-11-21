@@ -3,7 +3,8 @@ import { formatInTimeZone } from "date-fns-tz";
 import PageHeader from "../../_components/PageHeader";
 import PageShell from "../../_components/ui/PageShell";
 import { TYPE } from "@/lib/admin/typeScale";
-import { getOrgContext } from "@/lib/admin/auth";
+import { ctxHasPermission, getOrgContext } from "@/lib/admin/auth";
+import { filingPermissionsHeld } from "@/lib/capture/handoff";
 import { getEntitlements, hasFeature } from "@/lib/admin/entitlements";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { CAPTURE_DEFAULT_TZ } from "@/lib/capture/constants";
@@ -44,6 +45,7 @@ export default async function CapturePage({ params }: { params: { id: string } }
     .order("position", { ascending: true });
 
   const c = capture as CaptureView;
+  const filingPermissions = await filingPermissionsHeld((p) => ctxHasPermission(ctx, p));
   const when = formatInTimeZone(new Date(c.created_at), CAPTURE_DEFAULT_TZ, "EEE MMM d, h:mm a");
 
   return (
@@ -61,7 +63,10 @@ export default async function CapturePage({ params }: { params: { id: string } }
       ) : c.status === "parsing" ? (
         <p className={TYPE.bodyMuted}>Still sorting this one out. Refresh in a moment.</p>
       ) : (
-        <ConfirmStack captureId={c.id} initial={{ capture: c, cards: (cards ?? []) as CardView[] }} />
+        <ConfirmStack
+          captureId={c.id}
+          initial={{ capture: c, cards: (cards ?? []) as CardView[], filing_permissions: filingPermissions }}
+        />
       )}
     </PageShell>
   );

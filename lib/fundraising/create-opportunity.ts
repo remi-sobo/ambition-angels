@@ -43,6 +43,9 @@ export type CreateOpportunityInput = {
   nextStep?: string | null;
   nextStepDue?: string | null;
   owner?: string | null;
+  /** The member who owns the ask (add_owner_id_opportunities.sql). Callers
+   *  default it to the creator (createOwnerFor); undefined leaves it unset. */
+  ownerId?: string | null;
   /** Files the ask under a fundraising-plan strategy when one applies. */
   planStrategyId?: string | null;
   /** Override the default pipeline. Callers normally leave this alone. */
@@ -96,6 +99,7 @@ export async function createOpportunity(
   if (input.nextStep?.trim()) insert.next_step = input.nextStep.trim().slice(0, 500);
   if (input.nextStepDue) insert.next_step_due = input.nextStepDue;
   if (input.owner !== undefined) insert.owner = input.owner;
+  if (input.ownerId !== undefined) insert.owner_id = input.ownerId;
   if (input.planStrategyId) insert.plan_strategy_id = input.planStrategyId;
 
   const { data, error } = await supabase

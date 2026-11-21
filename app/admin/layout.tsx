@@ -115,11 +115,12 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     // V4 A2: the nav also hides what the ROLE cannot open (matching the
     // #593 server guard), e.g. Finance for staff without finance.read.
     const perms = ctx ? await getRolePermissions(ctx.role) : null;
-    // V4 Stage C: a recording is saved to captures, whose RLS needs ops.write,
-    // so the Capture entry points also need the role (finance and board
-    // viewers get none). The entitlement is still the gate; the API is the
-    // boundary (402/403).
-    const canCapture = captureEnabled && !!perms?.includes("ops.write");
+    // Voice for every role: a recording is saved to captures, whose RLS needs
+    // capture.use (capture_use_permission.sql: all five roles), so finance
+    // and board viewers get Talk to log too. Filing each card still checks
+    // its destination's permission. The entitlement is still the gate; the
+    // API is the boundary (402/403).
+    const canCapture = captureEnabled && !!perms?.includes("capture.use");
     // V4 Stage D: "Capture a story" (StoryPhone) for roles that can write
     // the story bank in an org with Comms.
     const canStory = !!features?.includes("modules.comms") && !!perms?.includes("comms.manage");

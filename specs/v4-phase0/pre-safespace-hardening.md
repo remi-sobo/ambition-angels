@@ -18,6 +18,11 @@ Pulled out of V4 on 2026-11-20 with Remi's approval. These are the audit finding
 | 6, 7 | HubSpot and the Gmail sync are pinned to the org that owns them. Gift entry by donor name stays inside the org and handles commas. | `claude/presafespace-integration-org-pins` |
 | 11 | Totals page past 1,000 rows instead of silently stopping. | `claude/presafespace-row-cap` |
 
+## Status, 2026-11-21
+
+Merged: #582 (open hole), #583 (Comms saved views), #584 (AA-only data), #585 (thank-yous and receipts), #586 (1,000-row totals), #587 (HubSpot, Gmail sync, gift entry), #590 (finance categories per org; migration applied), #591 (fonts in repo), #592 (three crashing pages, silent task save).
+Open: #588 (phone privacy), #589 (import and export). In progress: role guard (item 3).
+
 ## Wave 2: after wave 1 merges (same files, so it waits)
 
 | # | Fix | Notes |

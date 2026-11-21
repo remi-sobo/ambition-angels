@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import ConfigEditor, { type FinConfig } from "./_components/ConfigEditor";
 import PageHeader from "../../_components/PageHeader";
+import PageShell from "../../_components/ui/PageShell";
 import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Read live every request so the form always seeds from the latest saved row
@@ -56,27 +56,18 @@ export default async function ConfigPage() {
         : Number(data.runway_target_months),
   };
 
+  // Settings archetype (V4 Stage G2): reading width, save per section.
   return (
-    <div className="max-w-3xl px-4 lg:px-8 py-6 lg:py-8">
-      <header className="mb-2">
-        <div className="flex items-center gap-3 text-xs text-ink-2 mb-1">
-          <Link href="/admin/finance" className="hover:text-ink-1">
-            ← Finance
-          </Link>
-        </div>
-        <PageHeader
-          title="Configuration"
-          subtitle={
-            <span className="block max-w-2xl">
-              Global settings that the dashboard uses for runway, budget rollups,
-              and fundraising progress. You probably set these once at the start
-              of each fiscal year and rarely touch them again.
-            </span>
-          }
-        />
-      </header>
-
+    <PageShell width="reading">
+      <PageHeader
+        breadcrumb={[
+          { label: "Settings", href: "/admin/settings" },
+          { label: "Finance", href: "/admin/settings/finance" },
+        ]}
+        title="Configuration"
+        subtitle="The settings the snapshot uses for runway, budget rollups and fundraising progress. Most are set once a year."
+      />
       <ConfigEditor initial={initial} />
-    </div>
+    </PageShell>
   );
 }

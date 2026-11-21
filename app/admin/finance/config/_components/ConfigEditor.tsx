@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { TYPE } from "@/lib/admin/typeScale";
+import Button from "@/app/admin/_components/ui/Button";
+import { DateField, SelectField, TextField } from "@/app/admin/_components/ui/Field";
+import { useSaveAction } from "@/app/admin/_lib/useSaveAction";
 
 export type FinConfig = {
   current_year: number;
@@ -19,206 +22,135 @@ export type FinConfig = {
 type Props = { initial: FinConfig };
 
 const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
+const str = (n: number | null) => (n === null ? "" : String(n));
+const num = (s: string) => (s.trim() === "" ? null : Number(s.replace(/[$,\s]/g, "")));
+
+// Finance setup (V4 Stage G2, the Settings archetype): one section per job,
+// each with labeled kit fields and its own Save, through saveAction. A save
+// sends only that section's fields, so saving the goal never touches cash.
 export default function ConfigEditor({ initial }: Props) {
   const router = useRouter();
+  const save = useSaveAction();
 
   const [year, setYear] = useState(String(initial.current_year));
   const [fyMonth, setFyMonth] = useState(String(initial.fiscal_year_start_month));
-  const [goal, setGoal] = useState(initial.fundraising_goal === null ? "" : String(initial.fundraising_goal));
-  const [threshold, setThreshold] = useState(
-    initial.contingency_unlock_threshold === null ? "" : String(initial.contingency_unlock_threshold)
-  );
-  const [startBal, setStartBal] = useState(
-    initial.cash_starting_balance === null ? "" : String(initial.cash_starting_balance)
-  );
+  const [goal, setGoal] = useState(str(initial.fundraising_goal));
+  const [threshold, setThreshold] = useState(str(initial.contingency_unlock_threshold));
+  const [startBal, setStartBal] = useState(str(initial.cash_starting_balance));
   const [startDate, setStartDate] = useState(initial.cash_starting_date ?? "");
-  const [baseline, setBaseline] = useState(
-    initial.monthly_burn_baseline === null ? "" : String(initial.monthly_burn_baseline)
-  );
-  const [horizon, setHorizon] = useState(
-    initial.forward_horizon_months === null ? "" : String(initial.forward_horizon_months)
-  );
-  const [runwayTarget, setRunwayTarget] = useState(
-    initial.runway_target_months === null ? "" : String(initial.runway_target_months)
-  );
+  const [baseline, setBaseline] = useState(str(initial.monthly_burn_baseline));
+  const [horizon, setHorizon] = useState(str(initial.forward_horizon_months));
+  const [runwayTarget, setRunwayTarget] = useState(str(initial.runway_target_months));
+  const [saving, setSaving] = useState<string | null>(null);
 
-  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const [error, setError] = useState<string | null>(null);
-
-  async function save() {
-    setStatus("saving");
-    setError(null);
-    const body: Record<string, unknown> = {};
-    body.current_year = Number(year);
-    body.fiscal_year_start_month = Number(fyMonth);
-    body.fundraising_goal = goal === "" ? null : Number(goal.replace(/,/g, ""));
-    body.contingency_unlock_threshold = threshold === "" ? null : Number(threshold);
-    body.cash_starting_balance = startBal === "" ? null : Number(startBal.replace(/,/g, ""));
-    body.cash_starting_date = startDate || null;
-    body.monthly_burn_baseline = baseline === "" ? null : Number(baseline.replace(/,/g, ""));
-    body.forward_horizon_months = horizon === "" ? null : Number(horizon);
-    body.runway_target_months = runwayTarget === "" ? null : Number(runwayTarget);
-
-    const r = await fetch("/api/admin/finance/config", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok) {
-      setStatus("error");
-      setError(j.error ?? "Save failed");
-      return;
-    }
-    setStatus("saved");
-    setTimeout(() => setStatus("idle"), 1500);
-    router.refresh();
+  async function saveSection(key: string, body: Record<string, unknown>) {
+    setSaving(key);
+    const r = await save({ request: { url: "/api/admin/finance/config", method: "POST", body }, success: "Saved" });
+    setSaving(null);
+    if (r.ok) router.refresh();
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Section
         title="Fiscal year"
-        hint="The fiscal year determines which budget rows are 'current'. Most US nonprofits use calendar year. Fiscal year starts January."
+        hint="Decides which budget rows are current. Most US nonprofits run January to December. The organization's fiscal year is also set under Settings, Organization."
+        saving={saving === "fy"}
+        onSave={() => saveSection("fy", { current_year: Number(year), fiscal_year_start_month: Number(fyMonth) })}
       >
-        <Field label="Current fiscal year">
-          <input
-            value={year}
-            onChange={(e) => setYear(e.target.value)}
-            inputMode="numeric"
-            className="bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1 w-32"
-          />
-        </Field>
-        <Field label="Fiscal year starts">
-          <select
-            value={fyMonth}
-            onChange={(e) => setFyMonth(e.target.value)}
-            className="bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1"
-          >
-            {MONTHS.map((m, i) => (
-              <option key={m} value={i + 1}>
-                {m}
-              </option>
-            ))}
-          </select>
-        </Field>
+        <TextField label="Current fiscal year" value={year} onChange={(e) => setYear(e.target.value)} inputMode="numeric" />
+        <SelectField
+          label="Fiscal year starts"
+          value={fyMonth}
+          onChange={(e) => setFyMonth(e.target.value)}
+          options={MONTHS.map((m, i) => ({ value: String(i + 1), label: m }))}
+        />
       </Section>
 
       <Section
         title="Fundraising goal"
-        hint="From the budget workbook Donations tab. Contingency unlocks when received + secured crosses (goal × threshold)."
+        hint="From the budget workbook. Contingency unlocks when received plus secured crosses the goal times the threshold."
+        saving={saving === "goal"}
+        onSave={() => saveSection("goal", { fundraising_goal: num(goal), contingency_unlock_threshold: num(threshold) })}
       >
-        <Field label="Goal ($)">
-          <input
-            value={goal}
-            onChange={(e) => setGoal(e.target.value)}
-            inputMode="decimal"
-            placeholder="1247982"
-            className="bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1 w-40"
-          />
-        </Field>
-        <Field label="Contingency unlock threshold">
-          <input
-            value={threshold}
-            onChange={(e) => setThreshold(e.target.value)}
-            inputMode="decimal"
-            placeholder="1.09"
-            className="bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1 w-24"
-          />
-        </Field>
+        <TextField label="Goal" value={goal} onChange={(e) => setGoal(e.target.value)} inputMode="decimal" placeholder="1200000" />
+        <TextField
+          label="Contingency unlock threshold"
+          value={threshold}
+          onChange={(e) => setThreshold(e.target.value)}
+          inputMode="decimal"
+          placeholder="1.09"
+          hint="1.09 means 109% of the goal."
+        />
       </Section>
 
       <Section
         title="Starting cash position"
-        hint="Cash on hand as of this date. Runway and cash-position math start from here, then add all transactions dated after this. If you only upload statements going back to (say) 2026-01-01, set the starting balance to whatever was in the bank on 2025-12-31."
+        hint="Cash on hand as of this date. Cash and runway start here, then add every transaction dated after it. If your statements start January 1, use the balance from December 31."
+        saving={saving === "cash"}
+        onSave={() => saveSection("cash", { cash_starting_balance: num(startBal), cash_starting_date: startDate || null })}
       >
-        <Field label="Starting balance ($)">
-          <input
-            value={startBal}
-            onChange={(e) => setStartBal(e.target.value)}
-            inputMode="decimal"
-            placeholder="121589"
-            className="bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1 w-40"
-          />
-        </Field>
-        <Field label="As of date">
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1"
-          />
-        </Field>
+        <TextField label="Starting balance" value={startBal} onChange={(e) => setStartBal(e.target.value)} inputMode="decimal" placeholder="120000" />
+        <DateField label="As of" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
       </Section>
 
       <Section
-        title="Runway model"
-        hint="Drives the forward runway. The burn baseline is the monthly spend the runway divides by. Set it to a number you can defend, a touch above your actual average for cushion. Leave it blank to fall back to the trailing 3-month average. The horizon is how many months ahead the projected runway counts pledges that haven't landed yet."
+        title="Runway"
+        hint="The burn baseline is the monthly spend runway divides by: a number you can defend, a touch above your real average. Leave it blank to use the 3-month average. The horizon is how far ahead projected runway counts pledges not yet in."
+        saving={saving === "runway"}
+        onSave={() =>
+          saveSection("runway", {
+            monthly_burn_baseline: num(baseline),
+            forward_horizon_months: num(horizon),
+            runway_target_months: num(runwayTarget),
+          })
+        }
       >
-        <Field label="Monthly burn baseline ($)">
-          <input
-            value={baseline}
-            onChange={(e) => setBaseline(e.target.value)}
-            inputMode="decimal"
-            placeholder="50000"
-            className="bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1 w-40"
-          />
-        </Field>
-        <Field label="Forward horizon (months)">
-          <input
-            value={horizon}
-            onChange={(e) => setHorizon(e.target.value)}
-            inputMode="numeric"
-            placeholder="3"
-            className="bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1 w-24"
-          />
-        </Field>
-        <Field label="Runway target (months)">
-          <input
-            value={runwayTarget}
-            onChange={(e) => setRunwayTarget(e.target.value)}
-            inputMode="numeric"
-            placeholder="6"
-            className="bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1 w-24"
-          />
-        </Field>
+        <TextField label="Monthly burn baseline" value={baseline} onChange={(e) => setBaseline(e.target.value)} inputMode="decimal" placeholder="50000" />
+        <TextField label="Projection window (months)" value={horizon} onChange={(e) => setHorizon(e.target.value)} inputMode="numeric" placeholder="3" />
+        <TextField label="Runway target (months)" value={runwayTarget} onChange={(e) => setRunwayTarget(e.target.value)} inputMode="numeric" placeholder="6" />
       </Section>
-
-      <div className="flex items-center gap-3 pt-2">
-        <button
-          type="button"
-          disabled={status === "saving"}
-          onClick={save}
-          className="px-4 py-2 rounded-control bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40"
-        >
-          {status === "saving" ? "Saving…" : "Save changes"}
-        </button>
-        {status === "saved" && <span className="text-xs text-revenue">Saved</span>}
-        {status === "error" && error && <span className="text-xs text-expense">{error}</span>}
-      </div>
     </div>
   );
 }
 
-function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+function Section({
+  title,
+  hint,
+  children,
+  onSave,
+  saving,
+}: {
+  title: string;
+  hint?: string;
+  children: ReactNode;
+  onSave: () => void;
+  saving: boolean;
+}) {
   return (
-    <section className="rounded-panel-lg border-hairline bg-surface p-5">
-      <h2 className={`${TYPE.sectionHeader} mb-1`}>{title}</h2>
-      {hint && <p className="text-xs text-ink-2 mb-4 max-w-2xl">{hint}</p>}
+    <section className="bg-surface border border-hairline rounded-panel p-5">
+      <h2 className={TYPE.cardTitle}>{title}</h2>
+      {hint ? <p className={`${TYPE.bodyMuted} mt-1 mb-4`}>{hint}</p> : null}
       <div className="grid sm:grid-cols-2 gap-4">{children}</div>
+      <div className="flex justify-end mt-4">
+        <Button variant="secondary" onClick={onSave} loading={saving}>
+          {saving ? "Saving" : `Save ${title.toLowerCase()}`}
+        </Button>
+      </div>
     </section>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className={`block ${TYPE.fieldLabel} mb-1`}>{label}</span>
-      {children}
-    </label>
   );
 }

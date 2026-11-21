@@ -3,6 +3,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 import { pushConstituentToHubSpot } from "@/lib/hubspot/sync-out";
+import { createOwnerFor } from "@/lib/admin/owners-server";
 
 // Epic B — constituent (donor) records by hand. Until now constituents were
 // only created as a side effect of a gift/opportunity/grant; this lets staff
@@ -28,7 +29,10 @@ export async function POST(req: NextRequest) {
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 
   const type = body.type === "organization" ? "organization" : "person";
-  const insert: Record<string, unknown> = { org_id: ctx.orgId, type, source: "manual" };
+  // V4 B2: the creator owns a new record unless the request names an owner.
+  const owner = await createOwnerFor(body, ctx);
+  if (!owner.ok) return NextResponse.json({ error: owner.error }, { status: 400 });
+  const insert: Record<string, unknown> = { org_id: ctx.orgId, type, source: "manual", owner_id: owner.ownerId };
 
   if (type === "organization") {
     const orgName = str(body.org_name);

@@ -7,6 +7,7 @@ import { TYPE } from "@/lib/admin/typeScale";
 import { useSaveAction } from "@/app/admin/_lib/useSaveAction";
 import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import { buttonClass } from "./Button";
+import MoreActionsMenu from "./MoreActionsMenu";
 import type { DataTableBulkAction } from "@/lib/admin/dataTable";
 
 /**
@@ -121,9 +122,23 @@ export default function DataTableFrame({
     });
   const toggleAll = () => setSelected(allOn ? new Set() : new Set(rowIds));
 
-  async function run(action: DataTableBulkAction) {
+  async function run(action: DataTableBulkAction, choice?: { value: string; label: string }) {
     const ids = rowIds.filter((id) => selected.has(id));
     if (ids.length === 0 || busy) return;
+    if (action.kind === "choose") {
+      if (!choice) return;
+      setBusy(action.key);
+      const r = await save({
+        request: { url: action.url, method: action.method ?? "POST", body: { ids, [action.field]: choice.value || null } },
+        success: action.success?.replace("{label}", choice.label),
+      });
+      setBusy(null);
+      if (r.ok) {
+        setSelected(new Set());
+        router.refresh();
+      }
+      return;
+    }
     if (action.kind === "link") {
       const [path, hash] = action.href.split("#");
       const sep = path.includes("?") ? "&" : "?";
@@ -323,7 +338,19 @@ export default function DataTableFrame({
         </span>
         {count > 0 ? (
           <div role="group" aria-label="Bulk actions" className="flex flex-wrap items-center gap-2">
-            {bulkActions.map((a) => (
+            {bulkActions.map((a) =>
+              a.kind === "choose" ? (
+                <MoreActionsMenu
+                  key={a.key}
+                  label={a.label}
+                  triggerText={busy === a.key ? "Working" : a.label}
+                  size="sm"
+                  align="left"
+                  placement="above"
+                  disabled={busy !== null}
+                  items={a.options.map((o) => ({ label: o.label, onSelect: () => void run(a, o) }))}
+                />
+              ) : (
               <button
                 key={a.key}
                 type="button"
@@ -334,7 +361,8 @@ export default function DataTableFrame({
               >
                 {busy === a.key ? "Working" : a.label}
               </button>
-            ))}
+              ),
+            )}
             <button type="button" onClick={() => setSelected(new Set())} className={buttonClass({ variant: "quiet", size: "sm" })}>
               Clear selection
             </button>

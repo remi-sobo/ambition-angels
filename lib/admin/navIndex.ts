@@ -71,6 +71,23 @@ export const TAB_HELP: Record<string, { what: string; keywords?: string[] }> = {
   "inbox/messages": { what: "Direct messages and group chat with your team.", keywords: ["chat", "messages", "dm"] },
 };
 
+/**
+ * Live screens that are not tabs but belong to one (V4 B2: they were only
+ * linked from pages that now 308). Each is indexed only when its parent tab
+ * is visible, so it inherits the tab's entitlement and seat.
+ */
+export const TAB_SUBPAGES: Record<string, PageEntry[]> = {
+  "fundraising/donors-funders": [
+    { label: "Gift reports", href: "/admin/fundraising/reports", keywords: ["reports", "gifts", "segments", "export"] },
+  ],
+  "fundraising/campaigns": [
+    { label: "Plan strategies", href: "/admin/fundraising/campaigns#plan", keywords: ["fundraising plan", "strategy", "goals"] },
+  ],
+  "work/plan-close": [
+    { label: "Weekly briefing", href: "/admin/briefing/weekly", keywords: ["briefing", "weekly", "summary"] },
+  ],
+};
+
 export type HelpTab = { key: string; label: string; href: string; what?: string };
 export type HelpDestination = { key: string; label: string; blurb?: string; tabs: HelpTab[] };
 
@@ -114,6 +131,9 @@ export function navPageIndex(nav: ShellNav, settings: SettingsSection[] = []): P
         href: t.href,
         keywords: [d.label.toLowerCase(), ...(TAB_HELP[`${d.key}/${t.key}`]?.keywords ?? [])],
       });
+      for (const sub of TAB_SUBPAGES[`${d.key}/${t.key}`] ?? []) {
+        push({ ...sub, keywords: [d.label.toLowerCase(), ...(sub.keywords ?? [])] });
+      }
     }
   }
   for (const s of settings) {

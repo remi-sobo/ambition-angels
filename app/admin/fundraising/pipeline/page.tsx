@@ -15,13 +15,24 @@ export const dynamic = "force-dynamic";
 export default async function PipelinePage({
   searchParams,
 }: {
-  searchParams?: { pipeline?: string; year?: string; view?: string };
+  searchParams?: { pipeline?: string; year?: string; view?: string; asks?: string };
 }) {
+  // V4 B2 "My asks": the ask log filtered to owner_id = the viewer. The
+  // board's other params ride along so switching keeps the board as it was.
+  const keep: Record<string, string> = {};
+  for (const k of ["pipeline", "year", "view"] as const) {
+    const v = searchParams?.[k];
+    if (v) keep[k] = v;
+  }
   return (
     <div>
       <PipelineHome searchParams={searchParams} basePath="/admin/fundraising/pipeline" />
       <div id="ask-log" className="max-w-workspace px-4 lg:px-8 pb-6 lg:pb-8 scroll-mt-24">
-        <AskLog embedded />
+        <AskLog
+          embedded
+          mine={searchParams?.asks === "mine"}
+          filter={{ basePath: "/admin/fundraising/pipeline", extraParams: keep, hash: "ask-log" }}
+        />
       </div>
     </div>
   );

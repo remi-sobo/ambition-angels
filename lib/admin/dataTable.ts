@@ -213,6 +213,9 @@ export function applyTableSort<Q extends Orderable<Q>>(
  *    selection clears and the page re-reads. No optimistic update.
  *  - "link": navigates to `href` with `?<param>=id1,id2` appended (an export,
  *    a compose screen prefilled with recipients).
+ *  - "choose": opens a menu of `options`; picking one sends
+ *    `{ ids: [...], <field>: value }` to `url` (an empty value sends null),
+ *    e.g. "Assign to…" with the org's members (V4 B2).
  */
 export type DataTableBulkAction =
   | {
@@ -227,4 +230,16 @@ export type DataTableBulkAction =
       success?: string;
       tone?: "danger";
     }
-  | { kind: "link"; key: string; label: string; href: string; param?: string; tone?: "danger" };
+  | { kind: "link"; key: string; label: string; href: string; param?: string; tone?: "danger" }
+  | {
+      kind: "choose";
+      key: string;
+      label: string;
+      url: string;
+      method?: "POST" | "PATCH";
+      field: string;
+      options: { value: string; label: string }[];
+      /** Success toast; `{label}` is replaced with the chosen option's label. */
+      success?: string;
+      tone?: undefined;
+    };

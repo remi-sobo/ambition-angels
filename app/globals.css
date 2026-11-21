@@ -430,6 +430,12 @@
   padding-top: calc(3.5rem + env(safe-area-inset-top));
 }
 
+/* A full-page surface with no shell around it (the login screen) takes the
+   whole viewport itself. */
+.admin-main:has(.admin-bare) {
+  padding: 0;
+}
+
 /* Phones carry a floating bottom tab bar (MobileTabBar, lg:hidden); reserve
    room so the last bit of content isn't hidden behind it. Bar is ~3.5rem tall
    plus its own safe-area pad and the dock margin. */

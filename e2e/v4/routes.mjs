@@ -80,6 +80,7 @@ export function buildRoutes() {
     commsDraft: first("email_campaigns", (c) => c.status === "draft")?.id,
     event: first("calendar_events", (e) => /^Donor/.test(e.title || "") && new Date(e.start_time) > new Date())?.id || first("calendar_events")?.id,
     ask: first("asks")?.id,
+    softCreditDonor: (fx.gifts || []).find((g) => g.id === fx.soft_credits?.[0]?.gift_id)?.constituent_id,
     reviewCycle: first("review_cycles")?.id,
   };
   const session = first("cohort_sessions", (s) => s.cohort_id === ids.cohort && s.status === "held")?.id;
@@ -108,6 +109,7 @@ export function buildRoutes() {
   const D = (label, p) => ({ group: "detail", label, path: p });
   const details = [
     D("Donor 360 (person)", `/admin/fundraising/donors-funders/${ids.constituent}`),
+    D("Donor 360 (gift with soft credit)", `/admin/fundraising/donors-funders/${ids.softCreditDonor}`),
     D("Funder 360 (foundation)", `/admin/fundraising/donors-funders/${ids.funder}`),
     D("Companies view", `/admin/fundraising/donors-funders/companies`),
     D("Pipeline (ask) detail", `/admin/fundraising/pipeline/${ids.ask}`),

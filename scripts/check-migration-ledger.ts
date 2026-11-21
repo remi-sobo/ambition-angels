@@ -206,18 +206,14 @@ function main(): void {
  */
 export const BASELINE: { ledgerOnly: string[]; fileOnly: string[] } = {
   // Applied to production, no file. Classified in
-  // docs/unapplied-migrations-triage.md §4.1 — the comms module, the Step 13
-  // default drops, fin_config's per-org restructure, and the rest.
+  // docs/unapplied-migrations-triage.md §4.1 — the Step 13 default drops, fin_config's per-org restructure, and the rest.
+  // The six comms story-bank entries (comms_phase1_story_schema … _phase6_loop)
+  // left this list in V4 Stage D, when their files landed byte-for-byte from
+  // the story-bank branch.
   ledgerOnly: [
     "bloomos_briefing_narrative",
     "bloomos_staff_phase2b_shim_and_seed",
     "bv_showcase_submissions",
-    "comms_phase1_story_schema",
-    "comms_phase2_storage",
-    "comms_phase2_views",
-    "comms_phase3_outputs",
-    "comms_phase4_editions",
-    "comms_phase6_loop",
     "create_bv_newsletter_subscribers",
     "drop_product_table_org_id_defaults",
     "enable_rls_exposed_tables",

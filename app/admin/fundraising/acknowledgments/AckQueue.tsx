@@ -10,6 +10,7 @@ import {
   IRS_SUBSTANTIATION_THRESHOLD,
   type ReceiptGift,
 } from "@/lib/fundraising/receipt";
+import { resolveOrgEmailIdentity } from "@/lib/email/org-identity";
 import { reconcileAckQueue, type AckQueueGift } from "@/lib/fundraising/ack-tasks";
 import { ensureEscalationsForQueue } from "@/lib/fundraising/stewardship";
 import { type AckChannel } from "@/lib/fundraising/ack-channels";
@@ -65,6 +66,17 @@ export default async function AckQueue({ embedded = false }: { embedded?: boolea
 
   // IRS substantiation is derived from the gift amount via the compliance
   // module's threshold, not a literal in this view.
+  // The receipt preview carries THIS org's tax statement. If the org hasn't
+  // set up what a receipt needs, the preview shows why instead, and the send
+  // route refuses with the same reason.
+  const identity = ctx ? await resolveOrgEmailIdentity(supabase, ctx.orgId, "receipt") : null;
+  const previewBlock = (g: ReceiptGift): string =>
+    identity?.ok && identity.identity.taxStatement
+      ? complianceBlock(g, identity.identity.taxStatement)
+      : identity && !identity.ok
+        ? identity.reason
+        : "";
+
   const required = pending.filter((g) => requiresSubstantiation(g.amount));
   const oldest = pending[0];
 
@@ -182,7 +194,7 @@ export default async function AckQueue({ embedded = false }: { embedded?: boolea
                         giftId={g.id}
                         donorName={g.constituent ? constituentName(g.constituent) : "there"}
                         donorEmail={email}
-                        complianceBlock={complianceBlock(receiptGift)}
+                        complianceBlock={previewBlock(receiptGift)}
                         templates={templates}
                         defaultChannel={(g.constituent?.preferred_ack_channel as AckChannel | null) ?? null}
                         orgName={ctx?.orgName ?? "our organization"}

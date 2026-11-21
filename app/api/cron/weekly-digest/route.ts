@@ -194,7 +194,7 @@ export async function GET(req: NextRequest) {
       ? section("⏰ Your overdue CRM tasks", groupOverdue(crmOverdue.all.filter((t) => t.assignedTo === who))) +
         section("Unassigned overdue", groupOverdue(crmOverdue.all.filter((t) => t.assignedTo === null)))
       : section("⏰ Overdue across CRM", crmOverdue);
-    const ok = await sendOperatorEmailTo(email, subject, operatorEmailShell(headline, body + personal));
+    const ok = await sendOperatorEmailTo(email, subject, operatorEmailShell(headline, body + personal), orgId);
     if (ok) sent += 1;
   }
   return NextResponse.json({ sent, recipients: operators.length });

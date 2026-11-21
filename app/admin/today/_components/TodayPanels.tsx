@@ -339,15 +339,22 @@ export function CohortsPanel({ rows, failed }: { rows: CohortRow[]; failed: bool
               <div className="min-w-0 flex-1">
                 <p className={`${TYPE.body} font-semibold truncate`}>{c.name}</p>
                 <p className={`text-xs mt-0.5 ${c.unrecorded > 0 ? "text-expense font-semibold" : "text-ink-2"}`}>
-                  {c.unrecorded > 0
+                  {c.todaySessionId
+                    ? "Session today"
+                    : c.unrecorded > 0
                     ? `${c.unrecorded} session${c.unrecorded === 1 ? "" : "s"} waiting for attendance`
                     : c.next
                       ? `Next session ${shortDay(c.next)}`
                       : "No sessions scheduled"}
                 </p>
               </div>
-              <Link href={`/admin/cohorts/${c.id}`} className={ROW_LINK} aria-label={`Open ${c.name}`}>
-                {c.unrecorded > 0 ? "Take roll" : "Open"}
+              {/* V4 Stage E: today's session opens its roster directly (Today → roster in one tap). */}
+              <Link
+                href={c.todaySessionId ? `/admin/programs/cohorts/${c.id}/sessions/${c.todaySessionId}` : `/admin/programs/cohorts/${c.id}`}
+                className={ROW_LINK}
+                aria-label={c.todaySessionId ? `Take attendance for ${c.name}` : `Open ${c.name}`}
+              >
+                {c.todaySessionId ? "Take attendance" : c.unrecorded > 0 ? "Take roll" : "Open"}
               </Link>
             </li>
           ))}

@@ -1,21 +1,20 @@
 "use client";
 
 import AnalyticsView from "../AnalyticsView";
-import { TYPE } from "@/lib/admin/typeScale";
+import PageHeader from "../_components/PageHeader";
+import PageShell from "../_components/ui/PageShell";
 
-// Website Analytics gets its own route (Data › Website Analytics in the
-// BloomOS sidebar). The same view also remains reachable from the
-// dashboard's Analytics tab; AnalyticsView fetches its own data, so this
-// page is just chrome around it. Middleware gates /admin/* on a session.
+// Impact → Analytics: website analytics, the Dashboard archetype (V4 Stage
+// G2: the page frame, PageHeader v2, Figures with sources, DataTable v2).
+// AnalyticsView fetches its own data; this page is the frame around it.
 export default function AnalyticsPage() {
   return (
-    <div className="min-h-screen bg-ink">
-      <div className="bg-tile border-b border-hairline px-4 lg:px-8 py-3 sm:py-4 sticky admin-sticky-top z-30">
-        <span className={`${TYPE.cardTitle} sm:text-base`}>Website Analytics</span>
-      </div>
-      <div className="max-w-[1400px] px-4 lg:px-8 py-6 lg:py-8">
-        <AnalyticsView />
-      </div>
-    </div>
+    <PageShell>
+      <PageHeader
+        title="Website analytics"
+        subtitle="Who visits the public site, what they read and what they click. Counts come from the site's own page-view log."
+      />
+      <AnalyticsView />
+    </PageShell>
   );
 }

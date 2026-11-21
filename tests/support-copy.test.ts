@@ -12,10 +12,7 @@ const ROOT = join(__dirname, "..");
 const SCOPE = ["app/admin", "app/api/admin", "lib/admin", "lib/email/org-identity.ts", "lib/email/operator.ts"];
 
 /** Files owned by another stage, flagged for its owner rather than edited here. */
-const ALLOW: Record<string, string> = {
-  "app/admin/capture/_lib/captureApi.ts": "Capture is another stage's file (\"Tell Remi.\" on a 503); flagged to its owner",
-  "app/admin/capture/_components/CaptureModal.tsx": "Capture is another stage's file (a placeholder naming Shannon); flagged to its owner",
-};
+const ALLOW: Record<string, string> = {};
 
 function walk(p: string, out: string[] = []): string[] {
   const abs = join(ROOT, p);

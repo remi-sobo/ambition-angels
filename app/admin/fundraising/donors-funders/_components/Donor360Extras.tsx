@@ -28,7 +28,10 @@ export default async function Donor360Extras({
   name,
   whyMatters,
   history,
+  compact = false,
 }: {
+  /** The donor record's right column (V4 B1): one column, no side-by-side. */
+  compact?: boolean;
   constituentId: string;
   name: string;
   whyMatters: string | null;
@@ -154,7 +157,7 @@ export default async function Donor360Extras({
         </section>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className={compact ? "grid grid-cols-1 gap-4" : "grid grid-cols-1 lg:grid-cols-2 gap-4"}>
         {/* ── Giving by year ── */}
         <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
           <div className="px-5 py-4 border-b border-hairline">

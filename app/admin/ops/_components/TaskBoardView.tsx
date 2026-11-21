@@ -1,5 +1,6 @@
 "use client";
 
+import { saveAction } from "@/lib/admin/saveAction";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
@@ -59,20 +60,15 @@ export default function TaskBoardView({
   async function moveTo(id: string, status: TaskStatus) {
     const task = local.find((t) => t.id === id);
     if (!task || task.status === status) return;
-    setLocal((prev) => prev.map((t) => (t.id === id ? { ...t, status } : t)));
-    try {
-      const r = await fetch(`/api/admin/ops/tasks/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      startTransition(() => router.refresh());
-    } catch (e) {
-      console.error("Status move failed:", e);
-      toast.error("Couldn't move the task. Reloading.");
-      router.refresh();
-    }
+    const before = task.status;
+    const r = await saveAction({
+      request: { url: `/api/admin/ops/tasks/${id}`, method: "PATCH", body: { status } },
+      optimistic: () => setLocal((prev) => prev.map((t) => (t.id === id ? { ...t, status } : t))),
+      rollback: () => setLocal((prev) => prev.map((t) => (t.id === id ? { ...t, status: before } : t))),
+      failure: "Couldn't move the task. It is back where it was.",
+      toast,
+    });
+    if (r.ok) startTransition(() => router.refresh());
   }
 
   return (

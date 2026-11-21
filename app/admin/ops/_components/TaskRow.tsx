@@ -1,5 +1,6 @@
 "use client";
 
+import { saveAction } from "@/lib/admin/saveAction";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
@@ -67,21 +68,14 @@ export default function TaskRow({
 
   async function patch(body: Record<string, unknown>) {
     setBusy(true);
-    try {
-      const r = await fetch(`/api/admin/ops/tasks/${task.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      startTransition(() => router.refresh());
-    } catch (e) {
-      console.error("Task patch failed:", e);
-      toast.error("Couldn't save the change. Try again.");
-    } finally {
-      setBusy(false);
-      setShowMenu(false);
-    }
+    const r = await saveAction({
+      request: { url: `/api/admin/ops/tasks/${task.id}`, method: "PATCH", body },
+      failure: "Couldn't save the change. Try again.",
+      toast,
+    });
+    setBusy(false);
+    setShowMenu(false);
+    if (r.ok) startTransition(() => router.refresh());
   }
 
   async function deleteTask() {
@@ -92,16 +86,13 @@ export default function TaskRow({
     });
     if (!ok) return;
     setBusy(true);
-    try {
-      const r = await fetch(`/api/admin/ops/tasks/${task.id}`, { method: "DELETE" });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      startTransition(() => router.refresh());
-    } catch (e) {
-      console.error("Task delete failed:", e);
-      toast.error("Couldn't delete the task.");
-    } finally {
-      setBusy(false);
-    }
+    const r = await saveAction({
+      request: { url: `/api/admin/ops/tasks/${task.id}`, method: "DELETE" },
+      failure: "Couldn't delete the task. Try again.",
+      toast,
+    });
+    setBusy(false);
+    if (r.ok) startTransition(() => router.refresh());
   }
 
   const isDone = task.status === "done";

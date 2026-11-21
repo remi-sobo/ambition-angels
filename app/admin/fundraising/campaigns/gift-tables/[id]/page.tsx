@@ -19,6 +19,7 @@ import {
   formatGiftMoney,
   type ClosedSnapshot,
   type GiftTable,
+  type LevelSlot,
   hasPledgedStage,
   hasStaleCloseDate,
   isEstimated,
@@ -38,6 +39,9 @@ import PossibleMatches, { type MatchRow } from "./_components/PossibleMatches";
 import WorkCards from "./_components/WorkCards";
 import CloseControls from "./_components/CloseControls";
 import PlanVsActual from "./_components/PlanVsActual";
+import { StaticTable } from "@/app/admin/_components/ui/DataTable";
+
+type LevelRow = { kind: "level"; s: LevelSlot } | { kind: "total" };
 
 /**
  * One gift table (specs/fundraising-gift-tables.md, Phase 2).
@@ -395,36 +399,40 @@ export default async function GiftTablePage({ params }: { params: { id: string }
           </Card>
         ) : (
           <Card padded={false}>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b border-hairline">
-                    <th className={`${TYPE.tableHeader} px-4 py-3`}>Level</th>
-                    <th className={`${TYPE.tableHeader} px-4 py-3`}>Gift size</th>
-                    <th className={`${TYPE.tableHeader} px-4 py-3`}>What it buys</th>
-                    <th className={`${TYPE.tableHeader} px-4 py-3 text-right`}>Gifts</th>
-                    <th className={`${TYPE.tableHeader} px-4 py-3 text-right`}>Total</th>
-                    <th className={`${TYPE.tableHeader} px-4 py-3 text-right`}>Prospects</th>
-                    <th className={`${TYPE.tableHeader} px-4 py-3 text-right`}>Names</th>
-                    <th className={`${TYPE.tableHeader} px-4 py-3 text-right`}>Gap</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {slots.map((s) => {
-                    const l = s.level;
-                    const native =
-                      l.cadence === "monthly"
-                        ? `${formatGiftMoney(l.amount)}/mo`
-                        : l.cadence === "annual"
-                          ? `${formatGiftMoney(l.amount)}/yr`
-                          : formatGiftMoney(l.amount);
-                    // The native amount is ALWAYS visible; the basis value
-                    // only appears when it differs, and says so.
-                    const derived = s.value !== l.amount ? formatGiftMoney(s.value) : null;
-                    return (
-                      <tr key={l.id} className="border-b border-hairline last:border-0">
-                        <td className={`${TYPE.body} px-4 py-3 font-medium`}>{l.label}</td>
-                        <td className={`${TYPE.body} px-4 py-3 tabular-nums`}>
+            {/* The kit table (V4 P1): cards under 640px. The totals ride as
+                the last row, set in bold. */}
+            <div className="p-3">
+              <StaticTable<LevelRow>
+                label="Gift table levels"
+                noun={{ one: "row", many: "rows" }}
+                rows={[...slots.map((s) => ({ kind: "level" as const, s })), { kind: "total" as const }]}
+                getRowId={(r) => (r.kind === "total" ? "total" : r.s.level.id)}
+                getRowLabel={(r) => (r.kind === "total" ? "Total" : r.s.level.label)}
+                minWidth={820}
+                columns={[
+                  {
+                    key: "level",
+                    header: "Level",
+                    card: "title",
+                    render: (r) => <span className={`${TYPE.body} ${r.kind === "total" ? "font-semibold" : "font-medium"}`}>{r.kind === "total" ? "Total" : r.s.level.label}</span>,
+                  },
+                  {
+                    key: "size",
+                    header: "Gift size",
+                    render: (r) => {
+                      if (r.kind === "total") return null;
+                      const l = r.s.level;
+                      const native =
+                        l.cadence === "monthly"
+                          ? `${formatGiftMoney(l.amount)}/mo`
+                          : l.cadence === "annual"
+                            ? `${formatGiftMoney(l.amount)}/yr`
+                            : formatGiftMoney(l.amount);
+                      // The native amount is ALWAYS visible; the basis value
+                      // only appears when it differs, and says so.
+                      const derived = r.s.value !== l.amount ? formatGiftMoney(r.s.value) : null;
+                      return (
+                        <span className={`${TYPE.body} tabular-nums`}>
                           {native}
                           {derived && (
                             <span className={`${TYPE.metadata} block`}>
@@ -432,65 +440,77 @@ export default async function GiftTablePage({ params }: { params: { id: string }
                               {isEstimated(l, ctxValue) ? " · estimated" : ""}
                             </span>
                           )}
-                        </td>
-                        <td className={`${TYPE.bodyMuted} px-4 py-3`}>{l.purpose ?? "—"}</td>
-                        <td className={`${TYPE.body} px-4 py-3 text-right tabular-nums`}>
-                          {l.giftsNeeded}
-                        </td>
-                        <td className={`${TYPE.body} px-4 py-3 text-right tabular-nums`}>
-                          {formatGiftMoney(s.value * l.giftsNeeded)}
-                        </td>
-                        <td className={`${TYPE.body} px-4 py-3 text-right tabular-nums`}>
-                          {s.needed}
-                          <span className={`${TYPE.metadata} block`}>
-                            {l.prospectsPerGift} per gift
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-right tabular-nums">
-                          <LevelDrawer
-                            tableId={table.id}
-                            levelId={l.id}
-                            levelLabel={l.label}
-                            needed={s.needed}
-                            placements={viewsByLevel.get(l.id) ?? []}
-                            owners={owners}
-                            canWrite={canEdit}
-                          />
-                        </td>
-                        <td
-                          className={`px-4 py-3 text-right tabular-nums ${
-                            s.gap > 0 ? "text-status-critical-text font-semibold" : TYPE.bodyMuted
-                          }`}
-                        >
-                          {s.gap}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-                <tfoot>
-                  <tr className="bg-tile">
-                    <td className={`${TYPE.body} px-4 py-3 font-semibold`}>Total</td>
-                    <td />
-                    <td />
-                    <td className={`${TYPE.body} px-4 py-3 text-right tabular-nums font-semibold`}>
-                      {levels.reduce((s, l) => s + l.giftsNeeded, 0)}
-                    </td>
-                    <td className={`${TYPE.body} px-4 py-3 text-right tabular-nums font-semibold`}>
-                      {formatGiftMoney(shape)}
-                    </td>
-                    <td className={`${TYPE.body} px-4 py-3 text-right tabular-nums font-semibold`}>
-                      {slots.reduce((s, x) => s + x.needed, 0)}
-                    </td>
-                    <td className={`${TYPE.body} px-4 py-3 text-right tabular-nums font-semibold`}>
-                      {slots.reduce((s, x) => s + x.placed, 0)}
-                    </td>
-                    <td className={`${TYPE.body} px-4 py-3 text-right tabular-nums font-semibold`}>
-                      {g.unfilledSlots}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
+                        </span>
+                      );
+                    },
+                  },
+                  { key: "buys", header: "What it buys", render: (r) => (r.kind === "total" ? null : <span className={TYPE.bodyMuted}>{r.s.level.purpose ?? "—"}</span>) },
+                  {
+                    key: "gifts",
+                    header: "Gifts",
+                    align: "right",
+                    render: (r) => (
+                      <span className={`${TYPE.body} tabular-nums ${r.kind === "total" ? "font-semibold" : ""}`}>
+                        {r.kind === "total" ? levels.reduce((sum, l) => sum + l.giftsNeeded, 0) : r.s.level.giftsNeeded}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: "total",
+                    header: "Total",
+                    align: "right",
+                    render: (r) => (
+                      <span className={`${TYPE.body} tabular-nums ${r.kind === "total" ? "font-semibold" : ""}`}>
+                        {r.kind === "total" ? formatGiftMoney(shape) : formatGiftMoney(r.s.value * r.s.level.giftsNeeded)}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: "prospects",
+                    header: "Prospects",
+                    align: "right",
+                    render: (r) =>
+                      r.kind === "total" ? (
+                        <span className={`${TYPE.body} tabular-nums font-semibold`}>{slots.reduce((sum, x) => sum + x.needed, 0)}</span>
+                      ) : (
+                        <span className={`${TYPE.body} tabular-nums`}>
+                          {r.s.needed}
+                          <span className={`${TYPE.metadata} block`}>{r.s.level.prospectsPerGift} per gift</span>
+                        </span>
+                      ),
+                  },
+                  {
+                    key: "names",
+                    header: "Names",
+                    align: "right",
+                    render: (r) =>
+                      r.kind === "total" ? (
+                        <span className={`${TYPE.body} tabular-nums font-semibold`}>{slots.reduce((sum, x) => sum + x.placed, 0)}</span>
+                      ) : (
+                        <LevelDrawer
+                          tableId={table.id}
+                          levelId={r.s.level.id}
+                          levelLabel={r.s.level.label}
+                          needed={r.s.needed}
+                          placements={viewsByLevel.get(r.s.level.id) ?? []}
+                          owners={owners}
+                          canWrite={canEdit}
+                        />
+                      ),
+                  },
+                  {
+                    key: "gap",
+                    header: "Gap",
+                    align: "right",
+                    render: (r) =>
+                      r.kind === "total" ? (
+                        <span className={`${TYPE.body} tabular-nums font-semibold`}>{g.unfilledSlots}</span>
+                      ) : (
+                        <span className={`tabular-nums ${r.s.gap > 0 ? "text-status-critical-text font-semibold" : TYPE.bodyMuted}`}>{r.s.gap}</span>
+                      ),
+                  },
+                ]}
+              />
             </div>
             <p className={`${TYPE.metadata} px-4 py-3 border-t border-hairline`}>
               Gap is prospects needed minus names placed, never below zero, per level. Read it

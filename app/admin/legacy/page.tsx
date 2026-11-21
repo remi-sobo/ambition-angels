@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import AnalyticsView from "../AnalyticsView";
 import { TYPE } from "@/lib/admin/typeScale";
+import { StaticTable, DataTableSkeleton } from "../_components/ui/DataTable";
+import Drawer from "../_components/ui/Drawer";
 import { clearAdminCaches } from "@/lib/admin/swCache";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -467,6 +469,7 @@ export default function AdminPage() {
             <form onSubmit={handleLogin} className="flex flex-col gap-4">
               <input
                 type="email"
+                aria-label="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Email"
@@ -476,6 +479,7 @@ export default function AdminPage() {
               />
               <input
                 type="password"
+                aria-label="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
@@ -723,7 +727,8 @@ export default function AdminPage() {
                 ))}
               </div>
               <input
-                type="text"
+                type="search"
+                aria-label="Search submissions"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search name, email, location…"
@@ -732,207 +737,77 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* Mobile: stacked cards (≤ md). The full table stays for tablet+. */}
-          <div className="md:hidden divide-y divide-hairline">
+          {/* The kit table (V4 P1): phone cards under 640px; a row's
+              answers and every match open in a drawer. */}
+          <div className="p-4">
             {loading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="px-4 py-4"><Skeleton className="h-16 w-full" /></div>
-              ))
-            ) : paginated.length === 0 ? (
-              <p className={`px-4 py-10 text-center ${TYPE.bodyMuted}`}>No submissions found.</p>
+              <DataTableSkeleton rows={5} columns={8} label="Loading submissions" />
             ) : (
-              paginated.map((s) => {
-                const open = expandedId === s.id;
-                return (
-                  <div
-                    key={s.id}
-                    onClick={() => setExpandedId(open ? null : s.id)}
-                    className={`px-4 py-4 transition-colors ${open ? "bg-orange/10" : "active:bg-tile"}`}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`font-semibold ${TYPE.body} truncate`}>{s.teen_name || "Anonymous"}</span>
-                          {s.audience && (
-                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${s.audience === "teen" ? "bg-orange/20 text-orange" : "bg-tile text-ink-2"}`}>{s.audience}</span>
-                          )}
-                        </div>
-                        <div className="text-xs text-ink-2 mt-0.5">
-                          {fmtDate(s.created_at)}{s.location ? ` · ${s.location}` : ""}
-                        </div>
+              <StaticTable
+                label="Career quiz submissions"
+                noun={{ one: "submission", many: "submissions" }}
+                rows={paginated}
+                getRowId={(s) => s.id}
+                getRowLabel={(s) => s.teen_name || "Anonymous"}
+                emptyMessage="No submissions found."
+                minWidth={900}
+                columns={[
+                  {
+                    key: "name",
+                    header: "Name",
+                    card: "title",
+                    render: (s) => (
+                      <button
+                        type="button"
+                        onClick={() => setExpandedId(s.id)}
+                        className="font-medium text-ink-1 hover:text-orange text-left whitespace-nowrap"
+                      >
+                        {s.teen_name || "Anonymous"}
+                      </button>
+                    ),
+                  },
+                  { key: "date", header: "Date", render: (s) => <span className="text-ink-2 whitespace-nowrap text-xs">{fmtDate(s.created_at)}</span> },
+                  { key: "email", header: "Email", render: (s) => <span className="text-ink-2 text-xs">{s.email || "—"}</span> },
+                  {
+                    key: "audience",
+                    header: "Audience",
+                    render: (s) =>
+                      s.audience ? (
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${s.audience === "teen" ? "bg-orange/20 text-orange" : "bg-tile text-ink-2"}`}>{s.audience}</span>
+                      ) : (
+                        <span className="text-ink-3">—</span>
+                      ),
+                  },
+                  { key: "age", header: "Age", render: (s) => <span className="text-ink-2 text-xs">{s.age || "—"}</span> },
+                  { key: "location", header: "Location", render: (s) => <span className="text-ink-2 text-xs whitespace-nowrap">{s.location || "—"}</span> },
+                  {
+                    key: "careers",
+                    header: "Top 3 careers",
+                    render: (s) => (
+                      <div className="flex flex-wrap gap-1">
+                        {s.career_matches?.slice(0, 3).map((c, i) => (
+                          <span key={i} className="text-xs bg-tile border-hairline text-ink-2 px-2 py-0.5 rounded-full whitespace-nowrap">{c.title}</span>
+                        )) ?? <span className="text-ink-3">—</span>}
                       </div>
-                      {s.money_vs_meaning !== null && (
-                        <span className="text-xs font-semibold text-ink-1 flex-shrink-0">
-                          {s.money_vs_meaning}<span className="text-ink-3">/10</span>
-                        </span>
-                      )}
-                    </div>
-                    {s.career_matches && s.career_matches.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {s.career_matches.slice(0, 3).map((c, i) => (
-                          <span key={i} className="text-xs bg-tile border-hairline text-ink-2 px-2 py-0.5 rounded-full">{c.title}</span>
-                        ))}
-                      </div>
-                    )}
-                    {open && (
-                      <div className="mt-4 pt-4 border-t border-hairline space-y-3">
-                        <div className="text-xs font-bold text-orange uppercase tracking-widest">Quiz Answers</div>
-                        <div className="space-y-1.5 text-xs">
-                          {[
-                            ["Email", s.email],
-                            ["Subjects", s.subjects],
-                            ["Work Style", s.work_style],
-                            ["Good At", s.good_at],
-                            ["People come for", s.people_come],
-                            ["Free Time", s.free_time],
-                            ["Flow State", s.flow_state],
-                            ["Dream Day", s.dream_day],
-                            ["Future Self", s.future_self],
-                          ].map(([label, val]) => val ? (
-                            <div key={String(label)} className="flex gap-2">
-                              <span className="text-ink-3 w-28 flex-shrink-0">{label}</span>
-                              <span className="text-ink-2 break-words min-w-0">{String(val)}</span>
-                            </div>
-                          ) : null)}
-                        </div>
-                        {s.career_matches && s.career_matches.length > 0 && (
-                          <>
-                            <div className="text-xs font-bold text-orange uppercase tracking-widest pt-2">All Matches</div>
-                            <div className="space-y-1.5">
-                              {s.career_matches.map((c, i) => (
-                                <div key={i} className="bg-tile rounded-control px-2.5 py-1.5">
-                                  <div className="flex items-center justify-between gap-2">
-                                    <span className="text-xs font-semibold text-ink-1 truncate">{i + 1}. {c.title}</span>
-                                    <span className="text-xs text-orange font-semibold whitespace-nowrap flex-shrink-0">{c.salary}</span>
-                                  </div>
-                                  {c.why && <div className="text-xs text-ink-2 mt-0.5 italic">{c.why}</div>}
-                                </div>
-                              ))}
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })
+                    ),
+                  },
+                  {
+                    key: "score",
+                    header: "Money vs meaning",
+                    align: "right",
+                    render: (s) =>
+                      s.money_vs_meaning !== null ? (
+                        <span className="font-semibold text-ink-1 text-xs">{s.money_vs_meaning}<span className="text-ink-3">/10</span></span>
+                      ) : (
+                        <span className="text-ink-3 text-xs">—</span>
+                      ),
+                  },
+                ]}
+              />
             )}
           </div>
 
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-sm min-w-[900px]">
-              <thead>
-                <tr className="border-b border-hairline">
-                  {["Date", "Name", "Email", "Audience", "Age", "Location", "Top 3 Careers", "💰 Score"].map((h) => (
-                    <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-5 py-3 whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i} className="border-b border-hairline">
-                      {Array.from({ length: 8 }).map((_, j) => (
-                        <td key={j} className="px-5 py-4"><Skeleton className="h-4 w-full" /></td>
-                      ))}
-                    </tr>
-                  ))
-                ) : paginated.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="text-center py-16 text-ink-2">No submissions found.</td>
-                  </tr>
-                ) : (
-                  paginated.map((s) => (
-                    <>
-                      <tr
-                        key={s.id}
-                        onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
-                        className={`border-b border-hairline cursor-pointer transition-colors ${expandedId === s.id ? "bg-orange/10" : "hover:bg-tile"}`}
-                      >
-                        <td className="px-5 py-4 text-ink-2 whitespace-nowrap text-xs">{fmtDate(s.created_at)}</td>
-                        <td className="px-5 py-4 font-medium text-ink-1 whitespace-nowrap">{s.teen_name || <span className="text-ink-3">—</span>}</td>
-                        <td className="px-5 py-4 text-ink-2 text-xs">{s.email || <span className="text-ink-3">—</span>}</td>
-                        <td className="px-5 py-4">
-                          {s.audience ? (
-                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${s.audience === "teen" ? "bg-orange/20 text-orange" : "bg-tile text-ink-2"}`}>{s.audience}</span>
-                          ) : <span className="text-ink-3">—</span>}
-                        </td>
-                        <td className="px-5 py-4 text-ink-2 text-xs">{s.age || "—"}</td>
-                        <td className="px-5 py-4 text-ink-2 text-xs whitespace-nowrap">{s.location || "—"}</td>
-                        <td className="px-5 py-4">
-                          <div className="flex flex-wrap gap-1">
-                            {s.career_matches?.slice(0, 3).map((c, i) => (
-                              <span key={i} className="text-xs bg-tile border-hairline text-ink-2 px-2 py-0.5 rounded-full whitespace-nowrap">{c.title}</span>
-                            )) ?? <span className="text-ink-3">—</span>}
-                          </div>
-                        </td>
-                        <td className="px-5 py-4 text-ink-2 text-xs">
-                          {s.money_vs_meaning !== null ? (
-                            <span className="font-semibold text-ink-1">{s.money_vs_meaning}<span className="text-ink-3">/10</span></span>
-                          ) : "—"}
-                        </td>
-                      </tr>
-
-                      {expandedId === s.id && (
-                        <tr key={`${s.id}-expanded`} className="bg-tile">
-                          <td colSpan={8} className="px-6 py-6">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                              <div>
-                                <div className="text-xs font-bold text-orange uppercase tracking-widest mb-3">Quiz Answers</div>
-                                <div className="space-y-2">
-                                  {[
-                                    ["Subjects / Interests", s.subjects],
-                                    ["Work Style", s.work_style],
-                                    ["Problem Types", s.problem_types],
-                                    ["Good At", s.good_at],
-                                    ["People Come To Them For", s.people_come],
-                                    ["Free Time", s.free_time],
-                                    ["Flow State", s.flow_state],
-                                    ["Dream Work Day", s.dream_day],
-                                    ["Future Self Goal", s.future_self],
-                                    ["Life Status", s.status],
-                                    ["Money vs Meaning", s.money_vs_meaning !== null ? `${s.money_vs_meaning}/10` : null],
-                                  ].map(([label, val]) => val ? (
-                                    <div key={String(label)} className="flex gap-2 text-xs">
-                                      <span className="text-ink-3 w-44 flex-shrink-0">{label}</span>
-                                      <span className="text-ink-2">{String(val)}</span>
-                                    </div>
-                                  ) : null)}
-                                </div>
-                                {s.email && (
-                                  <div className="mt-4 pt-4 border-t border-hairline">
-                                    <div className="text-xs font-bold text-orange uppercase tracking-widest mb-1">Email Sent To</div>
-                                    <div className="text-ink-2 text-xs">{s.email}</div>
-                                  </div>
-                                )}
-                              </div>
-                              <div>
-                                <div className="text-xs font-bold text-orange uppercase tracking-widest mb-3">All Career Matches</div>
-                                <div className="space-y-2">
-                                  {s.career_matches?.map((c, i) => (
-                                    <div key={i} className="bg-tile rounded-control px-3 py-2">
-                                      <div className="flex items-start justify-between gap-2">
-                                        <div>
-                                          <span className="text-xs font-bold text-ink-3 mr-2">{i + 1}.</span>
-                                          <span className="text-xs font-semibold text-ink-1">{c.title}</span>
-                                        </div>
-                                        <span className="text-xs text-orange font-semibold whitespace-nowrap flex-shrink-0">{c.salary}</span>
-                                      </div>
-                                      {c.why && <div className="text-xs text-ink-2 mt-0.5 ml-4 italic">{c.why}</div>}
-                                    </div>
-                                  )) ?? <span className="text-ink-3 text-xs">No matches recorded</span>}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          <SubmissionDrawer submission={submissions.find((s) => s.id === expandedId) ?? null} onClose={() => setExpandedId(null)} />
 
           {totalPages > 1 && (
             <div className="px-6 py-4 border-t border-hairline flex items-center justify-between">
@@ -1068,7 +943,8 @@ export default function AdminPage() {
             <>
               <div className="px-6 pt-4 pb-3 border-b border-hairline flex items-center gap-3">
                 <input
-                  type="text"
+                  type="search"
+                  aria-label="Search donations"
                   value={donationSearch}
                   onChange={(e) => setDonationSearch(e.target.value)}
                   placeholder="Search name or email…"
@@ -1076,89 +952,47 @@ export default function AdminPage() {
                 />
                 <span className="text-xs text-ink-2">{filteredDonations.length} donation{filteredDonations.length !== 1 ? "s" : ""}</span>
               </div>
-              {/* Mobile cards */}
-              <div className="md:hidden divide-y divide-hairline">
+              <div className="p-4">
                 {loading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} className="px-4 py-3"><Skeleton className="h-12 w-full" /></div>
-                  ))
-                ) : paginatedDonations.length === 0 ? (
-                  <p className={`px-4 py-10 text-center ${TYPE.bodyMuted}`}>No donations found.</p>
+                  <DataTableSkeleton rows={5} columns={6} label="Loading donations" />
                 ) : (
-                  paginatedDonations.map((d) => (
-                    <div key={d.id} className="px-4 py-3 flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-orange/10 border border-orange/20 flex items-center justify-center flex-shrink-0">
-                        <span className="text-orange font-bold text-xs">{donorInitial(d)}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`font-medium ${TYPE.body} truncate`}>{donorDisplayName(d)}</span>
-                          {d.recurring && (
-                            <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
-                          )}
-                        </div>
-                        <div className="text-xs text-ink-2">
-                          {fmtDate(d.created_at)}{d.email ? ` · ${d.email}` : ""}
-                        </div>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <div className={`font-bold ${TYPE.body}`}>{fmtMoney(d.amount)}</div>
-                        {d.status && d.status !== "succeeded" && (
-                          <div className="text-xs text-expense capitalize">{d.status}</div>
-                        )}
-                      </div>
-                    </div>
-                  ))
+                  <StaticTable
+                    label="All donations"
+                    noun={{ one: "donation", many: "donations" }}
+                    rows={paginatedDonations}
+                    getRowId={(d) => d.id}
+                    getRowLabel={(d) => donorDisplayName(d)}
+                    emptyMessage="No donations found."
+                    columns={[
+                      { key: "donor", header: "Donor", card: "title", render: (d) => <span className="font-medium text-ink-1">{donorDisplayName(d)}</span> },
+                      { key: "date", header: "Date", render: (d) => <span className="text-ink-2 text-xs whitespace-nowrap">{fmtDate(d.created_at)}</span> },
+                      { key: "email", header: "Email", render: (d) => <span className="text-ink-2 text-xs">{d.email || "—"}</span> },
+                      { key: "amount", header: "Amount", align: "right", render: (d) => <span className="font-bold text-ink-1">{fmtMoney(d.amount)}</span> },
+                      {
+                        key: "type",
+                        header: "Type",
+                        render: (d) => (
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${d.recurring ? "bg-orange/20 text-orange" : "bg-tile text-ink-2"}`}>
+                            {d.recurring ? "Monthly" : "One-time"}
+                          </span>
+                        ),
+                      },
+                      {
+                        key: "status",
+                        header: "Status",
+                        render: (d) => (
+                          <span
+                            className={`text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${
+                              !d.status || d.status === "succeeded" ? "bg-revenue-bg text-revenue" : d.status === "failed" ? "bg-expense-bg text-expense" : "bg-tile text-ink-2"
+                            }`}
+                          >
+                            {d.status || "succeeded"}
+                          </span>
+                        ),
+                      },
+                    ]}
+                  />
                 )}
-              </div>
-
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-hairline">
-                      {["Date", "Donor", "Email", "Amount", "Type", "Status"].map((h) => (
-                        <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-5 py-3 whitespace-nowrap">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loading ? (
-                      Array.from({ length: 5 }).map((_, i) => (
-                        <tr key={i} className="border-b border-hairline">
-                          {Array.from({ length: 6 }).map((_, j) => (
-                            <td key={j} className="px-5 py-4"><Skeleton className="h-4 w-full" /></td>
-                          ))}
-                        </tr>
-                      ))
-                    ) : paginatedDonations.length === 0 ? (
-                      <tr><td colSpan={6} className="text-center py-16 text-ink-2">No donations found.</td></tr>
-                    ) : (
-                      paginatedDonations.map((d) => (
-                        <tr key={d.id} className="border-b border-hairline hover:bg-tile transition-colors">
-                          <td className="px-5 py-4 text-ink-2 text-xs whitespace-nowrap">{fmtDate(d.created_at)}</td>
-                          <td className="px-5 py-4 font-medium text-ink-1">{donorDisplayName(d)}</td>
-                          <td className="px-5 py-4 text-ink-2 text-xs">{d.email || "—"}</td>
-                          <td className="px-5 py-4 font-bold text-ink-1">{fmtMoney(d.amount)}</td>
-                          <td className="px-5 py-4">
-                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${d.recurring ? "bg-orange/20 text-orange" : "bg-tile text-ink-2"}`}>
-                              {d.recurring ? "Monthly" : "One-time"}
-                            </span>
-                          </td>
-                          <td className="px-5 py-4">
-                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${
-                              !d.status || d.status === "succeeded" ? "bg-revenue-bg text-revenue" :
-                              d.status === "failed" ? "bg-expense-bg text-expense" :
-                              d.status === "cancelled" ? "bg-tile text-ink-2" :
-                              "bg-tile text-ink-2"
-                            }`}>
-                              {d.status || "succeeded"}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
               </div>
               {donationTotalPages > 1 && (
                 <div className="px-6 py-4 border-t border-hairline flex items-center justify-between">
@@ -1182,73 +1016,45 @@ export default function AdminPage() {
               ) : !donationStats || donationStats.donorProfiles.length === 0 ? (
                 <p className={`${TYPE.bodyMuted}`}>No donor data yet.</p>
               ) : (
-                <>
-                <div className="md:hidden divide-y divide-hairline -mx-6">
-                  {donationStats.donorProfiles.map((p, i) => (
-                    <div key={p.email + i} className="px-6 py-3 flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-orange/10 border border-orange/20 flex items-center justify-center flex-shrink-0">
-                        <span className="text-orange font-bold text-xs">
-                          {(p.firstName?.[0] ?? p.email?.[0] ?? "$").toUpperCase()}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`font-medium ${TYPE.body} truncate`}>
+                <StaticTable
+                  label="Donor profiles"
+                  noun={{ one: "donor", many: "donors" }}
+                  rows={donationStats.donorProfiles.map((p, i) => ({ ...p, rowId: `${p.email}-${i}` }))}
+                  getRowId={(p) => p.rowId}
+                  getRowLabel={(p) => [p.firstName, p.lastName].filter(Boolean).join(" ") || "Anonymous"}
+                  minWidth={750}
+                  columns={[
+                    {
+                      key: "donor",
+                      header: "Donor",
+                      card: "title",
+                      render: (p) => (
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-orange/10 border border-orange/20 flex items-center justify-center flex-shrink-0">
+                            <span className="text-orange font-bold text-xs">{(p.firstName?.[0] ?? p.email?.[0] ?? "$").toUpperCase()}</span>
+                          </div>
+                          <span className={`font-medium ${TYPE.body} whitespace-nowrap`}>
                             {[p.firstName, p.lastName].filter(Boolean).join(" ") || "Anonymous"}
                           </span>
-                          {p.recurring && (
-                            <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-orange/20 text-orange">Monthly</span>
-                          )}
                         </div>
-                        <div className="text-xs text-ink-2">
-                          {p.donationCount} gift{p.donationCount !== 1 ? "s" : ""} · last {fmtDate(p.lastDonation)}
-                        </div>
-                      </div>
-                      <div className="font-bold text-orange text-sm flex-shrink-0">{fmtMoney(p.totalGiven)}</div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full text-sm min-w-[750px]">
-                    <thead>
-                      <tr className="border-b border-hairline">
-                        {["Donor", "Email", "Total Given", "Donations", "First Gift", "Last Gift", "Type"].map((h) => (
-                          <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-4 py-3 whitespace-nowrap">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {donationStats.donorProfiles.map((p, i) => (
-                        <tr key={p.email + i} className="border-b border-hairline hover:bg-tile transition-colors">
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-orange/10 border border-orange/20 flex items-center justify-center flex-shrink-0">
-                                <span className="text-orange font-bold text-xs">
-                                  {(p.firstName?.[0] ?? p.email?.[0] ?? "$").toUpperCase()}
-                                </span>
-                              </div>
-                              <span className={`font-medium ${TYPE.body} whitespace-nowrap`}>
-                                {[p.firstName, p.lastName].filter(Boolean).join(" ") || "Anonymous"}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-ink-2 text-xs">{p.email !== "Anonymous" ? p.email : "—"}</td>
-                          <td className="px-4 py-3 font-bold text-orange text-sm">{fmtMoney(p.totalGiven)}</td>
-                          <td className={`px-4 py-3 ${TYPE.bodyMuted}`}>{p.donationCount}</td>
-                          <td className="px-4 py-3 text-ink-2 text-xs whitespace-nowrap">{fmtDate(p.firstDonation)}</td>
-                          <td className="px-4 py-3 text-ink-2 text-xs whitespace-nowrap">{fmtDate(p.lastDonation)}</td>
-                          <td className="px-4 py-3">
-                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${p.recurring ? "bg-orange/20 text-orange" : "bg-tile text-ink-2"}`}>
-                              {p.recurring ? "Monthly" : "One-time"}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                </>
+                      ),
+                    },
+                    { key: "email", header: "Email", render: (p) => <span className="text-ink-2 text-xs">{p.email !== "Anonymous" ? p.email : "—"}</span> },
+                    { key: "total", header: "Total given", align: "right", render: (p) => <span className="font-bold text-orange text-sm">{fmtMoney(p.totalGiven)}</span> },
+                    { key: "count", header: "Donations", align: "right", render: (p) => <span className={TYPE.bodyMuted}>{p.donationCount}</span> },
+                    { key: "first", header: "First gift", render: (p) => <span className="text-ink-2 text-xs whitespace-nowrap">{fmtDate(p.firstDonation)}</span> },
+                    { key: "last", header: "Last gift", render: (p) => <span className="text-ink-2 text-xs whitespace-nowrap">{fmtDate(p.lastDonation)}</span> },
+                    {
+                      key: "type",
+                      header: "Type",
+                      render: (p) => (
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${p.recurring ? "bg-orange/20 text-orange" : "bg-tile text-ink-2"}`}>
+                          {p.recurring ? "Monthly" : "One-time"}
+                        </span>
+                      ),
+                    },
+                  ]}
+                />
               )}
             </div>
           )}
@@ -1344,53 +1150,21 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* Mobile cards */}
-                <div className="md:hidden divide-y divide-hairline -mx-6">
-                  {partnerData.signups.map((s) => (
-                    <div key={s.id} className="px-6 py-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className={`font-medium ${TYPE.body} truncate`}>{s.first_name} {s.last_name}</span>
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange flex-shrink-0">{s.role}</span>
-                      </div>
-                      <div className="text-xs text-ink-2 mt-0.5 truncate">{s.email}</div>
-                      <div className="text-xs text-ink-3 mt-0.5">
-                        {fmtDate(s.created_at)}{s.teen_count ? ` · ${s.teen_count} teens` : ""}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Table (md+) */}
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full text-sm min-w-[700px]">
-                    <thead>
-                      <tr className="border-b border-hairline">
-                        {["Name", "Email", "Role", "Teen Count", "Date"].map((h) => (
-                          <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-4 py-3 whitespace-nowrap">
-                            {h}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {partnerData.signups.map((s) => (
-                        <tr key={s.id} className="border-b border-hairline hover:bg-tile transition-colors">
-                          <td className="px-4 py-3 font-medium text-ink-1 whitespace-nowrap">
-                            {s.first_name} {s.last_name}
-                          </td>
-                          <td className="px-4 py-3 text-ink-2 text-xs">{s.email}</td>
-                          <td className="px-4 py-3">
-                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange">
-                              {s.role}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-ink-2 text-xs">{s.teen_count ?? "—"}</td>
-                          <td className="px-4 py-3 text-ink-2 text-xs whitespace-nowrap">{fmtDate(s.created_at)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <StaticTable
+                  label="Partner waitlist"
+                  noun={{ one: "signup", many: "signups" }}
+                  rows={partnerData.signups}
+                  getRowId={(s) => s.id}
+                  getRowLabel={(s) => `${s.first_name} ${s.last_name}`}
+                  minWidth={700}
+                  columns={[
+                    { key: "name", header: "Name", card: "title", render: (s) => <span className="font-medium text-ink-1 whitespace-nowrap">{s.first_name} {s.last_name}</span> },
+                    { key: "email", header: "Email", render: (s) => <span className="text-ink-2 text-xs">{s.email}</span> },
+                    { key: "role", header: "Role", render: (s) => <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange">{s.role}</span> },
+                    { key: "teens", header: "Teen count", align: "right", render: (s) => <span className="text-ink-2 text-xs">{s.teen_count ?? "—"}</span> },
+                    { key: "date", header: "Date", render: (s) => <span className="text-ink-2 text-xs whitespace-nowrap">{fmtDate(s.created_at)}</span> },
+                  ]}
+                />
               </>
             )}
           </div>
@@ -1434,56 +1208,22 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* Mobile cards */}
-                <div className="md:hidden divide-y divide-hairline -mx-6">
-                  {programData.signups.map((s) => (
-                    <div key={s.id} className="px-6 py-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className={`font-medium ${TYPE.body} truncate`}>{s.org_name}</span>
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange flex-shrink-0">{s.program_type}</span>
-                      </div>
-                      <div className="text-xs text-ink-2 mt-0.5 truncate">
-                        {s.first_name} {s.last_name} · {s.email}
-                      </div>
-                      <div className="text-xs text-ink-3 mt-0.5">
-                        {fmtDate(s.created_at)}{s.teen_count ? ` · ${s.teen_count} teens` : ""}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Table (md+) */}
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full text-sm min-w-[800px]">
-                    <thead>
-                      <tr className="border-b border-hairline">
-                        {["Org Name", "Contact", "Email", "Program Type", "Teen Count", "Date"].map((h) => (
-                          <th key={h} className="text-left text-xs font-semibold text-ink-3 uppercase tracking-widest px-4 py-3 whitespace-nowrap">
-                            {h}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {programData.signups.map((s) => (
-                        <tr key={s.id} className="border-b border-hairline hover:bg-tile transition-colors">
-                          <td className="px-4 py-3 font-medium text-ink-1 whitespace-nowrap">{s.org_name}</td>
-                          <td className={`px-4 py-3 ${TYPE.bodyMuted} whitespace-nowrap`}>
-                            {s.first_name} {s.last_name}
-                          </td>
-                          <td className="px-4 py-3 text-ink-2 text-xs">{s.email}</td>
-                          <td className="px-4 py-3">
-                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange">
-                              {s.program_type}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-ink-2 text-xs">{s.teen_count ?? "—"}</td>
-                          <td className="px-4 py-3 text-ink-2 text-xs whitespace-nowrap">{fmtDate(s.created_at)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <StaticTable
+                  label="Program partners"
+                  noun={{ one: "signup", many: "signups" }}
+                  rows={programData.signups}
+                  getRowId={(s) => s.id}
+                  getRowLabel={(s) => s.org_name}
+                  minWidth={800}
+                  columns={[
+                    { key: "org", header: "Org name", card: "title", render: (s) => <span className="font-medium text-ink-1 whitespace-nowrap">{s.org_name}</span> },
+                    { key: "contact", header: "Contact", render: (s) => <span className={`${TYPE.bodyMuted} whitespace-nowrap`}>{s.first_name} {s.last_name}</span> },
+                    { key: "email", header: "Email", render: (s) => <span className="text-ink-2 text-xs">{s.email}</span> },
+                    { key: "type", header: "Program type", render: (s) => <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange/15 text-orange">{s.program_type}</span> },
+                    { key: "teens", header: "Teen count", align: "right", render: (s) => <span className="text-ink-2 text-xs">{s.teen_count ?? "—"}</span> },
+                    { key: "date", header: "Date", render: (s) => <span className="text-ink-2 text-xs whitespace-nowrap">{fmtDate(s.created_at)}</span> },
+                  ]}
+                />
               </>
             )}
           </div>
@@ -1493,5 +1233,67 @@ export default function AdminPage() {
 
       </div>
     </div>
+  );
+}
+
+/** A quiz submission's answers and every career match (V4 P1: was an
+ *  expanding table row; now the kit Drawer, the same on a phone). */
+function SubmissionDrawer({ submission: s, onClose }: { submission: Submission | null; onClose: () => void }) {
+  return (
+    <Drawer
+      open={!!s}
+      onClose={onClose}
+      width={560}
+      title={s?.teen_name || "Anonymous"}
+      description={s ? [fmtDate(s.created_at), s.location].filter(Boolean).join(" · ") : undefined}
+    >
+      {s ? (
+        <div className="space-y-6">
+          <div>
+            <div className="text-xs font-bold text-orange uppercase tracking-widest mb-3">Quiz answers</div>
+            <dl className="space-y-2">
+              {[
+                ["Email", s.email],
+                ["Subjects / interests", s.subjects],
+                ["Work style", s.work_style],
+                ["Problem types", s.problem_types],
+                ["Good at", s.good_at],
+                ["People come to them for", s.people_come],
+                ["Free time", s.free_time],
+                ["Flow state", s.flow_state],
+                ["Dream work day", s.dream_day],
+                ["Future self goal", s.future_self],
+                ["Life status", s.status],
+                ["Money vs meaning", s.money_vs_meaning !== null ? `${s.money_vs_meaning}/10` : null],
+              ].map(([label, val]) =>
+                val ? (
+                  <div key={String(label)} className="flex gap-2 text-xs">
+                    <dt className="text-ink-3 w-40 flex-shrink-0">{label}</dt>
+                    <dd className="text-ink-2 break-words min-w-0">{String(val)}</dd>
+                  </div>
+                ) : null,
+              )}
+            </dl>
+          </div>
+          <div>
+            <div className="text-xs font-bold text-orange uppercase tracking-widest mb-3">All career matches</div>
+            <div className="space-y-2">
+              {s.career_matches?.map((c, i) => (
+                <div key={i} className="bg-tile rounded-control px-3 py-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <span className="text-xs font-bold text-ink-3 mr-2">{i + 1}.</span>
+                      <span className="text-xs font-semibold text-ink-1">{c.title}</span>
+                    </div>
+                    <span className="text-xs text-orange font-semibold whitespace-nowrap flex-shrink-0">{c.salary}</span>
+                  </div>
+                  {c.why && <div className="text-xs text-ink-2 mt-0.5 ml-4 italic">{c.why}</div>}
+                </div>
+              )) ?? <span className="text-ink-3 text-xs">No matches recorded</span>}
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </Drawer>
   );
 }

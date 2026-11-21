@@ -1,17 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import { userMessage, networkMessage } from "@/lib/admin/errors";
-import { TYPE } from "@/lib/admin/typeScale";
+import Drawer from "@/app/admin/_components/ui/Drawer";
+import Button from "@/app/admin/_components/ui/Button";
 import { type OpportunityRow } from "./pipeline-stages";
 import { type PipelineStage } from "@/lib/fundraising/stages";
 
 /**
  * Full-size edit dialog for a pipeline card (replaces the cramped inline edit
- * panel). Mirrors TaskEditModal's shell: dimmed backdrop, Escape to close,
+ * panel). The kit Drawer, as TaskEditModal: focus trap, Escape to close,
  * one PATCH with every editable field on save. Stage comes from the card's
  * pipeline config, so the dropdown always matches the board's columns.
  */
@@ -43,15 +44,6 @@ export default function OpportunityEditModal({
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const busy = saving || deleting;
-
-  // Close on Escape.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !busy) onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose, busy]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -122,25 +114,38 @@ export default function OpportunityEditModal({
     // stopPropagation on pointer events so the board's drag handlers never see
     // gestures that start inside the dialog (the card underneath is draggable).
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
-      onClick={() => !busy && onClose()}
+      className="contents"
       onPointerDown={(e) => e.stopPropagation()}
       onPointerMove={(e) => e.stopPropagation()}
       onPointerUp={(e) => e.stopPropagation()}
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl rounded-panel border-hairline bg-ink shadow-2xl max-h-[90vh] overflow-y-auto"
-      >
-        <form onSubmit={submit} className="p-6 space-y-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h2 className={TYPE.modalTitle}>{opp.label}</h2>
-              {opp.constituentName && opp.label !== opp.constituentName && (
-                <p className="text-xs text-ink-2 mt-0.5 truncate">{opp.constituentName}</p>
-              )}
+      {/* The kit Drawer (V4 P1): focus trap, Escape and scrim close (held
+          while a save or delete is in flight), a phone sheet. */}
+      <Drawer
+        open
+        onClose={() => !busy && onClose()}
+        width={560}
+        title={opp.label}
+        description={opp.constituentName && opp.label !== opp.constituentName ? opp.constituentName : undefined}
+        footer={
+          <div className="flex w-full items-center gap-2">
+            <Button variant="quiet" size="sm" onClick={handleDelete} disabled={busy}>
+              {deleting ? "Deleting…" : "Delete"}
+            </Button>
+            <div className="ml-auto flex items-center gap-2">
+              <Button variant="secondary" onClick={onClose} disabled={busy}>
+                Cancel
+              </Button>
+              <Button type="submit" form="opportunity-edit-form" disabled={busy} loading={saving}>
+                {saving ? "Saving…" : "Save"}
+              </Button>
             </div>
-            <div className="flex items-center gap-3 shrink-0 text-xs">
+          </div>
+        }
+      >
+        <form id="opportunity-edit-form" onSubmit={submit} className="space-y-4">
+          {(opp.constituentId || opp.hubspotId) && (
+            <div className="flex items-center gap-3 text-xs">
               {opp.constituentId && (
                 <Link
                   href={`/admin/fundraising/donors/${opp.constituentId}`}
@@ -158,7 +163,7 @@ export default function OpportunityEditModal({
                 </Link>
               )}
             </div>
-          </div>
+          )}
 
           <label className={labelCls}>
             Deal name
@@ -288,37 +293,13 @@ export default function OpportunityEditModal({
             />
           </label>
 
-          {error && <p className="text-expense text-sm">{error}</p>}
-
-          <div className="flex items-center gap-2 pt-2">
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={busy}
-              className="px-3 py-2 rounded-full text-xs text-ink-2 hover:text-expense transition-colors disabled:opacity-50"
-            >
-              {deleting ? "Deleting…" : "Delete"}
-            </button>
-            <div className="ml-auto flex items-center gap-2">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={busy}
-                className="px-4 py-2 text-xs text-ink-2 hover:text-ink-1 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={busy}
-                className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-5 py-2 rounded-full transition-colors disabled:opacity-50"
-              >
-                {saving ? "Saving…" : "Save"}
-              </button>
-            </div>
-          </div>
+          {error && (
+            <p role="alert" className="text-status-critical-text text-sm">
+              {error}
+            </p>
+          )}
         </form>
-      </div>
+      </Drawer>
     </div>
   );
 }

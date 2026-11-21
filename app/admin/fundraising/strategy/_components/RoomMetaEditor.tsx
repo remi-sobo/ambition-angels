@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { TYPE } from "@/lib/admin/typeScale";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { userMessage } from "@/lib/admin/errors";
+import { TextField, TextareaField } from "@/app/admin/_components/ui/Field";
 
 // Editor for the Strategy Room's presentation copy — the hero (eyebrow,
 // headline, accent, subtitle), the stat chips, and the "what we're doing this
@@ -79,12 +80,12 @@ export default function RoomMetaEditor({ meta }: { meta: RoomMetaInput }) {
       {open && (
         <div className={`px-5 pb-5 space-y-4 ${busy ? "opacity-60" : ""}`}>
           <div className="grid sm:grid-cols-2 gap-3">
-            <div><label className={label}>Eyebrow</label><input className={input} value={f.eyebrow} onChange={(e) => set("eyebrow", e.target.value)} /></div>
+            <TextField label="Eyebrow" controlSize="md" value={f.eyebrow} onChange={(e) => set("eyebrow", e.target.value)} />
             <div className="grid grid-cols-2 gap-3">
-              <div><label className={label}>Headline</label><input className={input} value={f.headline} onChange={(e) => set("headline", e.target.value)} /></div>
-              <div><label className={label}>Headline accent (orange)</label><input className={input} value={f.headline_accent} onChange={(e) => set("headline_accent", e.target.value)} /></div>
+              <TextField label="Headline" controlSize="md" value={f.headline} onChange={(e) => set("headline", e.target.value)} />
+              <TextField label="Headline accent (orange)" controlSize="md" value={f.headline_accent} onChange={(e) => set("headline_accent", e.target.value)} />
             </div>
-            <div className="sm:col-span-2"><label className={label}>Subtitle</label><textarea rows={2} className={input} value={f.subtitle} onChange={(e) => set("subtitle", e.target.value)} /></div>
+            <TextareaField label="Subtitle" className="sm:col-span-2" rows={2} value={f.subtitle} onChange={(e) => set("subtitle", e.target.value)} />
           </div>
 
           <div>
@@ -95,8 +96,8 @@ export default function RoomMetaEditor({ meta }: { meta: RoomMetaInput }) {
             <div className="space-y-2">
               {f.stats.map((s, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <input className={`${input} w-28`} placeholder="3,500+" value={s.value} onChange={(e) => setStat(i, "value", e.target.value)} />
-                  <input className={`${input} flex-1`} placeholder="teens reached" value={s.label} onChange={(e) => setStat(i, "label", e.target.value)} />
+                  <input aria-label={`Stat ${i + 1} number`} className={`${input} w-28`} placeholder="3,500+" value={s.value} onChange={(e) => setStat(i, "value", e.target.value)} />
+                  <input aria-label={`Stat ${i + 1} label`} className={`${input} flex-1`} placeholder="teens reached" value={s.label} onChange={(e) => setStat(i, "label", e.target.value)} />
                   <button type="button" onClick={() => set("stats", f.stats.filter((_, j) => j !== i))} className="text-ink-3 hover:text-expense text-sm px-1 shrink-0" aria-label="Remove stat">×</button>
                 </div>
               ))}
@@ -105,8 +106,8 @@ export default function RoomMetaEditor({ meta }: { meta: RoomMetaInput }) {
           </div>
 
           <div className="border-t border-hairline pt-4 grid sm:grid-cols-2 gap-3">
-            <div><label className={label}>“This year” heading</label><input className={input} value={f.this_year_heading} onChange={(e) => set("this_year_heading", e.target.value)} /></div>
-            <div><label className={label}>“This year” intro</label><textarea rows={2} className={input} value={f.year_intro} onChange={(e) => set("year_intro", e.target.value)} /></div>
+            <TextField label="“This year” heading" controlSize="md" value={f.this_year_heading} onChange={(e) => set("this_year_heading", e.target.value)} />
+            <TextareaField label="“This year” intro" rows={2} value={f.year_intro} onChange={(e) => set("year_intro", e.target.value)} />
           </div>
 
           <div>
@@ -117,8 +118,8 @@ export default function RoomMetaEditor({ meta }: { meta: RoomMetaInput }) {
             <div className="space-y-2">
               {f.this_year.map((y, i) => (
                 <div key={i} className="flex items-start gap-2">
-                  <input className={`${input} w-36`} placeholder="Exposure" value={y.label} onChange={(e) => setYear(i, "label", e.target.value)} />
-                  <textarea rows={2} className={`${input} flex-1`} placeholder="What this layer is…" value={y.body} onChange={(e) => setYear(i, "body", e.target.value)} />
+                  <input aria-label={`Layer ${i + 1} name`} className={`${input} w-36`} placeholder="Exposure" value={y.label} onChange={(e) => setYear(i, "label", e.target.value)} />
+                  <textarea aria-label={`Layer ${i + 1} description`} rows={2} className={`${input} flex-1`} placeholder="What this layer is…" value={y.body} onChange={(e) => setYear(i, "body", e.target.value)} />
                   <button type="button" onClick={() => set("this_year", f.this_year.filter((_, j) => j !== i))} className="text-ink-3 hover:text-expense text-sm px-1 shrink-0 pt-2" aria-label="Remove item">×</button>
                 </div>
               ))}

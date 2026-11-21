@@ -11,6 +11,7 @@ import { userMessage } from "@/lib/admin/errors";
 import { useSaveAction } from "@/app/admin/_lib/useSaveAction";
 import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import Button from "@/app/admin/_components/ui/Button";
+import { StaticTable } from "@/app/admin/_components/ui/DataTable";
 
 type FieldOption = { key: string; label: string; required?: boolean };
 type Fields = { spine: FieldOption[]; custom: FieldOption[] };
@@ -307,29 +308,29 @@ export default function ImportWizard({
             <li className="text-ink-2">{counts.total ?? 0} rows in the file</li>
           </ul>
           {rows.length > 0 && (
-            <div className="max-h-80 overflow-auto rounded-control border border-hairline mb-3">
-              <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-tile text-left text-xs text-ink-2">
-                  <tr>
-                    <th scope="col" className="px-3 py-2 font-semibold w-14">Row</th>
-                    <th scope="col" className="px-3 py-2 font-semibold">What</th>
-                    <th scope="col" className="px-3 py-2 font-semibold">Result</th>
-                    <th scope="col" className="px-3 py-2 font-semibold">Why</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.slice(0, 200).map((r) => (
-                    <tr key={r.row_num} className="border-t border-hairline align-top">
-                      <td className="px-3 py-2 text-ink-2 tabular-nums">{r.row_num}</td>
-                      <td className="px-3 py-2 text-ink-1">{r.summary ?? "(no name)"}</td>
-                      <td className={`px-3 py-2 whitespace-nowrap ${r.status === "invalid" ? "text-expense font-semibold" : r.status === "valid" ? "text-revenue" : "text-ink-2"}`}>
+            // The kit table (V4 P1), first 200 rows, scrolling in its box.
+            <div className="max-h-80 overflow-auto mb-3">
+              <StaticTable
+                label="Dry run, row by row"
+                noun={{ one: "row", many: "rows" }}
+                rows={rows.slice(0, 200)}
+                getRowId={(r) => String(r.row_num)}
+                getRowLabel={(r) => `Row ${r.row_num}`}
+                columns={[
+                  { key: "what", header: "What", card: "title", render: (r) => <span className="text-ink-1">{r.summary ?? "(no name)"}</span> },
+                  { key: "row", header: "Row", align: "right", render: (r) => <span className="text-ink-2 tabular-nums">{r.row_num}</span> },
+                  {
+                    key: "result",
+                    header: "Result",
+                    render: (r) => (
+                      <span className={`whitespace-nowrap ${r.status === "invalid" ? "text-expense font-semibold" : r.status === "valid" ? "text-revenue" : "text-ink-2"}`}>
                         {statusLabel(r)}
-                      </td>
-                      <td className="px-3 py-2 text-ink-2">{r.error ?? r.donor ?? ""}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </span>
+                    ),
+                  },
+                  { key: "why", header: "Why", render: (r) => <span className="text-ink-2">{r.error ?? r.donor ?? ""}</span> },
+                ]}
+              />
             </div>
           )}
           <div className="flex gap-2 justify-end">

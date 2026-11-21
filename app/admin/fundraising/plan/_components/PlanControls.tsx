@@ -11,9 +11,8 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import { userMessage, networkMessage } from "@/lib/admin/errors";
+import { TextField, TextareaField } from "@/app/admin/_components/ui/Field";
 
-const inputCls =
-  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 const btnCls =
   "text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors disabled:opacity-50";
 const primaryBtnCls =
@@ -85,35 +84,10 @@ export function StrategyForm({
 
   return (
     <form onSubmit={submit} className="grid gap-2 sm:grid-cols-2">
-      <input
-        className={inputCls}
-        placeholder="Strategy name (e.g. Major gifts)"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        required
-      />
-      <input
-        className={inputCls}
-        placeholder="Goal for the year ($)"
-        type="number"
-        min="0"
-        step="0.01"
-        value={goal}
-        onChange={(e) => setGoal(e.target.value)}
-      />
-      <input
-        className={inputCls}
-        placeholder="Owner"
-        value={owner}
-        onChange={(e) => setOwner(e.target.value)}
-      />
-      <textarea
-        className={`${inputCls} sm:col-span-2`}
-        placeholder="Notes: the playbook, preconditions, risks"
-        rows={2}
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-      />
+      <TextField label="Strategy name" placeholder="Major gifts" controlSize="md" value={name} onChange={(e) => setName(e.target.value)} required />
+      <TextField label="Goal for the year ($)" controlSize="md" type="number" min="0" step="0.01" value={goal} onChange={(e) => setGoal(e.target.value)} />
+      <TextField label="Owner" controlSize="md" value={owner} onChange={(e) => setOwner(e.target.value)} />
+      <TextareaField label="Notes" placeholder="The playbook, preconditions, risks" className="sm:col-span-2" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
       <div className="sm:col-span-2 flex items-center gap-3">
         <button className={primaryBtnCls} disabled={busy}>
           {strategy ? "Save strategy" : "Add strategy"}

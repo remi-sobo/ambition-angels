@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { userMessage } from "@/lib/admin/errors";
 import { ACK_CHANNELS, CHANNEL_LABEL, type AckChannel } from "@/lib/fundraising/ack-channels";
-import { TYPE } from "@/lib/admin/typeScale";
+import { TextareaField } from "@/app/admin/_components/ui/Field";
 
 // Log a proactive, non-gift thank-you (no gift behind it, so no receipt
 // language). Reusable across constituent / opportunity / volunteer / milestone
@@ -84,13 +84,7 @@ export default function LogThankYou({
           </button>
         ))}
       </div>
-      <textarea
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        rows={3}
-        placeholder="A short note for the record (optional)."
-        className={`w-full bg-tile border-hairline rounded-control px-3 py-2 ${TYPE.body} leading-relaxed placeholder-ink-3 focus:outline-none focus:border-orange/40`}
-      />
+      <TextareaField label="Note (optional)" placeholder="A short note for the record." className="w-full" value={note} onChange={(e) => setNote(e.target.value)} rows={3} />
       <div className="flex items-center gap-3">
         <button
           onClick={save}

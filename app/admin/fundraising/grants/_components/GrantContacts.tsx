@@ -36,14 +36,14 @@ function RoleField({
 }) {
   return (
     <>
-      <select value={role} onChange={(e) => setRole(e.target.value)} className={inputCls + " text-xs"}>
+      <select aria-label="Contact role" value={role} onChange={(e) => setRole(e.target.value)} className={inputCls + " text-xs"}>
         {GRANT_CONTACT_ROLES.map(([v, l]) => (
           <option key={v} value={v} className="bg-tile">{l}</option>
         ))}
         <option value={CUSTOM_ROLE} className="bg-tile">Custom…</option>
       </select>
       {role === CUSTOM_ROLE && (
-        <input
+        <input aria-label="Custom role"
           value={custom}
           onChange={(e) => setCustom(e.target.value)}
           placeholder="Role"
@@ -123,7 +123,7 @@ function PersonPicker({
 
   return (
     <div ref={boxRef} className="relative w-56">
-      <input
+      <input aria-label="Search people"
         value={query}
         autoFocus={autoFocus}
         onChange={(e) => {
@@ -374,7 +374,7 @@ export function AddGrantContactForm({ grantId }: { grantId: string }) {
     <form onSubmit={submit} className="flex flex-wrap items-center gap-2 px-5 py-3 border-t border-hairline">
       <PersonPicker value={person} onChange={setPerson} />
       {!person.constituentId && person.name.trim() && (
-        <input
+        <input aria-label="Email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}

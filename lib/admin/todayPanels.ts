@@ -38,8 +38,8 @@ export type TodayLayout = {
   top: TodayPanelKey[];
   /** One level down. */
   below: TodayPanelKey[];
-  /** The page's primary action: Talk to log with ai.capture, the old quick
-   *  add without it, nothing for a read-only role. */
+  /** The page's primary action: Talk to log with ai.capture (any role with
+   *  capture.use), the old quick add without it (ops.write), else nothing. */
   primary: "talk" | "quick_add" | null;
   readOnly: boolean;
 };
@@ -72,9 +72,13 @@ export function selectTodayPanels(input: PanelInput): TodayLayout {
   const donors = mod("fundraising") && can("fundraising.read");
   const cohorts = mod("program") && can("program.read");
 
-  // Capture's tables are personal and need ops.write (capture_tables.sql RLS),
-  // so Talk to log is offered only where a recording can actually be saved.
-  const primary: TodayLayout["primary"] = readOnly ? null : can("ops.write") ? (feats.has("ai.capture") ? "talk" : "quick_add") : null;
+  // Capture's tables are personal and need capture.use (every role, see
+  // capture_use_permission.sql), so Talk to log is offered to finance and
+  // board viewers too; it files nothing they cannot file. Without ai.capture
+  // the old quick add needs ops.write, as before. A board viewer stays a
+  // read-only layout: voice is the one thing they can add.
+  const primary: TodayLayout["primary"] =
+    feats.has("ai.capture") && can("capture.use") ? "talk" : !readOnly && can("ops.write") ? "quick_add" : null;
 
   const top: TodayPanelKey[] = [];
   const below: TodayPanelKey[] = [];

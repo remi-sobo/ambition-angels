@@ -1,902 +1,453 @@
 import Link from "next/link";
-import SectionHeading from "../_components/SectionHeading";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { FinCategory } from "@/lib/finance/types";
-import {
-  CashFlowChart,
-  CircleGauge,
-  Donut,
-  ProgressBar,
-  Sparkline,
-  money,
-  type DonutSeg,
-} from "./_components/charts";
+import { CashFlowChart, money } from "./_components/charts";
 import PageHeader from "../_components/PageHeader";
+import PageShell from "../_components/ui/PageShell";
+import Button from "../_components/ui/Button";
+import Figure, { SummaryStrip } from "../_components/ui/Figure";
+import Notice from "../_components/ui/Notice";
+import ListRow, { ListRows } from "../_components/ui/ListRow";
+import { CountBadge } from "../_components/ui/Badge";
+import DataTable, { type DataTableColumn } from "../_components/ui/DataTable";
 import { getFinanceSnapshot, fiscalYearBounds } from "@/lib/admin/finance";
 import { endOfMonthISO } from "@/lib/finance/runway";
+import { loadRevenueSchedule, loadReceivedTotal, scheduleTotals, scheduleToRunwayPledges } from "@/lib/finance/schedule";
+import { loadUncategorized } from "@/lib/finance/uncategorized";
 import {
-  loadRevenueSchedule,
-  loadReceivedTotal,
-  scheduleTotals,
-  scheduleToRunwayPledges,
-} from "@/lib/finance/schedule";
-import ReconcileCard from "./_components/ReconcileCard";
-import RunwayTiers from "./_components/RunwayTiers";
-import InfoTip from "./_components/InfoTip";
-import { constituentName } from "@/lib/fundraising/display";
-import { CHART, CHART_SERIES } from "@/lib/admin/chartTokens";
+  budgetRows,
+  cashFigure,
+  cashState,
+  decisionLine,
+  fiscalYearLabel,
+  needsYou,
+  receivedFigure,
+  runwayFigures,
+  spentFigure,
+  type BudgetRow,
+  type DashFigure,
+} from "@/lib/finance/dashboard";
 import { TYPE } from "@/lib/admin/typeScale";
-import Alert from "../_components/ui/Alert";
 import { fetchAll } from "@/lib/supabase/fetchAll";
 import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
+import { getOrgContext, ctxHasPermission } from "@/lib/admin/auth";
+import SnapshotActions, { type BreakdownShare } from "./_components/SnapshotActions";
+import type { TableSpec } from "@/lib/admin/dataTable";
 
-// Read live every request: the service-role client's reads go through the
-// global fetch Next caches by default, so without this a freshly-saved config
-// (burn baseline, goal, anchor) could be served stale from the Data Cache.
-// Matches every other live admin page.
+// Finance → Snapshot: the Dashboard archetype (V4 Stage G2,
+// specs/v4-prototypes/Finance.dc.html). Header with one primary action; a
+// decision line in plain words; a summary strip (cash on hand, runway cash
+// only, runway with pledges due, received and spent this year), each with
+// its source and freshness, stale offering Refresh and missing reading "No
+// data yet", never 0; one chart; a "Needs you" list; one compact table
+// (budget vs actual by group). The rest of the old dashboard (runway tiers
+// with the projection window, set balance, the year's supporting figures,
+// spending by function, money in by source) sits one click away in the
+// header's More actions (SnapshotActions).
+//
+// Canonical numbers come from the shared snapshot (lib/admin/finance.ts) so
+// this page, Today and the briefing never disagree. Read live every request.
 export const dynamic = "force-dynamic";
 
-// ── Page ───────────────────────────────────────────────────────────────────
+const BASE = "/admin/finance/snapshot";
+const SET_BALANCE = `${BASE}?set=balance`;
+const BUDGET_TABLE: TableSpec = { sortable: [], defaultSort: null, pageSize: 200 };
+
+const SOURCE_FROM_CAT: Record<string, string> = {
+  "revenue.foundations": "Foundations",
+  "revenue.individuals": "Individuals",
+  "revenue.corporate": "Corporate",
+  "revenue.gov-grants": "Government",
+  "revenue.accelerator": "Accelerator",
+  "revenue.earned": "Earned",
+  "revenue.interest": "Other",
+  "revenue.other": "Other",
+};
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+function shares(map: Map<string, number>): BreakdownShare[] {
+  const total = Array.from(map.values()).reduce((s, v) => s + v, 0);
+  if (total <= 0) return [];
+  return Array.from(map.entries())
+    .filter(([, v]) => v > 0.0001)
+    .sort((a, b) => b[1] - a[1])
+    .map(([label, v]) => ({ label, amount: money(v), pct: v / total }));
+}
 
 export default async function FinanceDashboardPage() {
   const roleGate = await requirePagePermission("finance.read", "Finance");
   if (!roleGate.ok) return roleGate.page;
   const supabase = getSupabaseAdmin();
+  const ctx = await getOrgContext();
+  const canWrite = ctx ? await ctxHasPermission(ctx, "finance.write") : false;
 
-  // Canonical numbers (cash, runway, burn, monthly series, YTD) come from the
-  // shared snapshot, so the dashboard, the CEO cockpit, and the briefing engine
-  // never disagree. The dashboard layers per-category detail on top.
   const snap = await getFinanceSnapshot();
   const cfg = snap.cfg;
   const fy = fiscalYearBounds(cfg.year, cfg.startMonth);
   // Org fence: the service-role client bypasses RLS, so every read below is
   // scoped to the snapshot's org (the same org fin_config was resolved for).
   const orgId = snap.orgId;
+  const now = new Date();
 
-  const [
-    catsRes,
-    txnsRes,
-    budgetRes,
-    pledgesRes,
-    uncatRes,
-    recentRes,
-    recentGiftsRes,
-    scheduleRows,
-    receivedYTD,
-  ] = await Promise.all([
-    supabase
-      .from("fin_categories")
-      .select("id, group_name, display_name, kind, functional_class, sort_order, enabled")
-      .eq("org_id", orgId)
-      .eq("enabled", true)
-      .order("sort_order"),
-    // Fiscal-year transactions with category — for YTD-by-category, donuts, budget.
-    // Paged past PostgREST's 1,000-row cap: category totals, donuts and
-    // budget-vs-actual are sums over every FY transaction.
-    fetchAll<{ txn_date: string; amount: number; category_id: string | null; restricted: boolean }>(
-      () =>
-        supabase
-          .from("fin_transactions")
-          .select("txn_date, amount, category_id, restricted")
-          .eq("org_id", orgId)
-          .gte("txn_date", fy.start)
-          .lte("txn_date", fy.end),
-      { order: ["id"] }
-    ),
-    supabase
-      .from("fin_budget")
-      .select("category_id, base_amount, contingency_t1, contingency_t2, activated_contingency")
-      .eq("org_id", orgId)
-      .eq("year", cfg.year),
-    supabase
-      .from("fin_revenue_commitments")
-      .select("source_type, amount, status, probability, expected_date, restricted, external_ref")
-      .eq("org_id", orgId)
-      .eq("year", cfg.year),
-    supabase
-      .from("fin_transactions")
-      .select("id", { count: "exact", head: true })
-      .eq("org_id", orgId)
-      .is("category_id", null),
-    supabase
-      .from("fin_transactions")
-      .select("id, txn_date, description, amount, category_id")
-      .eq("org_id", orgId)
-      .order("txn_date", { ascending: false })
-      .order("id", { ascending: false })
-      .limit(10),
-    // Last few gifts that landed — donor-named, from the canonical gifts ledger
-    // (the same source as Received / Raised YTD, so the box reconciles with the
-    // headline). Different signal from "Recent transactions", which is bank-level
-    // and doesn't show who gave.
-    supabase
-      .from("gifts")
-      .select("id, amount, gift_date, method, constituent:constituents ( type, first_name, last_name, org_name )")
-      .eq("org_id", orgId)
-      .order("gift_date", { ascending: false })
-      .order("created_at", { ascending: false })
-      .limit(5),
-    loadRevenueSchedule(supabase, orgId),
-    loadReceivedTotal(supabase, orgId, fy.start, fy.end),
-  ]);
-
-  // Canonical inflows from the revenue schedule (opportunities + grants +
-  // pledges + manual — never raw hs_deals). The runway tiers and the headline
-  // figures read this so they agree with the snapshot's runway.
-  const schedTotals = scheduleTotals(scheduleRows);
+  const [catsRes, txnsRes, budgetRes, pledgesRes, ledgerRes, lastImportRes, reconRes, uncat, scheduleRows, received] =
+    await Promise.all([
+      supabase
+        .from("fin_categories")
+        .select("id, group_name, display_name, kind, functional_class, sort_order, enabled")
+        .eq("org_id", orgId)
+        .eq("enabled", true)
+        .order("sort_order"),
+      // Fiscal-year transactions with category, paged past PostgREST's cap:
+      // category totals are sums over every row of the year.
+      fetchAll<{ amount: number; category_id: string | null }>(
+        () =>
+          supabase
+            .from("fin_transactions")
+            .select("amount, category_id")
+            .eq("org_id", orgId)
+            .gte("txn_date", fy.start)
+            .lte("txn_date", fy.end),
+        { order: ["id"] },
+      ),
+      supabase
+        .from("fin_budget")
+        .select("category_id, base_amount, activated_contingency")
+        .eq("org_id", orgId)
+        .eq("year", cfg.year),
+      supabase.from("fin_revenue_commitments").select("source_type, amount, status").eq("org_id", orgId).eq("year", cfg.year),
+      supabase.from("fin_transactions").select("id", { count: "exact", head: true }).eq("org_id", orgId),
+      supabase.from("fin_imports").select("uploaded_at").eq("org_id", orgId).order("uploaded_at", { ascending: false }).limit(1).maybeSingle(),
+      supabase
+        .from("fin_reconciliation_items")
+        .select("id", { count: "exact", head: true })
+        .eq("org_id", orgId)
+        .eq("status", "pending"),
+      loadUncategorized(supabase, orgId),
+      loadRevenueSchedule(supabase, orgId),
+      loadReceivedTotal(supabase, orgId, fy.start, fy.end),
+    ]);
 
   const categories = (catsRes.data ?? []) as FinCategory[];
   const catById = new Map(categories.map((c) => [c.id, c]));
-  const txns =
-    (txnsRes.data ?? []) as Array<{
-      txn_date: string;
-      amount: number;
-      category_id: string | null;
-      restricted: boolean;
-    }>;
-  txns.forEach((t) => (t.amount = Number(t.amount)));
+  const txns = (txnsRes.data ?? []).map((t) => ({ amount: Number(t.amount), category_id: t.category_id }));
+  const partial = snap.partial || !!txnsRes.truncated;
 
-  // Canonical cash / runway / monthly series / YTD — one source of truth
-  // (lib/admin/finance.ts), shared with the cockpit and the briefing.
-  const { cashOnHand, burn3mo, monthBuckets, expenseYTD, netYTD } = snap;
-
-  // ── Functional split donut (expenses by program / admin / fundraising) ──
-  const functionalTotals = { program: 0, admin: 0, fundraising: 0, uncategorized: 0 };
-  for (const t of txns) {
-    if (t.amount >= 0) continue;
-    const cat = t.category_id ? catById.get(t.category_id) : null;
-    const cls = cat?.functional_class;
-    if (cls === "program") functionalTotals.program += -t.amount;
-    else if (cls === "admin") functionalTotals.admin += -t.amount;
-    else if (cls === "fundraising") functionalTotals.fundraising += -t.amount;
-    else functionalTotals.uncategorized += -t.amount;
-  }
-  const functionalSegs: DonutSeg[] = [
-    { label: "Program", value: functionalTotals.program, color: CHART.accent },
-    { label: "Admin", value: functionalTotals.admin, color: CHART.ink },
-    { label: "Fundraising", value: functionalTotals.fundraising, color: CHART.revenue },
-    { label: "Uncategorized", value: functionalTotals.uncategorized, color: CHART.warning },
-  ].filter((s) => s.value > 0.0001);
-
-  // ── Revenue source mix (from pledges + actual revenue txns) ────────────
-  const pledges = (pledgesRes.data ?? []) as Array<{
-    source_type: string;
-    amount: number;
-    status: string;
-    probability: number | null;
-    expected_date: string | null;
-    restricted: boolean;
-    external_ref: string | null;
-  }>;
-  const sourceTotals = new Map<string, number>();
-  for (const p of pledges) {
-    if (p.status !== "received") continue;
-    sourceTotals.set(
-      p.source_type,
-      (sourceTotals.get(p.source_type) ?? 0) + Number(p.amount)
-    );
-  }
-  // Augment with bank-side revenue not yet matched to a pledge — use the
-  // category's id prefix to route to a source type.
-  const sourceFromCat: Record<string, string> = {
-    "revenue.foundations": "foundation",
-    "revenue.individuals": "individual",
-    "revenue.corporate": "corporate",
-    "revenue.gov-grants": "government",
-    "revenue.accelerator": "accelerator",
-    "revenue.earned": "earned",
-    "revenue.interest": "other",
-    "revenue.other": "other",
-  };
-  for (const t of txns) {
-    if (t.amount <= 0) continue;
-    const cat = t.category_id ? catById.get(t.category_id) : null;
-    const src = cat ? sourceFromCat[cat.id] ?? "other" : "other";
-    sourceTotals.set(src, (sourceTotals.get(src) ?? 0) + t.amount);
-  }
-  const SOURCE_COLOR: Record<string, string> = {
-    foundation: CHART.revenue,
-    individual: CHART.accent,
-    corporate: CHART.warning,
-    government: CHART.ink,
-    accelerator: CHART_SERIES[6],
-    earned: "#60a5fa",
-    other: CHART.inkFaint,
-  };
-  const sourceSegs: DonutSeg[] = Array.from(sourceTotals.entries())
-    .map(([k, v]) => ({
-      label: k.charAt(0).toUpperCase() + k.slice(1),
-      value: v,
-      color: SOURCE_COLOR[k] ?? CHART.inkFaint,
-    }))
-    .sort((a, b) => b.value - a.value);
-
-  // ── Fundraising summary (from the canonical schedule + actual gifts) ─────
-  // Received = real money landed (gifts this fiscal year — HubSpot closed-won
-  // deals and manual/payment gifts). This alone is the "Raised YTD" headline:
-  // committed/pledged deals are money we don't have yet, so they never inflate
-  // the YTD total. Secured = committed schedule (pledges + awarded grants +
-  // manual secured + committed AIG/Pledged deals, full value, restricted
-  // included — restricted money still counts toward the goal). No hs_deals.
-  const securedTotal = schedTotals.committed;
-  const receivedTotal = receivedYTD.total;
-  const partial = snap.partial || txnsRes.truncated || receivedYTD.truncated;
-  // Projected pipeline is the schedule's probability-weighted open pipeline
-  // (sourced from opportunities). This is the same number the runway tiers use,
-  // so the headline pipeline figure and the runway can't disagree.
-  const projectedWeighted = schedTotals.projectedWeighted;
-  const raisedHard = receivedTotal + securedTotal;
-
-  // ── Budget vs actual (grouped) ──────────────────────────────────────────
-  const budgetRows =
-    (budgetRes.data ?? []) as Array<{
-      category_id: string;
-      base_amount: number;
-      contingency_t1: number;
-      contingency_t2: number;
-      activated_contingency: number;
-    }>;
+  // ── Budget vs actual by group ───────────────────────────────────────────
   const budgetByCat = new Map(
-    budgetRows.map((r) => [
+    ((budgetRes.data ?? []) as Array<{ category_id: string; base_amount: number; activated_contingency: number }>).map((r) => [
       r.category_id,
       Number(r.base_amount) + Number(r.activated_contingency),
-    ])
+    ]),
   );
   const actualByCat = new Map<string, number>();
   for (const t of txns) {
     if (t.amount >= 0 || !t.category_id) continue;
-    actualByCat.set(t.category_id, (actualByCat.get(t.category_id) ?? 0) + -t.amount);
+    actualByCat.set(t.category_id, (actualByCat.get(t.category_id) ?? 0) - t.amount);
   }
-  const totalBudget = Array.from(budgetByCat.values()).reduce((s, v) => s + v, 0);
-  // Group rollups
-  const groupRows = new Map<string, { budget: number; actual: number }>();
+  const groupMap = new Map<string, { budget: number; actual: number }>();
   for (const c of categories) {
     if (c.kind !== "expense") continue;
-    const g = c.group_name;
-    if (!groupRows.has(g)) groupRows.set(g, { budget: 0, actual: 0 });
-    const r = groupRows.get(g)!;
-    r.budget += budgetByCat.get(c.id) ?? 0;
-    r.actual += actualByCat.get(c.id) ?? 0;
+    const g = groupMap.get(c.group_name) ?? { budget: 0, actual: 0 };
+    g.budget += budgetByCat.get(c.id) ?? 0;
+    g.actual += actualByCat.get(c.id) ?? 0;
+    groupMap.set(c.group_name, g);
   }
-  const budgetVsActual = Array.from(groupRows.entries())
-    .map(([group, r]) => ({ group, ...r }))
-    .filter((r) => r.budget > 0 || r.actual > 0)
-    .sort((a, b) => b.budget - a.budget);
+  const budget = budgetRows(Array.from(groupMap.entries()).map(([group, r]) => ({ group, ...r })));
+  const totalBudget = Array.from(budgetByCat.values()).reduce((s, v) => s + v, 0);
+  const overBudget = budget.filter((b) => b.diffTone === "over");
 
-  // ── Misc ───────────────────────────────────────────────────────────────
-  const uncategorizedCount = uncatRes.count ?? 0;
-  const recent =
-    (recentRes.data ?? []) as Array<{
-      id: string;
-      txn_date: string;
-      description: string;
-      amount: number;
-      category_id: string | null;
-    }>;
-  const recentGifts =
-    (recentGiftsRes.data ?? []) as unknown as Array<{
-      id: string;
-      amount: number;
-      gift_date: string;
-      method: string | null;
-      constituent: { type: string; first_name: string | null; last_name: string | null; org_name: string | null } | null;
-    }>;
-
-  const goalPct = cfg.goal > 0 ? raisedHard / cfg.goal : 0;
-  const receivedPct = cfg.goal > 0 ? receivedTotal / cfg.goal : 0;
-  const budgetPct = totalBudget > 0 ? expenseYTD / totalBudget : 0;
-
-  // ── Forward-runway tiers ─────────────────────────────────────────────────
-  // The card recomputes the projected tier for 3/6/12-month horizons on the
-  // client, so it needs the unreceived pledges (full value) plus the resolved
-  // inputs the snapshot already computed.
-  const now = new Date();
-  // Runway tiers recompute client-side over the canonical schedule (committed at
-  // full value, projected pipeline weighted), matching the snapshot's runway.
-  const runwayPledges = scheduleToRunwayPledges(scheduleRows);
-  const horizonEnds = {
-    3: endOfMonthISO(now, 3),
-    6: endOfMonthISO(now, 6),
-    12: endOfMonthISO(now, 12),
-  } as const;
+  // ── Figures ────────────────────────────────────────────────────────────
+  const cashIn = { cashOnHand: snap.cashOnHand, anchorDate: cfg.startDate, reconciledAt: cfg.reconciledAt, partial: snap.partial };
+  const cash = cashState(cashIn, now);
   const ri = snap.runway.inputs;
+  const runwayIn = {
+    cashKnown: cash.known,
+    cashFreshness: cash.freshness,
+    cashMonths: snap.runway.cash.months,
+    dueMonths: snap.runway.due.months,
+    baseline: ri.baseline,
+    baselineSource: ri.baselineSource,
+    duePledges: ri.duePledges,
+    endCurrentMonth: endOfMonthISO(now, 0),
+  };
+  const ledgerRows = ledgerRes.error ? null : ledgerRes.count ?? 0;
+  const figures: DashFigure[] = [
+    cashFigure(cashIn, now, SET_BALANCE),
+    ...runwayFigures(runwayIn, SET_BALANCE),
+    receivedFigure(received, cfg.goal, fy.start),
+    spentFigure(
+      {
+        expenseYTD: snap.expenseYTD,
+        partial,
+        ledgerRows,
+        lastImportAt: (lastImportRes.data as { uploaded_at?: string } | null)?.uploaded_at ?? null,
+        totalBudget,
+      },
+      fy.start,
+      now,
+    ),
+  ];
+  const decision = decisionLine(runwayIn, SET_BALANCE);
+  const needs = needsYou(
+    {
+      uncategorized: uncat,
+      reconcilePending: reconRes.error ? null : reconRes.count ?? 0,
+      cash,
+      overBudget,
+      undatedPledges: snap.undatedPledgeCount,
+      lastClosedAt: cfg.lastReconciledAt,
+      setBalanceHref: canWrite ? SET_BALANCE : "/admin/finance/transactions#close",
+    },
+    now,
+  );
 
-  // ── Render ─────────────────────────────────────────────────────────────
+  // ── "Year at a glance" (More actions) ──────────────────────────────────
+  const sched = scheduleTotals(scheduleRows);
+  const functional = new Map<string, number>();
+  for (const t of txns) {
+    if (t.amount >= 0) continue;
+    const cls = t.category_id ? catById.get(t.category_id)?.functional_class : null;
+    const k = cls === "program" ? "Program" : cls === "admin" ? "Admin" : cls === "fundraising" ? "Fundraising" : "Uncategorized";
+    functional.set(k, (functional.get(k) ?? 0) - t.amount);
+  }
+  const bySource = new Map<string, number>();
+  for (const p of (pledgesRes.data ?? []) as Array<{ source_type: string; amount: number; status: string }>) {
+    if (p.status !== "received") continue;
+    bySource.set(cap(p.source_type), (bySource.get(cap(p.source_type)) ?? 0) + Number(p.amount));
+  }
+  for (const t of txns) {
+    if (t.amount <= 0) continue;
+    const src = (t.category_id && SOURCE_FROM_CAT[t.category_id]) || "Other";
+    bySource.set(src, (bySource.get(src) ?? 0) + t.amount);
+  }
+  const glance = [
+    {
+      label: ri.baselineSource === "config" ? "Monthly burn (your baseline)" : "Monthly burn (3-month average)",
+      value: ri.baseline > 0 ? money(ri.baseline) : null,
+      source:
+        ri.baselineSource === "config"
+          ? `Set in finance settings. The 3-month average is ${money(snap.burn3mo)}.`
+          : "Average spending over the last three active months, one-offs left out.",
+    },
+    {
+      label: "Net this year",
+      value: ledgerRows ? `${snap.netYTD >= 0 ? "+" : "-"}${money(Math.abs(snap.netYTD))}` : null,
+      source: "Money in minus money out across this year's transactions.",
+    },
+    {
+      label: "Secured, not yet received",
+      value: money(sched.committed),
+      source: "Committed pledges, awarded grants and signed deals at full value.",
+    },
+    {
+      label: "Pipeline (weighted)",
+      value: money(sched.projectedWeighted),
+      source: "Open asks times their chance of closing. The same figure the projected runway uses.",
+    },
+    {
+      label: "Toward the goal",
+      value: cfg.goal > 0 && !received.error ? `${Math.round(((received.total + sched.committed) / cfg.goal) * 100)}%` : null,
+      source: cfg.goal > 0 ? `Received plus secured, of the ${money(cfg.goal)} goal.` : "Set a fundraising goal in finance settings.",
+    },
+  ];
+
+  const budgetColumns: DataTableColumn<BudgetRow>[] = [
+    {
+      key: "group",
+      header: "Category group",
+      card: "title",
+      render: (r) => <span className="font-semibold text-ink-1">{r.group}</span>,
+    },
+    {
+      key: "budget",
+      header: "Year budget",
+      align: "right",
+      className: "tabular-nums",
+      render: (r) => (r.budget > 0 ? money(r.budget) : <span className="text-ink-2">No budget yet</span>),
+    },
+    { key: "actual", header: "Spent", align: "right", className: "tabular-nums", render: (r) => money(r.actual) },
+    {
+      key: "used",
+      header: "Used",
+      render: (r) =>
+        r.pct === null ? (
+          <span className="text-ink-2">No budget to measure</span>
+        ) : (
+          <span className="inline-flex items-center gap-2">
+            <span aria-hidden className="inline-block w-20 h-1.5 rounded-full bg-tile overflow-hidden">
+              <span
+                className={`block h-full ${r.diffTone === "over" ? "bg-status-critical" : "bg-ink-2"}`}
+                style={{ width: `${Math.min(100, Math.round(r.pct * 100))}%` }}
+              />
+            </span>
+            <span className="tabular-nums text-ink-1">{Math.round(r.pct * 100)}%</span>
+          </span>
+        ),
+    },
+  ];
+
+  const toneClass = { under: "text-status-healthy-text font-semibold", over: "text-status-critical-text font-semibold", even: "text-ink-1", none: "text-ink-2" };
+
   return (
-    <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8 space-y-6">
-      {/* Header — SubNav now lives in app/admin/finance/layout.tsx so it
-          persists across every finance page. */}
+    <PageShell>
       <PageHeader
-        eyebrow={`Fiscal year ${cfg.year}`}
-        title="Dashboard"
-        subtitle="Live picture of cash, burn, fundraising, and budget. Numbers update as transactions are imported, categorized, and pledges are received."
+        title="Finance"
+        subtitle={fiscalYearLabel(cfg.year, fy)}
+        primaryAction={canWrite ? <Button href="/admin/settings/finance/upload">Upload transactions</Button> : undefined}
+        moreActions={
+          <SnapshotActions
+            canWrite={canWrite}
+            computedCash={cash.known ? snap.cashOnHand : null}
+            anchorDate={cfg.startDate}
+            runway={{
+              baseline: ri.baseline,
+              baselineSource: ri.baselineSource,
+              bankBalance: ri.bankBalance,
+              mtdSpend: ri.mtdSpend,
+              endCurrentMonth: endOfMonthISO(now, 0),
+              horizonEnds: { 3: endOfMonthISO(now, 3), 6: endOfMonthISO(now, 6), 12: endOfMonthISO(now, 12) },
+              defaultHorizon: cfg.horizon,
+              pledges: scheduleToRunwayPledges(scheduleRows),
+              restrictedInflows: snap.restrictedInflows,
+            }}
+            figures={glance}
+            functional={shares(functional)}
+            bySource={shares(bySource)}
+          />
+        }
       />
 
-      {partial && (
-        <Alert tone="warning" title="Partial ledger">
-          This org has more transactions or gifts than one page load reads, so cash, year-to-date and category totals
-          below are computed from part of the ledger and are not complete.
-        </Alert>
-      )}
-
-      {/* Cash anchor + reconcile — the trusted current-balance number, with a
-          one-tap "set current balance" and a freshness indicator. */}
-      <ReconcileCard computedCash={cashOnHand} anchorDate={cfg.startDate} reconciledAt={cfg.reconciledAt} />
-
-      {/* Forward runway — three tiers from the shared engine. */}
-      <RunwayTiers
-        baseline={ri.baseline}
-        baselineSource={ri.baselineSource}
-        bankBalance={ri.bankBalance}
-        mtdSpend={ri.mtdSpend}
-        endCurrentMonth={endOfMonthISO(now, 0)}
-        horizonEnds={horizonEnds}
-        defaultHorizon={cfg.horizon}
-        pledges={runwayPledges}
-        restrictedInflows={snap.restrictedInflows}
-      />
-
-      {/* Hero KPIs */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Hero
-          label="Raised YTD"
-          value={money(receivedTotal)}
-          href="/admin/finance/revenue"
-          hrefLabel="View revenue"
-          info={
-            <InfoTip heading="Raised YTD">
-              Money actually <b>received</b> this fiscal year: gifts that have landed
-              (the <code>gifts</code> ledger. HubSpot <b>Closed Won</b> deals and
-              manual gifts). Committed or pledged deals that haven&apos;t been received
-              are <b>not</b> counted here. They appear as <b>Secured</b> in the pledge
-              pipeline below. Projected pipeline is not included either.
-            </InfoTip>
-          }
-          sub={
-            cfg.goal > 0
-              ? `${Math.round(receivedPct * 100)}% of ${money(cfg.goal)} goal`
-              : "set a goal in Config"
+      {/* The decision line: where you stand, in plain words. */}
+      <section aria-label="Where you stand" className="mb-4">
+        <Notice
+          tone={decision.tone}
+          title={decision.headline}
+          action={
+            decision.action ? (
+              <Button variant="secondary" size="sm" href={decision.action.href}>
+                {decision.action.label}
+              </Button>
+            ) : (
+              <Link href={`${BASE}?show=runway`} className="text-[13px] font-semibold underline underline-offset-2">
+                How runway is figured
+              </Link>
+            )
           }
         >
-          <CircleGauge
-            pct={receivedPct}
-            value={`${Math.round(receivedPct * 100)}%`}
-            label="Goal"
-            color={CHART.revenue}
+          {decision.detail}
+        </Notice>
+      </section>
+
+      {partial ? (
+        <Notice tone="partial" title="Some figures are from part of the ledger." className="mb-4">
+          This organization has more transactions or gifts than one read holds, so cash and the year&apos;s totals are a
+          floor, not the whole answer.
+        </Notice>
+      ) : null}
+
+      <SummaryStrip label="Key figures">
+        {figures.map((f) => (
+          <Figure
+            key={f.key}
+            label={f.label}
+            value={f.value}
+            source={f.source}
+            freshness={f.freshness}
+            compare={f.compare}
+            href={f.href}
+            refreshHref={canWrite ? f.refreshHref : undefined}
           />
-        </Hero>
-        <Hero
-          label="Spent YTD"
-          value={money(expenseYTD)}
-          href="/admin/finance/transactions?status=outflow"
-          hrefLabel="View expenses"
-          info={
-            <InfoTip heading="Spent YTD">
-              Every dollar out so far this fiscal year: the sum of all{" "}
-              <b>expense transactions</b> (negative <code>amount</code> in{" "}
-              <code>fin_transactions</code>) dated within the fiscal year. The % is{" "}
-              <b>Spent ÷ total budget</b> (budget base + activated contingency across
-              all categories).
-            </InfoTip>
-          }
-          sub={
-            totalBudget > 0
-              ? `${Math.round(budgetPct * 100)}% of ${money(totalBudget)} budget`
-              : "no budget set"
-          }
-        >
-          <CircleGauge
-            pct={budgetPct}
-            value={`${Math.round(budgetPct * 100)}%`}
-            label="Budget"
-            color={budgetPct > 1 ? CHART.expense : budgetPct > 0.8 ? CHART.warning : CHART.accent}
-          />
-        </Hero>
-      </section>
+        ))}
+      </SummaryStrip>
 
-      {/* Secondary metrics */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Mini
-          label={ri.baselineSource === "config" ? "Monthly burn (baseline)" : "Monthly burn (3-mo)"}
-          value={money(ri.baseline)}
-          sub={ri.baselineSource === "config" ? `${money(burn3mo)} actual (3-mo)` : undefined}
-          info={
-            <InfoTip heading="Monthly burn">
-              The monthly spend that runway divides by.{" "}
-              {ri.baselineSource === "config" ? (
-                <>
-                  Currently the <b>baseline you set in Config</b> ({money(ri.baseline)}/mo);
-                  the actual <b>trailing 3-month average</b> expense is shown beneath it for
-                  comparison.
-                </>
-              ) : (
-                <>
-                  No baseline set in Config, so this is the <b>trailing 3-month average</b>:
-                  the average expense over the last 3 active months (months with any
-                  revenue or expense), with one-off transactions flagged
-                  &ldquo;exclude from runway&rdquo; netted out.
-                </>
-              )}
-            </InfoTip>
-          }
-        />
-        <Mini
-          label="Net YTD"
-          value={`${netYTD >= 0 ? "+" : "−"}${money(Math.abs(netYTD))}`}
-          tone={netYTD >= 0 ? "good" : "warn"}
-          info={
-            <InfoTip heading="Net YTD">
-              <b>Revenue − expense</b> for the fiscal year so far. Every inflow minus
-              every outflow in <code>fin_transactions</code>. Positive means more came in
-              than went out. This is cash flow, not the same as fundraising
-              &ldquo;Raised&rdquo; (which counts committed money not yet in the bank).
-            </InfoTip>
-          }
-        />
-        <Mini
-          label="Pipeline (weighted)"
-          value={money(projectedWeighted)}
-          info={
-            <InfoTip heading="Pipeline (weighted)">
-              Open fundraising pipeline, <b>probability-weighted</b>: each open opportunity&apos;s{" "}
-              <b>ask × close-probability</b>, summed. Committed/won deals are excluded (they
-              count under Secured). This is the same projected figure the forward-runway
-              &ldquo;Projected&rdquo; tier uses, so the two can never disagree.
-            </InfoTip>
-          }
-        />
-        <Mini
-          label="Uncategorized"
-          value={String(uncategorizedCount)}
-          tone={uncategorizedCount > 0 ? "warn" : "good"}
-          href="/admin/finance/transactions?category=uncategorized"
-        />
-      </section>
-
-      {/* Cash flow chart */}
-      <section className="rounded-panel-lg border-hairline bg-surface p-5 sm:p-6">
-        <SectionHeading className="mb-1">
-          Cash flow · 12 months
-        </SectionHeading>
-        <p className="text-xs text-ink-2 mb-4">
-          Bars are revenue (up) and expense (down). The line traces ending
-          balance, starting from the {money(cfg.startBal)} anchor.
-        </p>
-        <CashFlowChart data={monthBuckets} />
-      </section>
-
-      {/* Splits */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="rounded-panel-lg border-hairline bg-surface p-5 sm:p-6">
-          <SectionHeading className="mb-1">
-            Functional split
-            <InfoTip heading="Functional split">
-              This fiscal year&apos;s <b>expenses</b> grouped by each category&apos;s{" "}
-              <b>functional class</b> — <b>program</b>, <b>admin</b>, or{" "}
-              <b>fundraising</b>: the same split a Form 990 reports. Expenses whose
-              category has no class (or no category) fall under <b>Uncategorized</b>.
-            </InfoTip>
-          </SectionHeading>
-          <p className="text-xs text-ink-2 mb-5">
-            How {money(expenseYTD)} of expense breaks down across program,
-            admin, and fundraising: the same split a Form 990 reports.
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-4 mb-4">
+        <section aria-labelledby="cash-title" className="bg-surface border border-hairline rounded-panel p-5 min-w-0">
+          <h2 id="cash-title" className={TYPE.cardTitle}>
+            Cash flow, this fiscal year
+          </h2>
+          <p className={`${TYPE.bodyMuted} mt-1 mb-4`}>
+            Bars are money in (up) and out (down). The line is the ending balance, from the {money(cfg.startBal)} starting
+            balance.
           </p>
-          {functionalSegs.length > 0 ? (
-            <Donut
-              segments={functionalSegs}
-              centerValue={`${
-                functionalTotals.program /
-                  Math.max(
-                    1,
-                    functionalTotals.program + functionalTotals.admin + functionalTotals.fundraising
-                  ) *
-                  100 >=
-                10
-                  ? Math.round(
-                      (functionalTotals.program /
-                        Math.max(
-                          1,
-                          functionalTotals.program +
-                            functionalTotals.admin +
-                            functionalTotals.fundraising
-                        )) *
-                        100
-                    )
-                  : "—"
-              }%`}
-              centerLabel="PROGRAM"
-            />
-          ) : (
-            <Empty>
-              Categorize some expenses to see the program / admin /
-              fundraising split.
-            </Empty>
-          )}
-        </div>
+          <CashFlowChart data={snap.monthBuckets} />
+          <div className="flex flex-wrap items-center justify-between gap-2 mt-3 text-xs text-ink-2">
+            <span>From imported transactions and the starting balance{ledgerRows === 0 ? ". No transactions yet." : "."}</span>
+            <Link href="/admin/finance/forecast" className="font-semibold text-ink-1 underline underline-offset-2">
+              Open forecast
+            </Link>
+          </div>
+        </section>
 
-        <div className="rounded-panel-lg border-hairline bg-surface p-5 sm:p-6">
-          <SectionHeading className="mb-1">
-            Revenue by source
-            <InfoTip heading="Revenue by source">
-              Money in, grouped by who it came from. Combines <b>received pledges</b>{" "}
-              (by their source type) with <b>positive bank transactions</b>, each
-              routed to a source by its revenue category (foundation, individual,
-              corporate, government, accelerator, earned, other). Projected pipeline is
-              not included: only money actually received.
-            </InfoTip>
-          </SectionHeading>
-          <p className="text-xs text-ink-2 mb-5">
-            Received revenue plus actuals from bank transactions, grouped by
-            who it came from. Projected pipeline shown separately below.
-          </p>
-          {sourceSegs.length > 0 ? (
-            <Donut segments={sourceSegs} centerValue={money(receivedTotal)} centerLabel="RAISED" />
+        <section aria-labelledby="needs-title" className="bg-surface border border-hairline rounded-panel px-5 pt-4 pb-3 min-w-0">
+          <h2 id="needs-title" className={`${TYPE.cardTitle} flex items-center gap-2`}>
+            Needs you {needs.length > 0 ? <CountBadge value={needs.length} /> : null}
+          </h2>
+          {needs.length === 0 ? (
+            <p className={`${TYPE.bodyMuted} py-6`}>Nothing needs you right now. Every transaction has a category and the books are current.</p>
           ) : (
-            <Empty>
-              Record received pledges or upload a revenue CSV to see the
-              source mix.
-            </Empty>
+            <ListRows>
+              {needs.map((n) => (
+                <ListRow
+                  key={n.key}
+                  title={n.title}
+                  context={<span className={n.tone === "danger" ? "text-status-critical-text" : undefined}>{n.detail}</span>}
+                  actions={
+                    <Button variant="secondary" size="sm" href={n.href}>
+                      {n.action}
+                    </Button>
+                  }
+                />
+              ))}
+            </ListRows>
           )}
-        </div>
-      </section>
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-hairline text-xs text-ink-2">
+            <span>Checked as of now</span>
+            <Link href="/admin/finance/transactions#reconcile" className="font-semibold text-ink-1 underline underline-offset-2">
+              Open reconcile
+            </Link>
+          </div>
+        </section>
+      </div>
 
-      {/* Budget vs actual */}
-      <section className="rounded-panel-lg border-hairline bg-surface p-5 sm:p-6">
-        <div className="flex items-baseline justify-between flex-wrap gap-2 mb-4">
-          <SectionHeading>
-            Budget vs actual
-            <InfoTip heading="Budget vs actual">
-              Per expense group: <b>actual</b> is this year&apos;s expense transactions
-              summed by category; <b>budget</b> is each category&apos;s{" "}
-              <code>base amount + activated contingency</code>, rolled up to the group.
-              The % is <b>actual ÷ budget</b>.
-            </InfoTip>
-          </SectionHeading>
-          <Link
-            href="/admin/finance/budget"
-            className="text-xs text-ink-2 hover:text-ink-1"
-          >
-            Edit budget →
+      <section aria-labelledby="budget-title">
+        <div className="flex flex-wrap items-end justify-between gap-2 mb-3">
+          <div>
+            <h2 id="budget-title" className={TYPE.cardTitle}>
+              Budget vs actual
+            </h2>
+            <p className={`${TYPE.bodyMuted} mt-1`}>
+              Budget from your {cfg.year} budget. Spending from categorized transactions this fiscal year.
+              {uncat.count > 0 ? ` ${uncat.count} uncategorized transaction${uncat.count === 1 ? " is" : "s are"} not counted yet.` : ""}
+            </p>
+          </div>
+          <Link href="/admin/finance/budget" className="text-[13px] font-semibold text-ink-1 underline underline-offset-2">
+            Open budget
           </Link>
         </div>
-        {budgetVsActual.length === 0 ? (
-          <Empty>Set a budget and import transactions to see this table.</Empty>
-        ) : (
-          <ul className="space-y-3">
-            {budgetVsActual.map((r) => {
-              const pct = r.budget > 0 ? r.actual / r.budget : 0;
-              const intent: "ok" | "warn" | "over" =
-                pct > 1 ? "over" : pct > 0.85 ? "warn" : "ok";
-              return (
-                <li key={r.group} className="text-xs">
-                  <div className="flex items-baseline justify-between mb-1">
-                    <span className="font-medium text-ink-1">
-                      {r.group}
-                    </span>
-                    <span className="font-mono text-ink-1">
-                      {money(r.actual)} <span className="text-ink-2">/ {money(r.budget)}</span>
-                      <span
-                        className={`ml-2 ${
-                          intent === "over"
-                            ? "text-expense"
-                            : intent === "warn"
-                            ? "text-status-watch-text"
-                            : "text-revenue"
-                        }`}
-                      >
-                        {Math.round(pct * 100)}%
-                      </span>
-                    </span>
-                  </div>
-                  <ProgressBar pct={pct} intent={intent} />
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
-
-      {/* Bottom strip: pledge pipeline + recent donations, then recent transactions */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="rounded-panel-lg border-hairline bg-surface p-5 sm:p-6">
-          <div className="flex items-baseline justify-between mb-4">
-            <SectionHeading>
-              Pledge pipeline
-            </SectionHeading>
-            <Link
-              href="/admin/finance/revenue"
-              className="text-xs text-ink-2 hover:text-ink-1"
-            >
-              Manage →
-            </Link>
-          </div>
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            <Cell
-              label="Received"
-              value={money(receivedTotal)}
-              info={
-                <InfoTip heading="Received">
-                  Real money that has landed this fiscal year. The sum of{" "}
-                  <b>gifts</b> dated within the year (the <code>gifts</code> ledger).
-                  This is the hard floor of goal progress.
-                </InfoTip>
-              }
-            />
-            <Cell
-              label="Secured"
-              value={money(securedTotal)}
-              accent
-              info={
-                <InfoTip heading="Secured">
-                  Committed money not yet received: the <b>committed</b> rows of the
-                  revenue schedule at full value. Scheduled pledge installments,
-                  awarded grants, and committed AIG/Pledged deals. Restricted money is
-                  included here (it still counts toward the goal).
-                </InfoTip>
-              }
-            />
-            <Cell
-              label="Projected"
-              value={money(projectedWeighted)}
-              subtle
-              info={
-                <InfoTip heading="Projected">
-                  Open pipeline, <b>probability-weighted</b>: each open opportunity&apos;s{" "}
-                  <b>ask × close-probability</b>. Not yet committed, so it&apos;s shown
-                  separately from Received and Secured.
-                </InfoTip>
-              }
-            />
-          </div>
-          <div className={`${TYPE.cardLabel} mb-2`}>
-            Toward {money(cfg.goal)} goal
-          </div>
-          <ProgressBar pct={goalPct} intent={goalPct >= 1 ? "ok" : "warn"} height={10} />
-          {cfg.goal > 0 && (
-            <div className="text-xs text-ink-2 mt-2">
-              {Math.round(goalPct * 100)}% hard ·{" "}
-              {Math.round(((raisedHard + projectedWeighted) / cfg.goal) * 100)}% with weighted pipeline
-            </div>
-          )}
-        </div>
-
-        <div className="rounded-panel-lg border-hairline bg-surface p-5 sm:p-6">
-          <div className="flex items-baseline justify-between mb-4">
-            <SectionHeading>
-              Recent donations
-              <InfoTip heading="Recent donations">
-                The last five <b>gifts</b> that landed, newest first. From the{" "}
-                <code>gifts</code> ledger, the same source as Received / Raised YTD.
-                Shows who gave, unlike Recent transactions (bank-level, no donor).
-              </InfoTip>
-            </SectionHeading>
-            <Link
-              href="/admin/fundraising/donors"
-              className="text-xs text-ink-2 hover:text-ink-1"
-            >
-              All →
-            </Link>
-          </div>
-          {recentGifts.length === 0 ? (
-            <Empty>No gifts recorded yet.</Empty>
-          ) : (
-            <ul className="text-xs">
-              {recentGifts.map((g) => {
-                const donor = g.constituent ? constituentName(g.constituent) : "Unknown donor";
-                return (
-                  <li
-                    key={g.id}
-                    className="grid grid-cols-[5rem_1fr_6rem] gap-3 py-1.5 border-t border-hairline first:border-t-0"
-                  >
-                    <span className="font-mono text-ink-2">{g.gift_date.slice(5)}</span>
-                    <span className="text-ink-1 truncate" title={donor}>
-                      {donor}
-                    </span>
-                    <span className="text-right font-mono text-revenue">
-                      {money(Number(g.amount))}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-
-        <div className="lg:col-span-2 rounded-panel-lg border-hairline bg-surface p-5 sm:p-6">
-          <div className="flex items-baseline justify-between mb-4">
-            <SectionHeading>
-              Recent transactions
-            </SectionHeading>
-            <Link
-              href="/admin/finance/transactions"
-              className="text-xs text-ink-2 hover:text-ink-1"
-            >
-              All →
-            </Link>
-          </div>
-          {recent.length === 0 ? (
-            <Empty>Upload a CSV to see transactions.</Empty>
-          ) : (
-            <ul className="text-xs">
-              {recent.map((t) => {
-                const c = t.category_id ? catById.get(t.category_id) : null;
-                return (
-                  <li
-                    key={t.id}
-                    className="grid grid-cols-[5rem_1fr_6rem] gap-3 py-1.5 border-t border-hairline first:border-t-0"
-                  >
-                    <span className="font-mono text-ink-2">{t.txn_date.slice(5)}</span>
-                    <span className="text-ink-1 truncate" title={t.description}>
-                      {t.description}
-                      {c && (
-                        <span className="text-ink-2 text-xs ml-2">
-                          {c.display_name}
-                        </span>
-                      )}
-                    </span>
-                    <span
-                      className={`text-right font-mono ${
-                        Number(t.amount) >= 0 ? "text-revenue" : "text-ink-1"
-                      }`}
-                    >
-                      {money(Number(t.amount))}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-      </section>
-    </div>
-  );
-}
-
-// ── Local UI bits ──────────────────────────────────────────────────────────
-
-function Hero({
-  label,
-  value,
-  sub,
-  delta,
-  deltaLabel,
-  accent,
-  sparkline,
-  info,
-  href,
-  hrefLabel,
-  children,
-}: {
-  label: string;
-  value: string;
-  sub?: string;
-  delta?: number;
-  deltaLabel?: string;
-  accent?: "orange";
-  sparkline?: number[];
-  info?: React.ReactNode;
-  /** When set, the whole card links here (with a "view list" affordance). */
-  href?: string;
-  hrefLabel?: string;
-  children?: React.ReactNode;
-}) {
-  const dotClass =
-    accent === "orange" ? "text-orange" : "text-ink-1";
-  return (
-    <div
-      className={`group relative rounded-panel-lg border-hairline bg-surface p-5 overflow-hidden ${
-        href
-          ? "transition-colors hover:border-ink-2 hover:bg-tile focus-within:ring-2 focus-within:ring-orange/40"
-          : ""
-      }`}
-    >
-      {/* Full-card overlay link: keeps the whole widget clickable + keyboard-
-          focusable without nesting the InfoTip button inside an <a>. */}
-      {href && (
-        <Link
-          href={href}
-          aria-label={`${label} · ${hrefLabel ?? "view list"}`}
-          className="absolute inset-0 z-10"
+        <DataTable
+          label="Budget vs actual by category group"
+          noun={{ one: "group", many: "groups" }}
+          columns={budgetColumns}
+          nextStep={{
+            header: "Difference",
+            render: (r) => <span className={toneClass[r.diffTone]}>{r.diff}</span>,
+          }}
+          data={{ rows: budget, total: budget.length, page: 0, pageSize: BUDGET_TABLE.pageSize, error: catsRes.error?.message ?? null }}
+          getRowId={(r) => r.group}
+          getRowLabel={(r) => r.group}
+          spec={BUDGET_TABLE}
+          state={{ page: 0, sort: null }}
+          baseHref={BASE}
+          emptyMessage={
+            <>
+              Set a budget and import transactions to see this table.{" "}
+              <Link href="/admin/finance/budget" className="font-semibold underline underline-offset-2">
+                Set a budget
+              </Link>
+            </>
+          }
         />
-      )}
-      <div className={`flex items-start justify-between gap-3 ${href ? "pointer-events-none" : ""}`}>
-        <div className="min-w-0">
-          <div className={TYPE.cardLabel}>
-            {label}
-            {info && <span className="pointer-events-auto relative z-20">{info}</span>}
-          </div>
-          <div className={`mt-1 font-display font-black text-3xl ${dotClass} leading-none`}>
-            {value}
-          </div>
-          {sub && <div className="mt-2 text-xs text-ink-2">{sub}</div>}
-          {typeof delta === "number" && Math.abs(delta) > 0.0001 && (
-            <div className="mt-1 text-xs">
-              <span className={delta >= 0 ? "text-revenue" : "text-expense"}>
-                {delta >= 0 ? "▲" : "▼"} {money(Math.abs(delta))}
-              </span>{" "}
-              <span className="text-ink-2">{deltaLabel}</span>
-            </div>
-          )}
-          {href && (
-            <div className="mt-2 text-xs font-medium text-ink-3 group-hover:text-orange transition-colors">
-              {hrefLabel ?? "View list"} →
-            </div>
-          )}
-        </div>
-        {children && <div className="shrink-0">{children}</div>}
-      </div>
-      {sparkline && sparkline.length > 1 && (
-        <div className="mt-3 -mb-1">
-          <Sparkline values={sparkline} width={220} height={36} color={CHART.accent} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Mini({
-  label,
-  value,
-  tone,
-  href,
-  sub,
-  info,
-}: {
-  label: string;
-  value: string;
-  tone?: "good" | "warn";
-  href?: string;
-  sub?: string;
-  info?: React.ReactNode;
-}) {
-  const valueClass =
-    tone === "warn"
-      ? "text-status-watch-text"
-      : tone === "good"
-      ? "text-revenue"
-      : "text-ink-1";
-  const inner = (
-    <div className="rounded-panel border-hairline bg-surface p-3 hover:bg-tile transition-colors">
-      <div className={`${TYPE.cardLabel} mb-1`}>{label}{info}</div>
-      <div className={`text-lg font-medium ${valueClass}`}>{value}</div>
-      {sub && <div className="mt-0.5 text-xs text-ink-2">{sub}</div>}
-    </div>
-  );
-  if (href) return <Link href={href}>{inner}</Link>;
-  return inner;
-}
-
-function Empty({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="text-sm text-ink-2 py-8 text-center border border-dashed border-hairline rounded-panel">
-      {children}
-    </div>
-  );
-}
-
-function Cell({
-  label,
-  value,
-  accent,
-  subtle,
-  info,
-}: {
-  label: string;
-  value: string;
-  accent?: boolean;
-  subtle?: boolean;
-  info?: React.ReactNode;
-}) {
-  return (
-    <div>
-      <div className={`${TYPE.cardLabel} mb-1`}>{label}{info}</div>
-      <div
-        className={`text-lg font-medium font-mono ${
-          accent ? "text-orange" : subtle ? "text-ink-2" : "text-ink-1"
-        }`}
-      >
-        {value}
-      </div>
-    </div>
+      </section>
+    </PageShell>
   );
 }

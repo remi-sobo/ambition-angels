@@ -10,7 +10,7 @@ export default function NoCategories() {
   return (
     <EmptyState
       label="Finance categories"
-      hint="Your organization's chart of categories hasn't been loaded yet. Your BloomOS operator sets it up; budgets, rules and categorizing transactions start working as soon as it's in."
+      hint="Your organization's chart of categories has not been loaded yet. It is set up for you during onboarding; budgets, rules and categorizing transactions start working as soon as it is in."
     />
   );
 }

@@ -3,6 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { userMessage } from "@/lib/admin/errors";
 import { TYPE } from "@/lib/admin/typeScale";
+import Button from "./_components/ui/Button";
+import Notice from "./_components/ui/Notice";
+import Figure, { SummaryStrip } from "./_components/ui/Figure";
+import DataTable, { type DataTableColumn } from "./_components/ui/DataTable";
+import { SkeletonGroup, SkeletonStrip, SkeletonTable } from "./_components/ui/Skeleton";
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -29,10 +34,10 @@ type ClickEvent = {
 type Period = "7d" | "30d" | "90d" | "all";
 
 const PERIODS: { id: Period; label: string }[] = [
-  { id: "7d", label: "Last 7 Days" },
-  { id: "30d", label: "Last 30 Days" },
-  { id: "90d", label: "Last 90 Days" },
-  { id: "all", label: "All Time" },
+  { id: "7d", label: "Last 7 days" },
+  { id: "30d", label: "Last 30 days" },
+  { id: "90d", label: "Last 90 days" },
+  { id: "all", label: "All time" },
 ];
 
 // ── Helpers ──────────────────────────────────────────────────────────────
@@ -124,8 +129,8 @@ export default function AnalyticsView() {
   // ── Period-filtered slices ────────────────────────────────────────────
   const cutoff = periodCutoff(period);
 
-  const pageViewsAll = data?.pageViews ?? [];
-  const eventsAll = data?.events ?? [];
+  const pageViewsAll = useMemo(() => data?.pageViews ?? [], [data]);
+  const eventsAll = useMemo(() => data?.events ?? [], [data]);
 
   const pageViews = useMemo(
     () =>
@@ -300,347 +305,185 @@ export default function AnalyticsView() {
     }));
   }, [pageViewsAll]);
 
-  // ── Render ────────────────────────────────────────────────────────────
+  // ── Render (V4 Stage G2: Figures with sources, DataTable v2, kit
+  // Buttons for the period, skeletons while loading) ─────────────────────
+  const periodLabel = PERIODS.find((p) => p.id === period)?.label ?? "";
+  const src = `From site page views, ${periodLabel.toLowerCase()}, as of this load`;
+  const SPEC = { sortable: [], defaultSort: null, pageSize: 500 } as const;
+  const table = <Row,>(label: string, noun: { one: string; many: string }, columns: DataTableColumn<Row>[], rows: Row[], id: (r: Row) => string, empty: string) => (
+    <DataTable
+      label={label}
+      noun={noun}
+      columns={columns}
+      data={{ rows, total: rows.length, page: 0, pageSize: SPEC.pageSize, error: error ?? null }}
+      getRowId={id}
+      getRowLabel={id}
+      spec={SPEC}
+      state={{ page: 0, sort: null }}
+      baseHref="/admin/impact/analytics"
+      emptyMessage={empty}
+    />
+  );
+
+  type TopPage = (typeof topPages)[number];
+  type EventRow = (typeof eventCounts)[number];
+  type Recent = (typeof recentActivity)[number];
 
   return (
     <div className="space-y-8">
-
-      {/* Period filter */}
-      <div className="flex flex-wrap gap-2">
+      <div role="group" aria-label="Period" className="flex flex-wrap gap-2">
         {PERIODS.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => setPeriod(p.id)}
-            className={`text-xs font-semibold px-4 py-2 rounded-full border transition-colors ${
-              period === p.id
-                ? "bg-orange text-white border-orange"
-                : "text-ink-2 border-hairline hover:border-orange/40 hover:text-ink-1"
-            }`}
-          >
+          <Button key={p.id} size="sm" variant={period === p.id ? "strong" : "secondary"} aria-pressed={period === p.id} onClick={() => setPeriod(p.id)}>
             {p.label}
-          </button>
+          </Button>
         ))}
       </div>
 
-      {error && (
-        <div className="bg-expense-bg border border-expense/30 rounded-panel px-5 py-3 text-expense text-sm">
+      {error ? (
+        <Notice tone="danger" title="Analytics failed to load.">
           {error}
-        </div>
-      )}
+        </Notice>
+      ) : null}
 
-      {/* Top stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard
-          label="Total page views"
-          value={loading ? "—" : totalPageViews.toLocaleString()}
-          sub="entries in period"
-        />
-        <StatCard
-          label="Unique sessions"
-          value={loading ? "—" : uniqueSessions.toLocaleString()}
-          sub="distinct visitors"
-        />
-        <StatCard
-          label="Avg time on page"
-          value={loading ? "—" : fmtSeconds(avgTimeOnPage)}
-          sub={`${exits.length.toLocaleString()} sample${exits.length === 1 ? "" : "s"}`}
-        />
-        <StatCard
-          label="Most visited page"
-          value={loading ? "—" : mostVisitedPage}
-          sub={`${topPages[0]?.views.toLocaleString() ?? 0} views`}
-        />
-        <StatCard
-          label="Top event"
-          value={loading ? "—" : topEvent}
-          sub={`${eventCounts[0]?.count.toLocaleString() ?? 0} fired`}
-        />
-        <StatCard
-          label="Total key events"
-          value={loading ? "—" : totalKeyEvents.toLocaleString()}
-          sub="all events in period"
-        />
-      </div>
+      {loading ? (
+        <SkeletonGroup label="Loading analytics">
+          <SkeletonStrip count={3} />
+          <SkeletonStrip count={3} />
+          <SkeletonTable rows={6} columns={4} />
+        </SkeletonGroup>
+      ) : (
+        <>
+          <SummaryStrip label="Site traffic">
+            <Figure label="Page views" value={error ? null : totalPageViews} source={src} />
+            <Figure label="Unique sessions" value={error ? null : uniqueSessions} source="Distinct visitor sessions in the period" />
+            <Figure
+              label="Average time on page"
+              value={error || exits.length === 0 ? null : fmtSeconds(avgTimeOnPage)}
+              source={`From ${exits.length.toLocaleString()} timed exit${exits.length === 1 ? "" : "s"}`}
+            />
+          </SummaryStrip>
+          <SummaryStrip label="What people do">
+            <Figure
+              label="Most visited page"
+              value={topPages[0] ? mostVisitedPage : null}
+              source={topPages[0] ? `${topPages[0].views.toLocaleString()} views in the period` : "No page views in the period"}
+            />
+            <Figure
+              label="Top event"
+              value={eventCounts[0] ? topEvent : null}
+              source={eventCounts[0] ? `Fired ${eventCounts[0].count.toLocaleString()} times` : "No events in the period"}
+            />
+            <Figure label="Key events" value={error ? null : totalKeyEvents} source="Every click and interaction event in the period" />
+          </SummaryStrip>
 
-      {/* Top Pages */}
-      <Section title="Top Pages" subtitle={`Top 15 by views · ${PERIODS.find((p) => p.id === period)?.label}`}>
-        {/* Mobile cards */}
-        <div className="md:hidden divide-y divide-hairline">
-          {loading ? (
-            <p className={`px-4 py-6 ${TYPE.bodyMuted}`}>Loading…</p>
-          ) : topPages.length === 0 ? (
-            <p className={`px-4 py-6 ${TYPE.bodyMuted}`}>No page views in this period yet.</p>
-          ) : (
-            topPages.map((p) => (
-              <div key={p.page} className="px-4 py-3">
-                <div className="text-ink-1 font-mono text-xs break-all">{p.page}</div>
-                <div className="flex items-center justify-between mt-1 text-xs text-ink-2">
-                  <span><span className="text-ink-1 font-semibold">{p.views.toLocaleString()}</span> views · {p.pct.toFixed(1)}%</span>
-                  <span>{fmtSeconds(p.avgTime)}</span>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+          <Section title="Top pages" subtitle={`Top 15 by views, ${periodLabel.toLowerCase()}`}>
+            {table<TopPage>(
+              "Top pages",
+              { one: "page", many: "pages" },
+              [
+                { key: "page", header: "Page", card: "title", render: (r) => <span className="font-mono text-xs text-ink-1 break-all">{r.page}</span> },
+                { key: "views", header: "Views", align: "right", className: "tabular-nums", render: (r) => r.views.toLocaleString() },
+                { key: "time", header: "Average time", className: "text-ink-2", render: (r) => fmtSeconds(r.avgTime) },
+                { key: "pct", header: "Share", align: "right", className: "tabular-nums text-ink-2", render: (r) => `${r.pct.toFixed(1)}%` },
+              ],
+              topPages,
+              (r) => r.page,
+              "No page views in this period yet.",
+            )}
+          </Section>
 
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-sm min-w-[640px]">
-            <thead>
-              <tr className="border-b border-hairline">
-                {["Page", "Views", "Avg Time on Page", "% of Total"].map((h) => (
-                  <th key={h} className={`text-left ${TYPE.tableHeader} px-4 py-3 whitespace-nowrap`}>
-                    {h}
-                  </th>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Section title="Device" subtitle="Visits by screen size">
+              <ul className="divide-y divide-hairline bg-surface border border-hairline rounded-panel px-5">
+                {deviceBreakdown.map((d) => (
+                  <li key={d.device} className="flex items-center gap-4 py-3">
+                    <span className={`${TYPE.body} font-semibold w-20`}>{d.device}</span>
+                    <span aria-hidden className="flex-1 h-2 bg-tile rounded-full overflow-hidden">
+                      <span className="block h-full bg-ink-2" style={{ width: `${d.pct.toFixed(1)}%` }} />
+                    </span>
+                    <span className={`${TYPE.body} tabular-nums whitespace-nowrap`}>
+                      {d.count.toLocaleString()} <span className="text-ink-2">· {d.pct.toFixed(0)}%</span>
+                    </span>
+                  </li>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan={4} className={`px-4 py-6 ${TYPE.bodyMuted}`}>Loading…</td></tr>
-              ) : topPages.length === 0 ? (
-                <tr><td colSpan={4} className={`px-4 py-6 ${TYPE.bodyMuted}`}>No page views in this period yet.</td></tr>
+              </ul>
+            </Section>
+            <Section title="Traffic sources" subtitle="Top 5, plus Direct">
+              {traffic.length === 0 ? (
+                <p className={TYPE.bodyMuted}>No traffic in this period yet.</p>
               ) : (
-                topPages.map((p) => (
-                  <tr key={p.page} className="border-b border-hairline hover:bg-tile transition-colors">
-                    <td className="px-4 py-3 text-ink-1 font-mono text-xs whitespace-nowrap">{p.page}</td>
-                    <td className="px-4 py-3 text-ink-1">{p.views.toLocaleString()}</td>
-                    <td className="px-4 py-3 text-ink-2 text-xs">{fmtSeconds(p.avgTime)}</td>
-                    <td className="px-4 py-3 text-ink-2 text-xs">{p.pct.toFixed(1)}%</td>
-                  </tr>
-                ))
+                <ul className="divide-y divide-hairline bg-surface border border-hairline rounded-panel px-5">
+                  {traffic.map((t) => (
+                    <li key={t.src} className="flex items-center justify-between gap-4 py-3">
+                      <span className={`${TYPE.body} font-medium truncate`}>{t.src}</span>
+                      <span className={`${TYPE.body} tabular-nums whitespace-nowrap`}>
+                        {t.count.toLocaleString()} <span className="text-ink-2">· {t.pct.toFixed(0)}%</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               )}
-            </tbody>
-          </table>
-        </div>
-      </Section>
+            </Section>
+          </div>
 
-      {/* Device + Traffic — side-by-side on desktop */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Section title="Device" subtitle="Visit breakdown by screen size">
-          <div className="px-6 pb-6 flex flex-col gap-3">
-            {deviceBreakdown.map((d) => (
-              <div key={d.device} className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3 flex-1">
-                  <span className={`${TYPE.body} font-semibold w-20`}>{d.device}</span>
-                  <div className="flex-1 h-2 bg-tile rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-orange/60"
-                      style={{ width: `${d.pct.toFixed(1)}%` }}
-                    />
-                  </div>
-                </div>
-                <span className={`${TYPE.body} font-mono whitespace-nowrap`}>
-                  {d.count.toLocaleString()} <span className="text-ink-2">· {d.pct.toFixed(0)}%</span>
-                </span>
-              </div>
+          <Section title="Key events" subtitle="Clicks and interactions: what people are actually doing">
+            {table<EventRow>(
+              "Key events",
+              { one: "event", many: "events" },
+              [
+                { key: "name", header: "Event", card: "title", render: (r) => <span className="font-mono text-xs text-ink-1 break-all">{r.event_name}</span> },
+                { key: "count", header: "In the period", align: "right", className: "tabular-nums font-semibold", render: (r) => r.count.toLocaleString() },
+                { key: "all", header: "All time", align: "right", className: "tabular-nums text-ink-2", render: (r) => r.allTime.toLocaleString() },
+              ],
+              eventCounts,
+              (r) => r.event_name,
+              "No events in this period yet.",
+            )}
+          </Section>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {hvp.map((card) => (
+              <Section key={card.path} title={`Warm lead page: ${card.path}`} subtitle="Visits to this partner pitch page, all time">
+                <SummaryStrip label={`Visits to ${card.path}`}>
+                  <Figure label="Total visits" value={card.totalAllTime} source="All time" />
+                  <Figure label="This week" value={card.thisWeek} source="The last 7 days" />
+                  <Figure label="Average time" value={card.totalAllTime > 0 ? fmtSeconds(card.avgTime) : null} source="From timed exits, all time" />
+                  <Figure label="Last visited" value={card.lastVisited ? timeAgo(card.lastVisited) : null} source="Newest page view" />
+                </SummaryStrip>
+              </Section>
             ))}
           </div>
-        </Section>
 
-        <Section title="Traffic Sources" subtitle="Top 5 + Direct">
-          <div className="px-6 pb-6 flex flex-col gap-3">
-            {loading ? (
-              <p className={`${TYPE.bodyMuted}`}>Loading…</p>
-            ) : traffic.length === 0 ? (
-              <p className={`${TYPE.bodyMuted}`}>No traffic in this period yet.</p>
-            ) : (
-              traffic.map((t) => (
-                <div key={t.src} className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <span className={`${TYPE.body} font-medium truncate flex-1`}>{t.src}</span>
-                  </div>
-                  <span className={`${TYPE.body} font-mono whitespace-nowrap`}>
-                    {t.count.toLocaleString()} <span className="text-ink-2">· {t.pct.toFixed(0)}%</span>
-                  </span>
-                </div>
-              ))
+          <Section title="Recent activity" subtitle="The last 50 page views, newest first">
+            {table<Recent>(
+              "Recent activity",
+              { one: "page view", many: "page views" },
+              [
+                { key: "page", header: "Page", card: "title", render: (v) => <span className="font-mono text-xs text-ink-1 break-all">{v.page ?? "Unknown page"}</span> },
+                { key: "device", header: "Device", className: "text-ink-2", render: (v) => v.device ?? "Unknown" },
+                { key: "source", header: "Source", className: "text-ink-2", render: (v) => refSource(v.referrer) },
+                { key: "time", header: "Time on page", className: "text-ink-2", render: (v) => (v.duration != null ? fmtSeconds(v.duration) : "Not timed") },
+                { key: "when", header: "When", className: "text-ink-2 whitespace-nowrap", render: (v) => timeAgo(v.created_at) },
+              ],
+              recentActivity,
+              (v) => String(v.id),
+              "No page views yet.",
             )}
-          </div>
-        </Section>
-      </div>
-
-      {/* Key Events */}
-      <Section title="Key Events" subtitle="Click & interaction events. What people are actually doing">
-        {/* Mobile cards */}
-        <div className="md:hidden divide-y divide-hairline">
-          {loading ? (
-            <p className={`px-4 py-6 ${TYPE.bodyMuted}`}>Loading…</p>
-          ) : eventCounts.length === 0 ? (
-            <p className={`px-4 py-6 ${TYPE.bodyMuted}`}>No events in this period yet.</p>
-          ) : (
-            eventCounts.map((e) => (
-              <div key={e.event_name} className="px-4 py-3 flex items-center justify-between gap-3">
-                <span className="text-ink-1 font-mono text-xs break-all flex-1 min-w-0">{e.event_name}</span>
-                <div className="text-right flex-shrink-0">
-                  <div className="text-ink-1 font-semibold text-sm">{e.count.toLocaleString()}</div>
-                  <div className="text-ink-2 text-xs">{e.allTime.toLocaleString()} all-time</div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-sm min-w-[520px]">
-            <thead>
-              <tr className="border-b border-hairline">
-                {["Event Name", "Count (period)", "Count all time"].map((h) => (
-                  <th key={h} className={`text-left ${TYPE.tableHeader} px-4 py-3 whitespace-nowrap`}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan={3} className={`px-4 py-6 ${TYPE.bodyMuted}`}>Loading…</td></tr>
-              ) : eventCounts.length === 0 ? (
-                <tr><td colSpan={3} className={`px-4 py-6 ${TYPE.bodyMuted}`}>No events in this period yet.</td></tr>
-              ) : (
-                eventCounts.map((e) => (
-                  <tr key={e.event_name} className="border-b border-hairline hover:bg-tile transition-colors">
-                    <td className="px-4 py-3 text-ink-1 font-mono text-xs whitespace-nowrap">{e.event_name}</td>
-                    <td className="px-4 py-3 text-ink-1 font-semibold">{e.count.toLocaleString()}</td>
-                    <td className="px-4 py-3 text-ink-2">{e.allTime.toLocaleString()}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Section>
-
-      {/* High-value pages */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {hvp.map((card) => (
-          <Section
-            key={card.path}
-            title={`Warm lead page: ${card.path}`}
-            subtitle="Visits to this corporate-pitch page (all-time)"
-          >
-            <div className="px-6 pb-6 grid grid-cols-2 gap-4">
-              <Stat label="Total visits" value={card.totalAllTime.toLocaleString()} />
-              <Stat label="This week" value={card.thisWeek.toLocaleString()} />
-              <Stat label="Avg time on page" value={fmtSeconds(card.avgTime)} />
-              <Stat
-                label="Last visited"
-                value={card.lastVisited ? timeAgo(card.lastVisited) : "—"}
-              />
-            </div>
           </Section>
-        ))}
-      </div>
-
-      {/* Recent Activity */}
-      <Section title="Recent Activity" subtitle="Last 50 page views (newest first)">
-        {/* Mobile cards */}
-        <div className="md:hidden divide-y divide-hairline">
-          {loading ? (
-            <p className={`px-4 py-6 ${TYPE.bodyMuted}`}>Loading…</p>
-          ) : recentActivity.length === 0 ? (
-            <p className={`px-4 py-6 ${TYPE.bodyMuted}`}>No page views yet.</p>
-          ) : (
-            recentActivity.map((v) => (
-              <div key={String(v.id)} className="px-4 py-3">
-                <div className="flex items-start justify-between gap-3">
-                  <span className="text-ink-1 font-mono text-xs break-all flex-1 min-w-0">{v.page ?? "—"}</span>
-                  <span className="text-xs text-ink-3 whitespace-nowrap flex-shrink-0">{timeAgo(v.created_at)}</span>
-                </div>
-                <div className="text-xs text-ink-2 mt-1 flex flex-wrap gap-x-2">
-                  <span>{v.device ?? "—"}</span>
-                  <span>·</span>
-                  <span>{refSource(v.referrer)}</span>
-                  {v.duration != null && (
-                    <>
-                      <span>·</span>
-                      <span>{fmtSeconds(v.duration)}</span>
-                    </>
-                  )}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-sm min-w-[800px]">
-            <thead>
-              <tr className="border-b border-hairline">
-                {["Page", "Device", "Source", "Time on Page", "When"].map((h) => (
-                  <th key={h} className={`text-left ${TYPE.tableHeader} px-4 py-3 whitespace-nowrap`}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan={5} className={`px-4 py-6 ${TYPE.bodyMuted}`}>Loading…</td></tr>
-              ) : recentActivity.length === 0 ? (
-                <tr><td colSpan={5} className={`px-4 py-6 ${TYPE.bodyMuted}`}>No page views yet.</td></tr>
-              ) : (
-                recentActivity.map((v) => (
-                  <tr key={String(v.id)} className="border-b border-hairline hover:bg-tile transition-colors">
-                    <td className="px-4 py-3 text-ink-1 font-mono text-xs whitespace-nowrap">{v.page ?? "—"}</td>
-                    <td className="px-4 py-3 text-ink-2 text-xs">{v.device ?? "—"}</td>
-                    <td className="px-4 py-3 text-ink-2 text-xs">{refSource(v.referrer)}</td>
-                    <td className="px-4 py-3 text-ink-2 text-xs">
-                      {v.duration != null ? fmtSeconds(v.duration) : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-ink-2 text-xs whitespace-nowrap">{timeAgo(v.created_at)}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Section>
-
+        </>
+      )}
     </div>
   );
 }
 
-// ── Tiny presentational helpers ──────────────────────────────────────────
+// ── Tiny presentational helper ───────────────────────────────────────────
 
-function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   return (
-    <div className="bg-tile border-hairline rounded-panel-lg p-6">
-      <div className="font-display font-black text-3xl lg:text-4xl text-orange tracking-tight leading-none mb-2 truncate">
-        {value}
-      </div>
-      <div className={`${TYPE.body} font-medium`}>{label}</div>
-      {sub && <div className="text-ink-3 text-xs mt-1">{sub}</div>}
-    </div>
-  );
-}
-
-function Section({
-  title,
-  subtitle,
-  children,
-}: {
-  title: string;
-  subtitle?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
-      <div className="px-6 py-5 border-b border-hairline">
-        <h2 className={TYPE.sectionTitle}>{title}</h2>
-        {subtitle && <p className="text-ink-2 text-xs mt-0.5">{subtitle}</p>}
-      </div>
+    <section>
+      <h2 className={TYPE.cardTitle}>{title}</h2>
+      {subtitle ? <p className={`${TYPE.bodyMuted} mt-1 mb-3`}>{subtitle}</p> : null}
       {children}
     </section>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div className="font-display font-black text-2xl text-orange tracking-tight leading-none mb-1">
-        {value}
-      </div>
-      <div className="text-ink-2 text-xs">{label}</div>
-    </div>
   );
 }

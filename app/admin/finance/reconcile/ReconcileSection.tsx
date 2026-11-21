@@ -2,11 +2,12 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import ReconcileInbox, { type ReconItem } from "./_components/ReconcileInbox";
 import PageHeader from "../../_components/PageHeader";
+import PageShell from "../../_components/ui/PageShell";
 import { TYPE } from "@/lib/admin/typeScale";
 import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Reconcile — the Cowork reconciliation inbox. The weekly sweep (HubSpot +
-// Gmail) drops proposed ledger entries here; Shannon works the queue so the
+// Gmail) drops proposed ledger entries here; finance works the queue so the
 // week starts with coherent numbers. Nothing hits the ledger until accepted.
 //
 // Extracted at Spec Finance N1: the V1 route renders it standalone
@@ -25,9 +26,9 @@ export default async function ReconcileSection({ embedded = false }: { embedded?
   if (!ctx) {
     if (embedded) return null;
     return (
-      <div className="max-w-4xl px-4 lg:px-8 py-6 lg:py-8">
+      <PageShell width="reading">
         <PageHeader title="Reconcile" subtitle="Sign in to view the reconciliation inbox." />
-      </div>
+      </PageShell>
     );
   }
   const orgId = ctx.orgId;
@@ -53,13 +54,12 @@ export default async function ReconcileSection({ embedded = false }: { embedded?
     return (
       <section className="mt-8">
         <div className="mb-3">
-          <h2 className={TYPE.cardTitle}>
-            Reconcile <span className="text-ink-3 font-normal">· {pending.length} pending</span>
+          <h2 className={TYPE.sectionTitle}>
+            Reconcile <span className="text-ink-2 font-normal">· {pending.length} pending</span>
           </h2>
-          <p className="text-xs text-ink-3 max-w-2xl">
-            Cowork&apos;s proposed ledger entries from the week&apos;s HubSpot deals and email
-            commitments. Nothing touches the books until accepted; the close below blocks while
-            any are pending.
+          <p className={`${TYPE.bodyMuted} max-w-reading mt-1`}>
+            Proposed ledger entries from the week&apos;s HubSpot deals and email commitments. Nothing
+            touches the books until accepted, and the close below waits while any are pending.
           </p>
         </div>
         <ReconcileInbox pending={pending} resolved={resolved} />
@@ -68,18 +68,18 @@ export default async function ReconcileSection({ embedded = false }: { embedded?
   }
 
   return (
-    <div className="max-w-4xl px-4 lg:px-8 py-6 lg:py-8">
+    <PageShell width="reading">
       <PageHeader
         title="Reconcile"
         subtitle={
           <span className="block max-w-2xl">
-            Cowork sweeps the week&apos;s HubSpot deals and email commitments and proposes ledger
-            entries here. Accept what&apos;s real and the numbers update everywhere. Nothing touches
-            the books until you say so. Work this to zero on Friday and Monday starts clean.
+            The weekly sweep reads HubSpot deals and email commitments and proposes ledger entries
+            here. Accept what is real and the numbers update everywhere. Nothing touches the books
+            until you say so.
           </span>
         }
       />
       <ReconcileInbox pending={pending} resolved={resolved} />
-    </div>
+    </PageShell>
   );
 }

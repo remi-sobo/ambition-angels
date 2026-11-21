@@ -1,10 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { userMessage } from "@/lib/admin/errors";
-import Link from "next/link";
 import type { BankFormat, ImportPreview } from "@/lib/finance/types";
 import { TYPE } from "@/lib/admin/typeScale";
+import Button from "@/app/admin/_components/ui/Button";
+import { SelectField, TextField } from "@/app/admin/_components/ui/Field";
+import Notice from "@/app/admin/_components/ui/Notice";
+import Figure, { SummaryStrip } from "@/app/admin/_components/ui/Figure";
+import DataTable, { type DataTableColumn } from "@/app/admin/_components/ui/DataTable";
+import { useSaveAction } from "@/app/admin/_lib/useSaveAction";
 
 type CommitResult = {
   ok: true;
@@ -15,26 +19,27 @@ type CommitResult = {
   period_end: string | null;
 };
 
+type PreviewRow = ImportPreview["rows"][number];
+
 const FORMATS: { value: BankFormat; label: string }[] = [
   { value: "wells-fargo", label: "Wells Fargo" },
   { value: "chase", label: "Chase" },
   { value: "mercury", label: "Mercury" },
   { value: "quickbooks", label: "QuickBooks" },
-  { value: "generic", label: "Generic (date / description / amount headers)" },
+  { value: "generic", label: "Generic (date, description and amount headers)" },
 ];
 
+const PREVIEW_SPEC = { sortable: [], defaultSort: null, pageSize: 1000 } as const;
+
 function fmtMoney(n: number): string {
-  return n.toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2,
-  });
+  return n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 });
 }
 
-// The interactive bank-CSV importer (preview → commit). Extracted from the
-// route so the Upload page can be a server component that also shows the
-// reconcile card and links to the other import flows.
+// The bank-CSV importer, preview then commit (V4 Stage G2: kit fields, Notice,
+// a Figure strip with sources and DataTable v2 for the preview; both requests
+// go through saveAction, nothing optimistic). Nothing is written until Commit.
 export default function UploadClient() {
+  const save = useSaveAction();
   const [file, setFile] = useState<File | null>(null);
   const [format, setFormat] = useState<BankFormat>("wells-fargo");
   const [preview, setPreview] = useState<ImportPreview | null>(null);
@@ -44,6 +49,26 @@ export default function UploadClient() {
   const [errorHint, setErrorHint] = useState<string | null>(null);
   const [result, setResult] = useState<CommitResult | null>(null);
 
+  function send(mode: "preview" | "commit") {
+    const fd = new FormData();
+    fd.set("file", file as File);
+    fd.set("format", format);
+    fd.set("mode", mode);
+    let body: { sample?: unknown; hint?: unknown } | null = null;
+    return {
+      run: () =>
+        save<{ preview?: ImportPreview } & Partial<CommitResult>>({
+          request: async () => {
+            const res = await fetch("/api/admin/finance/import", { method: "POST", body: fd });
+            body = await res.clone().json().catch(() => null);
+            return res;
+          },
+          failure: false,
+        }),
+      body: () => body as { sample?: unknown; hint?: unknown } | null,
+    };
+  }
+
   async function doPreview() {
     if (!file) return;
     setBusy("previewing");
@@ -52,237 +77,181 @@ export default function UploadClient() {
     setErrorHint(null);
     setPreview(null);
     setResult(null);
-
-    const fd = new FormData();
-    fd.set("file", file);
-    fd.set("format", format);
-    fd.set("mode", "preview");
-
-    const r = await fetch("/api/admin/finance/import", { method: "POST", body: fd });
-    const json = await r.json().catch(() => ({}));
-    if (!r.ok) {
-      setError(userMessage(r, json));
-      if (Array.isArray(json.sample)) setErrorSample(json.sample);
-      if (typeof json.hint === "string") setErrorHint(json.hint);
-    } else {
-      setPreview(json.preview as ImportPreview);
-    }
+    const req = send("preview");
+    const r = await req.run();
     setBusy("idle");
+    if (!r.ok) {
+      setError(r.message);
+      const b = req.body();
+      if (Array.isArray(b?.sample)) setErrorSample(b!.sample as string[]);
+      if (typeof b?.hint === "string") setErrorHint(b!.hint as string);
+      return;
+    }
+    setPreview(r.data.preview ?? null);
   }
 
   async function doCommit() {
     if (!file || !preview) return;
     setBusy("committing");
     setError(null);
-
-    const fd = new FormData();
-    fd.set("file", file);
-    fd.set("format", format);
-    fd.set("mode", "commit");
-
-    const r = await fetch("/api/admin/finance/import", { method: "POST", body: fd });
-    const json = await r.json().catch(() => ({}));
-    if (!r.ok) {
-      setError(userMessage(r, json));
-    } else {
-      setResult(json as CommitResult);
-      setPreview(null);
-      setFile(null);
-    }
+    const r = await send("commit").run();
     setBusy("idle");
+    if (!r.ok) {
+      setError(r.message);
+      return;
+    }
+    setResult(r.data as CommitResult);
+    setPreview(null);
+    setFile(null);
   }
+
+  const columns: DataTableColumn<PreviewRow>[] = [
+    { key: "description", header: "Description", card: "title", render: (r) => <span className="text-ink-1">{r.description}</span> },
+    { key: "date", header: "Date", className: "tabular-nums text-ink-2 whitespace-nowrap", render: (r) => r.txn_date },
+    {
+      key: "amount",
+      header: "Amount",
+      align: "right",
+      className: "tabular-nums whitespace-nowrap",
+      render: (r) => <span className={r.amount >= 0 ? "text-status-healthy-text" : "text-ink-1"}>{fmtMoney(r.amount)}</span>,
+    },
+    {
+      key: "category",
+      header: "Category",
+      render: (r) => r.category_id ?? <span className="text-status-watch-text">Uncategorized</span>,
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (r) => (r.is_duplicate ? <span className="text-ink-2">Duplicate, skipped</span> : <span className="text-status-healthy-text font-semibold">New</span>),
+    },
+  ];
+
+  const src = file ? `From ${file.name}, before anything is saved` : "From the file you picked";
 
   return (
     <div className="space-y-6">
-      {/* Form */}
-      <section className="rounded-panel-lg border-hairline bg-surface p-6">
+      <section className="bg-surface border border-hairline rounded-panel p-5">
         <h2 className={`${TYPE.cardTitle} mb-1`}>Bank transactions (CSV)</h2>
-        <p className="text-xs text-ink-2 mb-4 max-w-2xl">
-          Pick a CSV exported from your bank and click <span className="text-ink-1">Upload</span>. We parse it, dedupe
-          against existing transactions, and show a preview. Nothing is written until you click{" "}
-          <span className="text-ink-1">Commit</span>. Generic mode works for any CSV with date / description / amount
-          columns.
+        <p className={`${TYPE.bodyMuted} mb-4`}>
+          Pick a CSV exported from your bank. BloomOS reads it, skips anything already imported and shows a preview.
+          Nothing is saved until you commit. Generic works for any CSV with date, description and amount columns.
         </p>
-        <div className="grid sm:grid-cols-[1fr_auto] gap-4 items-end">
-          <div className="flex-1">
-            <label className="block text-xs text-ink-2 mb-2">Bank format</label>
-            <select
-              value={format}
-              onChange={(e) => setFormat(e.target.value as BankFormat)}
-              className="w-full bg-ink border-hairline rounded-control px-3 py-2 text-sm text-ink-1"
-            >
-              {FORMATS.map((f) => (
-                <option key={f.value} value={f.value}>
-                  {f.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs text-ink-2 mb-2">CSV file</label>
-            <input
-              type="file"
-              accept=".csv,text/csv"
-              onChange={(e) => {
-                setFile(e.target.files?.[0] ?? null);
-                setPreview(null);
-                setError(null);
-                setResult(null);
-              }}
-              className="block text-sm text-ink-1 file:mr-3 file:rounded-control file:border-0 file:bg-orange file:text-white file:px-3 file:py-2 file:text-xs file:font-medium file:cursor-pointer hover:file:bg-orange-dark"
-            />
-          </div>
+        <div className="grid sm:grid-cols-2 gap-4 items-end">
+          <SelectField
+            label="Bank format"
+            value={format}
+            onChange={(e) => setFormat(e.target.value as BankFormat)}
+            options={FORMATS}
+          />
+          <TextField
+            label="CSV file"
+            type="file"
+            accept=".csv,text/csv"
+            onChange={(e) => {
+              setFile(e.target.files?.[0] ?? null);
+              setPreview(null);
+              setError(null);
+              setResult(null);
+            }}
+            hint={file ? `${file.name}, ${(file.size / 1024).toFixed(1)} KB` : undefined}
+            className="[&_input]:pt-2"
+          />
         </div>
-
         <div className="mt-5 flex items-center gap-3 flex-wrap">
-          <button
-            type="button"
-            disabled={!file || busy !== "idle"}
-            onClick={doPreview}
-            className="px-4 py-2 rounded-control bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {busy === "previewing" ? "Reading…" : "Upload"}
-          </button>
-          <span className="text-xs text-ink-2">
-            Reads the file, dedupes against existing transactions, shows a preview. You confirm before anything is saved.
-          </span>
-          {file && (
-            <span className="text-xs text-ink-2 ml-auto">
-              {file.name} · {(file.size / 1024).toFixed(1)} KB
-            </span>
-          )}
+          <Button onClick={doPreview} disabled={!file} loading={busy === "previewing"}>
+            {busy === "previewing" ? "Reading" : "Preview import"}
+          </Button>
+          <span className="text-[13px] text-ink-2">You confirm before anything is saved.</span>
         </div>
       </section>
 
-      {/* Error */}
-      {error && (
-        <div className="rounded-panel border border-expense/30 bg-expense-bg p-4 text-sm text-expense">
-          <div className="font-medium mb-1">{error}</div>
-          {errorHint && <div className="text-xs text-expense mb-3">{errorHint}</div>}
-          {errorSample && errorSample.length > 0 && (
+      {error ? (
+        <Notice tone="danger" title={error}>
+          {errorHint ?? null}
+          {errorSample && errorSample.length > 0 ? (
             <details className="mt-2" open>
-              <summary className="text-xs font-semibold text-expense cursor-pointer hover:text-expense">
-                First {errorSample.length} lines we saw in the file
-              </summary>
-              <pre className="mt-2 text-xs font-mono text-ink-1 bg-surface rounded p-3 overflow-x-auto">
-                {errorSample.join("\n")}
-              </pre>
+              <summary className="text-xs font-semibold cursor-pointer">First {errorSample.length} lines in the file</summary>
+              <pre className="mt-2 text-xs font-mono text-ink-1 bg-tile rounded-control p-3 overflow-x-auto">{errorSample.join("\n")}</pre>
             </details>
-          )}
-        </div>
-      )}
+          ) : null}
+        </Notice>
+      ) : null}
 
-      {/* Commit result */}
-      {result && (
-        <div className="rounded-panel border border-revenue/30 bg-revenue-bg p-4 text-sm text-revenue">
-          Imported <b>{result.inserted}</b> transactions
-          {result.duplicates_skipped > 0 && <> · skipped <b>{result.duplicates_skipped}</b> duplicates</>}
-          {result.categorized > 0 && <> · auto-categorized <b>{result.categorized}</b></>}
-          {result.period_start && result.period_end && (
-            <> · period <b>{result.period_start}</b> → <b>{result.period_end}</b></>
-          )}
-          .{" "}
-          <Link href="/admin/finance/transactions" className="underline">
-            Review →
-          </Link>{" "}
-          Then set your current balance above to reconcile.
-        </div>
-      )}
+      {result ? (
+        <Notice
+          tone="success"
+          title={`Imported ${result.inserted} transaction${result.inserted === 1 ? "" : "s"}.`}
+          action={
+            <Button variant="secondary" size="sm" href="/admin/finance/transactions">
+              Review transactions
+            </Button>
+          }
+        >
+          {result.duplicates_skipped > 0 ? `Skipped ${result.duplicates_skipped} duplicates. ` : ""}
+          {result.categorized > 0 ? `Categorized ${result.categorized} by your rules. ` : ""}
+          {result.period_start && result.period_end ? `Covers ${result.period_start} to ${result.period_end}. ` : ""}
+          Then set your current balance so cash matches the bank.
+        </Notice>
+      ) : null}
 
-      {/* Preview */}
-      {preview && (
-        <section className="rounded-panel-lg border-hairline bg-surface p-6">
-          {preview.file_already_imported && (
-            <div className="mb-4 rounded-panel border border-status-watch/40 bg-status-watch-bg p-3 text-xs text-status-watch-text">
-              This file&apos;s hash matches a prior import. Committing will be refused. Re-upload only after rotating the
-              file or trimming its date range.
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-            <Stat label="Rows in file" value={preview.row_count.toString()} />
-            <Stat label="New" value={preview.new_count.toString()} accent />
-            <Stat label="Duplicates" value={preview.duplicate_count.toString()} />
-            <Stat label="Auto-categorized" value={preview.categorized_count.toString()} />
-            <Stat label="Inflow total" value={fmtMoney(preview.inflow_total)} accent />
-            <Stat label="Outflow total" value={fmtMoney(preview.outflow_total)} />
-            <Stat label="Period start" value={preview.period_start ?? "—"} />
-            <Stat label="Period end" value={preview.period_end ?? "—"} />
-          </div>
-
-          <div className="overflow-x-auto mb-6">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="text-ink-2">
-                  <th className="text-left px-2 py-2">Date</th>
-                  <th className="text-left px-2 py-2">Description</th>
-                  <th className="text-right px-2 py-2">Amount</th>
-                  <th className="text-left px-2 py-2">Category</th>
-                  <th className="text-left px-2 py-2">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {preview.rows.map((r) => (
-                  <tr key={r.dedup_hash} className={`border-t border-hairline ${r.is_duplicate ? "opacity-40" : ""}`}>
-                    <td className="px-2 py-2 font-mono text-ink-1">{r.txn_date}</td>
-                    <td className="px-2 py-2 text-ink-1 max-w-md truncate">{r.description}</td>
-                    <td className={`px-2 py-2 text-right font-mono ${r.amount >= 0 ? "text-revenue" : "text-ink-1"}`}>
-                      {fmtMoney(r.amount)}
-                    </td>
-                    <td className="px-2 py-2 text-ink-2">
-                      {r.category_id ?? <span className="text-status-watch-text">uncategorized</span>}
-                    </td>
-                    <td className="px-2 py-2">
-                      {r.is_duplicate ? (
-                        <span className="text-ink-2">duplicate</span>
-                      ) : (
-                        <span className="text-revenue">new</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {preview.row_count > preview.rows.length && (
-              <p className="mt-2 text-xs text-ink-2">
-                Showing first {preview.rows.length} of {preview.row_count} rows.
-              </p>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3 pt-4 border-t border-hairline">
-            <button
-              type="button"
-              disabled={busy !== "idle" || preview.new_count === 0 || preview.file_already_imported}
-              onClick={doCommit}
-              className="px-4 py-2 rounded-control bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {busy === "committing"
-                ? "Importing…"
-                : `Commit ${preview.new_count} transaction${preview.new_count === 1 ? "" : "s"}`}
-            </button>
-            <button
-              type="button"
+      {preview ? (
+        <section className="space-y-4">
+          {preview.file_already_imported ? (
+            <Notice tone="warning" title="This file was imported before.">
+              Committing will be refused. Re-upload only after trimming its date range.
+            </Notice>
+          ) : null}
+          <SummaryStrip label="Import preview">
+            <Figure label="Rows in file" value={preview.row_count} source={src} />
+            <Figure label="New" value={preview.new_count} source="Not already in your ledger" />
+            <Figure label="Duplicates" value={preview.duplicate_count} source="Already imported, will be skipped" />
+            <Figure label="Categorized by rules" value={preview.categorized_count} source="Matched one of your category rules" />
+          </SummaryStrip>
+          <SummaryStrip label="Import totals">
+            <Figure label="Money in" value={fmtMoney(preview.inflow_total)} source={src} />
+            <Figure label="Money out" value={fmtMoney(preview.outflow_total)} source={src} />
+            <Figure label="First date" value={preview.period_start} source="Earliest transaction in the file" />
+            <Figure label="Last date" value={preview.period_end} source="Latest transaction in the file" />
+          </SummaryStrip>
+          <DataTable
+            label="Import preview"
+            noun={{ one: "row", many: "rows" }}
+            columns={columns}
+            data={{ rows: preview.rows, total: preview.rows.length, page: 0, pageSize: PREVIEW_SPEC.pageSize }}
+            getRowId={(r) => r.dedup_hash}
+            getRowLabel={(r) => r.description}
+            spec={PREVIEW_SPEC}
+            state={{ page: 0, sort: null }}
+            baseHref="/admin/settings/finance/upload"
+          />
+          {preview.row_count > preview.rows.length ? (
+            <p className="text-xs text-ink-2">
+              Showing the first {preview.rows.length} of {preview.row_count} rows.
+            </p>
+          ) : null}
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              variant="secondary"
               onClick={() => {
                 setPreview(null);
                 setError(null);
               }}
-              className={`px-4 py-2 rounded-control text-ink-1 hover:${TYPE.body}`}
             >
               Cancel
-            </button>
+            </Button>
+            <Button
+              onClick={doCommit}
+              disabled={preview.new_count === 0 || preview.file_already_imported}
+              loading={busy === "committing"}
+            >
+              {busy === "committing"
+                ? "Importing"
+                : `Commit ${preview.new_count} transaction${preview.new_count === 1 ? "" : "s"}`}
+            </Button>
           </div>
         </section>
-      )}
-    </div>
-  );
-}
-
-function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
-  return (
-    <div>
-      <div className={`${TYPE.cardLabel} mb-1`}>{label}</div>
-      <div className={`text-lg font-medium ${accent ? "text-orange" : "text-ink-1"}`}>{value}</div>
+      ) : null}
     </div>
   );
 }

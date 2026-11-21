@@ -37,7 +37,11 @@ describe("I3 structural pins", () => {
     const s = src("admin", "impact", "kpis", "page.tsx");
     expect(s).toMatch(/import KpisPage from "@\/app\/admin\/kpis\/page"/);
     expect(s).toMatch(/<ScorecardSection embedded \/>/);
-    expect(s.indexOf("<KpisPage />")).toBeLessThan(s.indexOf("<ScorecardSection embedded"));
+    // V4 G2: the seat passes its searchParams through (the view and
+    // department filters did nothing before), still ahead of the scorecard.
+    expect(s).toMatch(/<KpisPage searchParams=\{searchParams\} \/>/);
+    expect(s.indexOf("<KpisPage searchParams")).toBeGreaterThan(-1);
+    expect(s.indexOf("<KpisPage searchParams")).toBeLessThan(s.indexOf("<ScorecardSection embedded"));
     // The catalog hub itself is rendered, not reimplemented.
     expect(s).not.toMatch(/getMetricCatalog|plan_kpis/);
   });

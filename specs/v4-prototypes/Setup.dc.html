@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>First session setup checklist</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap">
+<style>
+body{margin:0}
+a{color:#29241F}a:hover{color:#9D532C}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 1184px; background: #1C1814; color: #29241F; font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 14px; line-height: 1.4">
+
+<nav aria-label="Main" style="flex: 1 1 248px; max-width: 248px; box-sizing: border-box; background: #1C1814; color: #F3EDE4; padding: 20px 12px; display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; gap: 10px; padding: 4px 10px 4px">
+<span aria-hidden="true" style="width: 26px; height: 26px; border-radius: 8px; background: #C96B38; display: inline-block"></span>
+<span style="font-weight: 700; font-size: 16px; letter-spacing: -0.01em">BloomOS</span>
+</div>
+<div style="padding: 0 10px 16px 46px; font-size: 12px; color: #A89B8D">Harbor Youth Collective</div>
+<button type="button" style="display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 44px; box-sizing: border-box; padding: 0 12px; margin-bottom: 12px; background: #2A241E; color: #A89B8D; border: 1px solid #3A322A; border-radius: 9px; font: inherit; text-align: left; cursor: pointer"><span>Search</span><span style="font-size: 12px; border: 1px solid #4A4037; border-radius: 5px; padding: 1px 6px">/</span></button>
+<sc-for list="{{nav}}" as="item" hint-placeholder-count="6">
+<a href="{{item.href}}" style="{{item.style}}">{{item.label}}</a>
+</sc-for>
+<div style="flex-grow: 1; min-height: 24px"></div>
+<a href="#" style="display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #F3EDE4; text-decoration: none">Inbox</a>
+<a href="#" style="display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #A89B8D; text-decoration: none">Settings</a>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; margin: 10px 10px 10px 0; border-radius: 18px; background: #F7F4EE; padding: 0 32px 32px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; padding: 40px 0 24px">
+<div>
+<h1 style="margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.02em">Welcome, Maya</h1>
+<p style="margin: 8px 0 0; max-width: 640px; color: #746C63">Harbor Youth Collective is set up and waiting for you. Five short steps and your team can start working. Nothing goes out to a donor until you send it.</p>
+</div>
+<button type="button" style="height: 44px; padding: 0 16px; background: transparent; border: 1px solid #CDBEAA; border-radius: 9px; font: inherit; color: #29241F; cursor: pointer">Finish later</button>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px">
+
+<section aria-labelledby="checklist-title" style="flex: 2 1 600px; min-width: 0; background: #FFFDF9; border: 1px solid #E3D9CB; border-radius: 15px">
+<div style="padding: 20px 20px 16px">
+<h2 id="checklist-title" style="margin: 0; font-size: 20px; font-weight: 600">Get ready to work</h2>
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px">
+<p style="margin: 0"><strong style="font-weight: 600">1 of 5 done.</strong> <span style="color: #746C63">About 15 minutes left.</span></p>
+<div role="progressbar" aria-label="Setup progress" aria-valuemin="0" aria-valuemax="5" aria-valuenow="1" style="display: flex; gap: 4px; width: 200px">
+<span style="flex: 1; height: 6px; border-radius: 999px; background: #32745B"></span>
+<span style="flex: 1; height: 6px; border-radius: 999px; background: #E3D9CB"></span>
+<span style="flex: 1; height: 6px; border-radius: 999px; background: #E3D9CB"></span>
+<span style="flex: 1; height: 6px; border-radius: 999px; background: #E3D9CB"></span>
+<span style="flex: 1; height: 6px; border-radius: 999px; background: #E3D9CB"></span>
+</div>
+</div>
+</div>
+
+<ol style="margin: 0; padding: 0; list-style: none">
+
+<li style="display: flex; gap: 16px; padding: 16px 20px; border-top: 1px solid #E3D9CB">
+<span aria-hidden="true" style="flex: none; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 999px; background: #E2EFE8"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#32745B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5l3 3 6-7"></path></svg></span>
+<div style="flex: 1; min-width: 0">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px"><h3 style="margin: 0; font-size: 15px; font-weight: 600">Confirm your organization</h3><span style="font-size: 12px; font-weight: 600; color: #32745B; background: #E2EFE8; border-radius: 999px; padding: 1px 8px">Done</span></div>
+<p style="margin: 4px 0 0; color: #746C63">Name, address and EIN. Needed for donor receipts.</p>
+<p style="margin: 8px 0 0; font-size: 13px">Harbor Youth Collective · 88 Wharf Street, Portland, ME 04101 · EIN 12-3456789</p>
+</div>
+<button type="button" style="flex: none; align-self: center; height: 36px; padding: 0 14px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; font: inherit; color: #29241F; cursor: pointer">Edit</button>
+</li>
+
+<li style="display: flex; gap: 16px; padding: 16px 20px 20px; border-top: 1px solid #E3D9CB; background: #FBF8F2">
+<span aria-hidden="true" style="flex: none; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; box-sizing: border-box; border-radius: 999px; border: 2px solid #29241F; font-size: 13px; font-weight: 700">2</span>
+<div style="flex: 1; min-width: 0">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px"><h3 style="margin: 0; font-size: 15px; font-weight: 600">Invite a teammate</h3><span style="font-size: 12px; font-weight: 600; color: #29241F; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 999px; padding: 0 8px">In progress</span><span style="font-size: 13px; color: #746C63">About 2 min</span></div>
+<p style="margin: 4px 0 0; color: #746C63">Give someone their own sign-in, so you can share donors and tasks.</p>
+
+<form style="margin-top: 16px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 4px; max-width: 400px">
+<label for="invite-email" style="font-weight: 600">Their email</label>
+<input id="invite-email" type="email" value="jordan@harboryouth.example.org" style="height: 40px; box-sizing: border-box; padding: 0 12px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; font: inherit; color: #29241F">
+</div>
+<fieldset style="margin: 0; padding: 0; border: 0">
+<legend style="padding: 0; font-weight: 600; margin-bottom: 8px">What they can do</legend>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px">
+<sc-for list="{{roles}}" as="r" hint-placeholder-count="4">
+<label style="{{r.boxStyle}}">
+<sc-if value="{{r.on}}" hint-placeholder-val="{{false}}"><input type="radio" name="role" value="{{r.value}}" checked style="margin: 2px 0 0; accent-color: #29241F"></sc-if>
+<sc-if value="{{r.off}}" hint-placeholder-val="{{true}}"><input type="radio" name="role" value="{{r.value}}" style="margin: 2px 0 0; accent-color: #29241F"></sc-if>
+<span><span style="display: block; font-weight: 600">{{r.name}}</span><span style="display: block; font-size: 13px; color: #746C63; margin-top: 2px">{{r.desc}}</span></span>
+</label>
+</sc-for>
+</div>
+</fieldset>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+<button type="button" style="height: 40px; padding: 0 18px; background: #9D532C; color: #FFFFFF; border: 0; border-radius: 9px; font: inherit; font-weight: 600; cursor: pointer">Send invite</button>
+<button type="button" style="height: 40px; padding: 0 8px; background: transparent; border: 0; font: inherit; color: #746C63; text-decoration: underline; cursor: pointer">Skip for now</button>
+<span style="font-size: 13px; color: #746C63">They get an email with a sign-in link. You can change roles later in Organization.</span>
+</div>
+</form>
+</div>
+</li>
+
+<sc-for list="{{steps}}" as="st" hint-placeholder-count="3">
+<li style="display: flex; gap: 16px; padding: 16px 20px; border-top: 1px solid #E3D9CB">
+<span aria-hidden="true" style="flex: none; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; box-sizing: border-box; border-radius: 999px; border: 1px solid #CDBEAA; color: #746C63; font-size: 13px; font-weight: 600">{{st.n}}</span>
+<div style="flex: 1; min-width: 0">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px"><h3 style="margin: 0; font-size: 15px; font-weight: 600">{{st.title}}</h3><span style="font-size: 13px; color: #746C63">Not started · {{st.time}}</span></div>
+<p style="margin: 4px 0 0; color: #746C63">{{st.why}}</p>
+</div>
+<div style="flex: none; align-self: center; display: flex; flex-direction: column; align-items: flex-end; gap: 4px">
+<a href="{{st.href}}" style="display: inline-flex; align-items: center; height: 36px; box-sizing: border-box; padding: 0 14px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; color: #29241F; text-decoration: none">{{st.action}}</a>
+<sc-if value="{{st.hasAlt}}" hint-placeholder-val="{{false}}">
+<a href="#" style="font-size: 13px">{{st.alt}}</a>
+</sc-if>
+</div>
+</li>
+</sc-for>
+
+</ol>
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 20px; border-top: 1px solid #E3D9CB">
+<span style="font-size: 13px; color: #746C63">Do them in any order. This list stays on Home until all five are done.</span>
+<a href="SetupEmpty.dc.html" style="font-weight: 600">Look around first</a>
+</div>
+</section>
+
+<aside aria-labelledby="defaults-title" style="flex: 1 1 320px; min-width: 0; background: #FFFDF9; border: 1px solid #E3D9CB; border-radius: 15px">
+<div style="padding: 20px 20px 12px">
+<h2 id="defaults-title" style="margin: 0; font-size: 17px; font-weight: 600">What we set up for you</h2>
+<p style="margin: 4px 0 0; font-size: 13px; color: #746C63">The BloomOS team set these on Nov 20. They are starting points. Change any of them.</p>
+</div>
+<ul style="margin: 0; padding: 0; list-style: none">
+<sc-for list="{{defaults}}" as="d" hint-placeholder-count="6">
+<li style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px 20px; border-top: 1px solid #E3D9CB">
+<div style="min-width: 0">
+<div style="font-weight: 600">{{d.name}}</div>
+<div style="font-size: 13px; color: #746C63; margin-top: 2px">{{d.value}}</div>
+</div>
+<a href="#" style="flex: none; font-size: 13px; font-weight: 600">{{d.action}}</a>
+</li>
+</sc-for>
+</ul>
+<div style="padding: 16px 20px 20px; border-top: 1px solid #E3D9CB; background: #FBF8F2; border-radius: 0 0 15px 15px">
+<h3 style="margin: 0; font-size: 15px; font-weight: 600">Need a hand?</h3>
+<p style="margin: 4px 0 12px; font-size: 13px; color: #746C63">Write to [SUPPORT EMAIL] and a person on the BloomOS team will answer.</p>
+<button type="button" style="height: 36px; padding: 0 14px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; font: inherit; color: #29241F; cursor: pointer">Book 20 minutes with us</button>
+</div>
+</aside>
+
+</div>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1184}}'>
+class Component extends DCLogic {
+renderVals() {
+const base = 'display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 9px; text-decoration: none; ';
+const nav = ['Home', 'Work', 'Fundraising', 'Comms', 'Finance', 'Organization'].map((label) => ({
+label,
+href: label === 'Fundraising' ? 'SetupEmpty.dc.html' : '#',
+style: base + (label === 'Home' ? 'background: #2A241E; color: #F3EDE4; font-weight: 600; box-shadow: inset 3px 0 0 #C96B38' : 'color: #A89B8D')
+}));
+const box = 'display: flex; align-items: flex-start; gap: 10px; padding: 12px; background: #FFFDF9; border-radius: 9px; cursor: pointer; ';
+const role = (value, name, desc, on) => ({ value, name, desc, on, off: !on, boxStyle: box + (on ? 'border: 1px solid #29241F; box-shadow: inset 0 0 0 1px #29241F' : 'border: 1px solid #CDBEAA') });
+const roles = [
+role('staff', 'Staff', 'Donors, gifts, tasks and emails. Cannot change settings or invite people.', true),
+role('admin', 'Admin', 'Everything you can do, including inviting people and changing settings.', false),
+role('finance', 'Finance', 'Staff access, plus transactions, budget and reports.', false),
+role('board', 'Board viewer', 'Can look at reports and records. Cannot change anything.', false)
+];
+const steps = [
+{ n: '3', title: 'Connect Gmail', time: 'About 2 min', why: 'Thank-you notes and receipts go out from your own address, not ours.', action: 'Connect Gmail', href: '#', hasAlt: false, alt: '' },
+{ n: '4', title: 'Bring in your donors', time: 'About 8 min', why: 'Upload a spreadsheet. We check for duplicates and show you a preview before anything is saved.', action: 'Upload a spreadsheet', href: 'SetupEmpty.dc.html', hasAlt: false, alt: '' },
+{ n: '5', title: 'Record your first gift', time: 'About 3 min', why: 'Type it in, or say what happened and confirm the card BloomOS fills in.', action: 'Record a gift', href: '#', hasAlt: true, alt: 'or try Talk to log' }
+];
+const defaults = [
+{ name: 'Turned on for you', value: 'Fundraising, Comms and Finance. Programs and Impact are off.', action: 'Ask us' },
+{ name: 'Finance categories', value: '28 starter categories for a youth nonprofit', action: 'Change' },
+{ name: 'Fiscal year', value: 'Starts July 1', action: 'Change' },
+{ name: 'Donor stages', value: 'Researching, Cultivating, Ask made, Verbal yes', action: 'Change' },
+{ name: 'Thank-you template', value: 'A short note with your EIN and receipt line', action: 'Change' },
+{ name: 'Your terms for participants', value: 'Youth, grouped in cohorts', action: 'Change' }
+];
+return { nav, roles, steps, defaults };
+}
+}
+</script>
+</body>
+</html>

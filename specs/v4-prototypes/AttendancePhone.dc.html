@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Take attendance</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap">
+<style>
+body{margin:0}
+a{color:#29241F}a:hover{color:#9D532C}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; overflow: hidden; display: flex; flex-direction: column; background: #F7F4EE; color: #29241F; font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 14px; line-height: 1.4">
+
+<header style="flex: none; background: #FFFDF9; border-bottom: 1px solid #E3D9CB; padding: 8px 16px 12px 4px">
+<div style="display: flex; align-items: center; gap: 4px">
+<a href="Roster.dc.html" aria-label="Back to Fall Coaching Group B" style="flex: none; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 9px; color: #29241F"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5 L8 12 L15 19"></path></svg></a>
+<div style="min-width: 0">
+<h1 style="margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.01em">Fall Coaching Group B</h1>
+<div style="font-size: 13px; color: #746C63">Tue Nov 24 · 4:00pm · Eastside Library</div>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 12px; padding: 8px 0 0 12px">
+<div role="progressbar" aria-label="Marked so far" aria-valuemin="0" aria-valuemax="12" aria-valuenow="8" style="flex: 1; height: 6px; background: #E3D9CB; border-radius: 999px; overflow: hidden"><div style="width: 66.67%; height: 6px; background: #29241F; border-radius: 999px"></div></div>
+<span style="flex: none; font-weight: 600">8 of 12 marked</span>
+</div>
+</header>
+
+<div style="flex: 1; min-height: 0; overflow-y: auto; padding: 12px 16px 16px">
+
+<div style="display: flex; align-items: center; gap: 12px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 15px; padding: 12px 12px 12px 16px; margin-bottom: 12px">
+<div style="flex: 1; min-width: 0">
+<div id="default-label" style="font-weight: 600; font-size: 15px">Everyone present, mark exceptions</div>
+<div style="font-size: 13px; color: #746C63">Tap only who is late or absent. The 4 left count as present when you finish.</div>
+</div>
+<button type="button" role="switch" aria-checked="true" aria-labelledby="default-label" style="flex: none; position: relative; width: 52px; height: 44px; padding: 0; background: transparent; border: 0; cursor: pointer">
+<span aria-hidden="true" style="position: absolute; left: 0; top: 8px; width: 52px; height: 28px; border-radius: 999px; background: #29241F"></span>
+<span aria-hidden="true" style="position: absolute; left: 27px; top: 11px; width: 22px; height: 22px; border-radius: 999px; background: #FFFDF9"></span>
+</button>
+</div>
+
+<ul aria-label="Marked" style="list-style: none; margin: 0; padding: 0; background: #FFFDF9; border: 1px solid #E3D9CB; border-radius: 15px">
+<sc-for list="{{marked}}" as="r" hint-placeholder-count="8">
+<li style="{{r.rowStyle}}">
+<div style="flex: 1; min-width: 0">
+<div style="font-size: 17px; font-weight: 600; letter-spacing: -0.01em">{{r.name}}</div>
+<sc-if value="{{r.hasNote}}" hint-placeholder-val="{{false}}"><button type="button" style="display: inline-flex; align-items: center; gap: 4px; min-height: 44px; margin: -12px 0 -12px -8px; padding: 0 8px; background: transparent; border: 0; font: inherit; font-size: 13px; font-weight: 600; color: #746C63; cursor: pointer"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 2 V10 M2 6 H10"></path></svg>Add note</button></sc-if>
+<sc-if value="{{r.noNote}}" hint-placeholder-val="{{true}}"><div style="font-size: 13px; color: #746C63">{{r.sub}}</div></sc-if>
+</div>
+<div role="radiogroup" aria-label="{{r.groupLabel}}" style="flex: none; display: flex; gap: 4px">
+<button type="button" role="radio" aria-checked="{{r.pChecked}}" style="{{r.pStyle}}"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="currentColor"></circle></svg>Present</button>
+<button type="button" role="radio" aria-checked="{{r.lChecked}}" style="{{r.lStyle}}"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16"><path d="M8 1.5 L14.5 8 L8 14.5 L1.5 8 Z" fill="currentColor"></path></svg>Late</button>
+<button type="button" role="radio" aria-checked="{{r.aChecked}}" style="{{r.aStyle}}"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16"><path d="M3.5 3.5 L12.5 12.5 M12.5 3.5 L3.5 12.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" fill="none"></path></svg>Absent</button>
+</div>
+</li>
+</sc-for>
+</ul>
+
+<h2 style="margin: 16px 0 8px 4px; font-size: 13px; font-weight: 600; color: #746C63">Not checked yet · present unless you tap</h2>
+<ul aria-label="Not checked yet" style="list-style: none; margin: 0; padding: 0; background: #FFFDF9; border: 1px solid #E3D9CB; border-radius: 15px">
+<sc-for list="{{unmarked}}" as="r" hint-placeholder-count="4">
+<li style="{{r.rowStyle}}">
+<div style="flex: 1; min-width: 0">
+<div style="font-size: 17px; font-weight: 600; letter-spacing: -0.01em">{{r.name}}</div>
+<div style="font-size: 13px; color: #746C63">{{r.sub}}</div>
+</div>
+<div role="radiogroup" aria-label="{{r.groupLabel}}" style="flex: none; display: flex; gap: 4px">
+<button type="button" role="radio" aria-checked="{{r.pChecked}}" style="{{r.pStyle}}"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="currentColor"></circle></svg>Present</button>
+<button type="button" role="radio" aria-checked="{{r.lChecked}}" style="{{r.lStyle}}"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16"><path d="M8 1.5 L14.5 8 L8 14.5 L1.5 8 Z" fill="currentColor"></path></svg>Late</button>
+<button type="button" role="radio" aria-checked="{{r.aChecked}}" style="{{r.aStyle}}"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16"><path d="M3.5 3.5 L12.5 12.5 M12.5 3.5 L3.5 12.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" fill="none"></path></svg>Absent</button>
+</div>
+</li>
+</sc-for>
+</ul>
+
+</div>
+
+<footer style="flex: none; background: #FFFDF9; border-top: 1px solid #E3D9CB; padding: 12px 16px 20px">
+<div role="status" style="display: flex; align-items: flex-start; gap: 12px; background: #FBF8F2; border: 1px solid #E3D9CB; border-radius: 12px; padding: 12px; margin-bottom: 12px">
+<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#746C63" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex: none; margin-top: 1px"><rect x="6" y="2.5" width="12" height="19" rx="2.5"></rect><path d="M9 7.5 L11.2 9.7 L15 5.9"></path><path d="M10.5 18 H13.5"></path></svg>
+<div>
+<div style="font-weight: 600">Saved to this phone. Sending when you are back online.</div>
+<div style="font-size: 13px; color: #746C63">8 marks waiting · last saved 4:06pm</div>
+</div>
+</div>
+<button type="button" style="width: 100%; height: 52px; background: #9D532C; color: #FFFFFF; border: 0; border-radius: 12px; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer">Finish session</button>
+</footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+const seg = 'display: inline-flex; align-items: center; justify-content: center; gap: 4px; width: 76px; height: 44px; padding: 0; border-radius: 9px; font: inherit; font-size: 13px; cursor: pointer; ';
+const off = seg + 'background: transparent; border: 1px solid #E3D9CB; color: #746C63; font-weight: 500';
+const on = {
+p: seg + 'background: #E2EFE8; border: 1px solid #32745B; color: #32745B; font-weight: 700',
+l: seg + 'background: #F5EAD6; border: 1px solid #965C1C; color: #965C1C; font-weight: 700',
+a: seg + 'background: #F5E2E0; border: 1px solid #AE4339; color: #AE4339; font-weight: 700'
+};
+const assumed = seg + 'background: #FFFDF9; border: 1px dashed #32745B; color: #32745B; font-weight: 600';
+const row = (r, i, last, isAssumed) => {
+const v = r.v;
+return {
+name: r.name,
+sub: r.sub,
+hasNote: !!r.note,
+noNote: !r.note,
+groupLabel: 'Attendance for ' + r.name,
+pChecked: v === 'p' ? 'true' : 'false',
+lChecked: v === 'l' ? 'true' : 'false',
+aChecked: v === 'a' ? 'true' : 'false',
+pStyle: v === 'p' ? (isAssumed ? assumed : on.p) : off,
+lStyle: v === 'l' ? on.l : off,
+aStyle: v === 'a' ? on.a : off,
+rowStyle: 'display: flex; align-items: center; gap: 8px; min-height: 56px; padding: 6px 6px 6px 16px; box-sizing: border-box' + (i < last ? '; border-bottom: 1px solid #E3D9CB' : '')
+};
+};
+const markedRaw = [
+{ name: 'Andre W.', sub: 'With Marcus', v: 'p' },
+{ name: 'Grace L.', sub: 'With Priya', v: 'l' },
+{ name: 'Hana K.', sub: 'With Marcus', v: 'p' },
+{ name: 'Jaylen M.', sub: 'With Marcus', v: 'a', note: true },
+{ name: 'Mateo G.', sub: 'With Marcus', v: 'p' },
+{ name: 'Nia B.', sub: 'With Priya', v: 'p' },
+{ name: 'Omar H.', sub: 'With Priya', v: 'p' },
+{ name: 'Sofia P.', sub: 'With Priya', v: 'p' }
+];
+const unmarkedRaw = [
+{ name: 'Ethan W.', sub: 'With Jordan', v: 'p' },
+{ name: 'Kai N.', sub: 'With Jordan', v: 'p' },
+{ name: 'Maya C.', sub: 'With Jordan', v: 'p' },
+{ name: 'Zara B.', sub: 'With Jordan', v: 'p' }
+];
+const marked = markedRaw.map((r, i) => row(r, i, markedRaw.length - 1, false));
+const unmarked = unmarkedRaw.map((r, i) => row(r, i, unmarkedRaw.length - 1, true));
+return { marked, unmarked };
+}
+}
+</script>
+</body>
+</html>

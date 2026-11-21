@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Donors empty state</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap">
+<style>
+body{margin:0}
+a{color:#29241F}a:hover{color:#9D532C}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 1000px; background: #1C1814; color: #29241F; font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 14px; line-height: 1.4">
+
+<nav aria-label="Main" style="flex: 1 1 248px; max-width: 248px; box-sizing: border-box; background: #1C1814; color: #F3EDE4; padding: 20px 12px; display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; gap: 10px; padding: 4px 10px 4px">
+<span aria-hidden="true" style="width: 26px; height: 26px; border-radius: 8px; background: #C96B38; display: inline-block"></span>
+<span style="font-weight: 700; font-size: 16px; letter-spacing: -0.01em">BloomOS</span>
+</div>
+<div style="padding: 0 10px 16px 46px; font-size: 12px; color: #A89B8D">Harbor Youth Collective</div>
+<button type="button" style="display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 44px; box-sizing: border-box; padding: 0 12px; margin-bottom: 12px; background: #2A241E; color: #A89B8D; border: 1px solid #3A322A; border-radius: 9px; font: inherit; text-align: left; cursor: pointer"><span>Search</span><span style="font-size: 12px; border: 1px solid #4A4037; border-radius: 5px; padding: 1px 6px">/</span></button>
+<sc-for list="{{nav}}" as="item" hint-placeholder-count="6">
+<a href="{{item.href}}" style="{{item.style}}">{{item.label}}</a>
+</sc-for>
+<div style="flex-grow: 1; min-height: 24px"></div>
+<a href="#" style="display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #F3EDE4; text-decoration: none">Inbox</a>
+<a href="#" style="display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #A89B8D; text-decoration: none">Settings</a>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; margin: 10px 10px 10px 0; border-radius: 18px; background: #F7F4EE; padding: 0 32px 32px">
+
+<div role="tablist" aria-label="Fundraising" style="display: flex; flex-wrap: wrap; gap: 24px; border-bottom: 1px solid #E3D9CB; padding-top: 14px">
+<a href="#" style="padding: 10px 0; color: #746C63; text-decoration: none">Today</a>
+<a href="#" aria-current="page" style="padding: 10px 0; color: #29241F; font-weight: 600; text-decoration: none; box-shadow: inset 0 -2px 0 #C96B38">Donors &amp; Funders</a>
+<a href="#" style="padding: 10px 0; color: #746C63; text-decoration: none">Pipeline</a>
+<a href="#" style="padding: 10px 0; color: #746C63; text-decoration: none">Grants</a>
+<a href="#" style="padding: 10px 0; color: #746C63; text-decoration: none">Campaigns</a>
+</div>
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 24px 0 16px">
+<h1 style="margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.02em">Donors &amp; Funders</h1>
+<div style="display: flex; gap: 8px">
+<button type="button" aria-label="More actions" style="width: 44px; height: 44px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; color: #29241F; font-size: 18px; cursor: pointer">&#8942;</button>
+<button type="button" style="height: 44px; padding: 0 18px; background: #FFFDF9; color: #29241F; border: 1px solid #CDBEAA; border-radius: 9px; font: inherit; font-weight: 600; cursor: pointer">Record a gift</button>
+</div>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 16px">
+<label style="display: flex; align-items: center; gap: 8px; flex: 0 1 260px; height: 40px; box-sizing: border-box; padding: 0 12px; background: #F7F4EE; border: 1px solid #E3D9CB; border-radius: 9px; color: #8A8178"><span>Search</span><input type="search" disabled aria-label="Search donors" style="flex: 1; min-width: 0; border: 0; background: transparent; font: inherit; color: #8A8178"></label>
+<button type="button" disabled style="height: 40px; padding: 0 14px; background: transparent; border: 1px solid #E3D9CB; border-radius: 9px; font: inherit; color: #8A8178; cursor: not-allowed">Filters</button>
+<button type="button" disabled style="height: 40px; padding: 0 14px; background: transparent; border: 1px solid #E3D9CB; border-radius: 9px; font: inherit; color: #8A8178; cursor: not-allowed">Sort: next step due</button>
+<span style="font-size: 13px; color: #746C63; margin-left: 4px">Search, filters and saved views turn on once you have donors.</span>
+<span style="flex-grow: 1"></span>
+<button type="button" disabled style="height: 40px; padding: 0 12px; background: transparent; border: 1px solid #E3D9CB; border-radius: 9px; font: inherit; color: #8A8178; cursor: not-allowed">Columns</button>
+</div>
+
+<section aria-label="Summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); background: #FFFDF9; border: 1px solid #E3D9CB; border-radius: 15px; margin-bottom: 16px">
+<sc-for list="{{stats}}" as="s" hint-placeholder-count="4">
+<div style="{{s.cellStyle}}">
+<div style="font-size: 13px; color: #746C63">{{s.label}}</div>
+<div style="font-size: 20px; font-weight: 600; letter-spacing: -0.01em; line-height: 32px; margin-top: 2px; color: #746C63">{{s.value}}</div>
+<div style="font-size: 12px; color: #746C63; margin-top: 2px">{{s.note}}</div>
+</div>
+</sc-for>
+</section>
+
+<section aria-labelledby="empty-title" style="background: #FFFDF9; border: 1px solid #E3D9CB; border-radius: 15px; overflow-x: auto">
+<table aria-hidden="true" style="width: 100%; min-width: 860px; border-collapse: collapse; text-align: left">
+<thead>
+<tr style="font-size: 12px; color: #746C63; text-transform: uppercase; letter-spacing: 0.04em">
+<th scope="col" style="padding: 12px 20px; font-weight: 600; border-bottom: 1px solid #E3D9CB">Donor</th>
+<th scope="col" style="padding: 12px 16px; font-weight: 600; border-bottom: 1px solid #E3D9CB; text-align: right">Lifetime</th>
+<th scope="col" style="padding: 12px 16px; font-weight: 600; border-bottom: 1px solid #E3D9CB">Last gift</th>
+<th scope="col" style="padding: 12px 16px; font-weight: 600; border-bottom: 1px solid #E3D9CB">Last touch</th>
+<th scope="col" style="padding: 12px 16px; font-weight: 600; border-bottom: 1px solid #E3D9CB">Next step</th>
+<th scope="col" style="padding: 12px 20px; font-weight: 600; border-bottom: 1px solid #E3D9CB">Owner</th>
+</tr>
+</thead>
+</table>
+
+<div style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 56px 32px 48px">
+<span aria-hidden="true" style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 999px; background: #F7F4EE; border: 1px solid #E3D9CB"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#746C63" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"></path><circle cx="17" cy="9" r="2.5"></circle><path d="M17 14c2.6 0 4.5 1.8 4.5 4.5"></path></svg></span>
+<h2 id="empty-title" style="margin: 16px 0 0; font-size: 20px; font-weight: 600">Your donors and funders will live here</h2>
+<p style="margin: 8px 0 0; max-width: 520px; color: #746C63">One list of everyone who gives to Harbor Youth Collective: people, households, foundations and companies, with what they gave and what to do next.</p>
+
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin-top: 24px">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px; width: 240px">
+<a href="#" style="display: inline-flex; align-items: center; justify-content: center; height: 44px; box-sizing: border-box; padding: 0 20px; background: #9D532C; color: #FFFFFF; border-radius: 9px; font-weight: 600; text-decoration: none">Import a spreadsheet</a>
+<span style="font-size: 13px; color: #746C63">CSV or Excel, up to 2,000 rows. Best if you have more than a handful.</span>
+</div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px; width: 240px">
+<button type="button" style="height: 44px; padding: 0 20px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; font: inherit; font-weight: 600; color: #29241F; cursor: pointer">Add one donor</button>
+<span style="font-size: 13px; color: #746C63">Type in one person, household, foundation or company.</span>
+</div>
+</div>
+
+<p style="margin: 24px 0 0; max-width: 560px; padding-top: 16px; border-top: 1px solid #E3D9CB; font-size: 13px; color: #746C63"><strong style="font-weight: 600; color: #29241F">What happens next:</strong> you match your columns to ours, we flag possible duplicates, and you see a preview. Nothing is saved until you confirm.</p>
+<a href="Setup.dc.html" style="margin-top: 16px; font-weight: 600">Back to your setup checklist (1 of 5 done)</a>
+</div>
+</section>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+renderVals() {
+const base = 'display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 9px; text-decoration: none; ';
+const nav = ['Home', 'Work', 'Fundraising', 'Comms', 'Finance', 'Organization'].map((label) => ({
+label,
+href: label === 'Home' ? 'Setup.dc.html' : '#',
+style: base + (label === 'Fundraising' ? 'background: #2A241E; color: #F3EDE4; font-weight: 600; box-shadow: inset 3px 0 0 #C96B38' : 'color: #A89B8D')
+}));
+const cell = 'padding: 16px 20px; border-right: 1px solid #E3D9CB';
+const stats = [
+{ label: 'Donors', value: 'None yet', note: 'Import or add your first', cellStyle: cell },
+{ label: 'Given this year', value: 'No gifts yet', note: 'Shows once a gift is recorded', cellStyle: cell },
+{ label: 'Next steps overdue', value: 'Nothing scheduled', note: 'Next steps come with donors', cellStyle: cell },
+{ label: 'Thank-yous owed', value: 'None yet', note: 'Queued after each gift', cellStyle: cell + '; border-right: 0' }
+];
+return { nav, stats };
+}
+}
+</script>
+</body>
+</html>

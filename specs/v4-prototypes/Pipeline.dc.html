@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fundraising pipeline board</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap">
+<style>
+body{margin:0}
+a{color:#29241F}a:hover{color:#9D532C}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 1000px; background: #1C1814; color: #29241F; font-family: 'Instrument Sans', system-ui, sans-serif; font-size: 14px; line-height: 1.4">
+
+<nav aria-label="Main" style="flex: 1 1 248px; max-width: 248px; box-sizing: border-box; background: #1C1814; color: #F3EDE4; padding: 20px 12px; display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; gap: 10px; padding: 4px 10px 16px">
+<span aria-hidden="true" style="width: 26px; height: 26px; border-radius: 8px; background: #C96B38; display: inline-block"></span>
+<span style="font-weight: 700; font-size: 16px; letter-spacing: -0.01em">BloomOS</span>
+</div>
+<button type="button" style="display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 44px; box-sizing: border-box; padding: 0 12px; margin-bottom: 12px; background: #2A241E; color: #A89B8D; border: 1px solid #3A322A; border-radius: 9px; font: inherit; text-align: left; cursor: pointer"><span>Search</span><span style="font-size: 12px; border: 1px solid #4A4037; border-radius: 5px; padding: 1px 6px">/</span></button>
+<sc-for list="{{nav}}" as="item" hint-placeholder-count="8">
+<a href="#" style="{{item.style}}">{{item.label}}</a>
+</sc-for>
+<div style="flex-grow: 1; min-height: 24px"></div>
+<a href="#" style="display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #F3EDE4; text-decoration: none">Inbox<span style="background: #C96B38; color: #1C1814; font-weight: 700; font-size: 12px; border-radius: 999px; padding: 1px 8px">3</span></a>
+<a href="#" style="display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 9px; color: #A89B8D; text-decoration: none">Settings</a>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; margin: 10px 10px 10px 0; border-radius: 18px; background: #F7F4EE; padding: 0 32px 32px">
+
+<div role="tablist" aria-label="Fundraising" style="display: flex; flex-wrap: wrap; gap: 24px; border-bottom: 1px solid #E3D9CB; padding-top: 14px">
+<a href="#" style="padding: 10px 0; color: #746C63; text-decoration: none">Today</a>
+<a href="Main.dc.html" style="padding: 10px 0; color: #746C63; text-decoration: none">Donors &amp; Funders</a>
+<a href="#" aria-current="page" style="padding: 10px 0; color: #29241F; font-weight: 600; text-decoration: none; box-shadow: inset 0 -2px 0 #C96B38">Pipeline</a>
+<a href="#" style="padding: 10px 0; color: #746C63; text-decoration: none">Grants</a>
+<a href="#" style="padding: 10px 0; color: #746C63; text-decoration: none">Campaigns</a>
+</div>
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 24px 0 16px">
+<h1 style="margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.02em">Pipeline</h1>
+<div style="display: flex; gap: 8px">
+<button type="button" aria-label="More actions" style="width: 44px; height: 44px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; color: #29241F; font-size: 18px; cursor: pointer">&#8942;</button>
+<button type="button" style="height: 44px; padding: 0 18px; background: #9D532C; color: #FFFFFF; border: 0; border-radius: 9px; font: inherit; font-weight: 600; cursor: pointer">Add an ask</button>
+</div>
+</header>
+
+<div role="tablist" aria-label="Saved views" style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 14px">
+<button type="button" role="tab" aria-selected="true" style="height: 36px; padding: 0 14px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; font: inherit; font-weight: 600; color: #29241F; cursor: pointer">My asks</button>
+<button type="button" role="tab" aria-selected="false" style="height: 36px; padding: 0 14px; background: transparent; border: 1px solid transparent; border-radius: 9px; font: inherit; color: #746C63; cursor: pointer">All asks</button>
+<button type="button" role="tab" aria-selected="false" style="height: 36px; padding: 0 14px; background: transparent; border: 1px solid transparent; border-radius: 9px; font: inherit; color: #746C63; cursor: pointer">Closing this quarter</button>
+<button type="button" style="height: 36px; padding: 0 12px; background: transparent; border: 1px dashed #CDBEAA; border-radius: 9px; font: inherit; color: #746C63; cursor: pointer">+ Save view</button>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 16px">
+<label style="display: flex; align-items: center; gap: 8px; flex: 0 1 260px; height: 40px; box-sizing: border-box; padding: 0 12px; background: #FBF8F2; border: 1px solid #CDBEAA; border-radius: 9px; color: #746C63"><span>Search</span><input type="search" aria-label="Search asks" placeholder="donor or ask" style="flex: 1; min-width: 0; border: 0; background: transparent; font: inherit; color: #29241F; outline-offset: 4px"></label>
+<button type="button" style="height: 40px; padding: 0 14px; background: #F5E5DB; border: 1px solid #C96B38; border-radius: 9px; font: inherit; font-weight: 600; color: #7D4223; cursor: pointer">Filters (1)</button>
+<button type="button" style="height: 40px; padding: 0 14px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; font: inherit; color: #29241F; cursor: pointer">Sort: next step due</button>
+<span aria-hidden="true" style="width: 1px; height: 24px; background: #E3D9CB; margin: 0 4px"></span>
+<button type="button" style="height: 32px; padding: 0 10px; background: #F5E5DB; border: 0; border-radius: 999px; font: inherit; font-weight: 600; color: #7D4223; cursor: pointer">Owner: me &#10005;</button>
+<button type="button" style="height: 32px; padding: 0 10px; background: transparent; border: 0; border-radius: 999px; font: inherit; font-weight: 600; color: #29241F; cursor: pointer">Expected close &#9662;</button>
+<button type="button" style="height: 32px; padding: 0 10px; background: transparent; border: 0; border-radius: 999px; font: inherit; font-weight: 600; color: #29241F; cursor: pointer">Ask size &#9662;</button>
+<button type="button" style="height: 32px; padding: 0 10px; background: transparent; border: 0; font: inherit; color: #746C63; text-decoration: underline; cursor: pointer">Clear all</button>
+<span style="flex-grow: 1"></span>
+<div role="group" aria-label="Layout" style="display: flex; border: 1px solid #CDBEAA; border-radius: 9px; overflow: hidden">
+<button type="button" aria-pressed="true" style="height: 38px; padding: 0 12px; background: #29241F; color: #FFFDF9; border: 0; font: inherit; font-weight: 600; cursor: pointer">Board</button>
+<button type="button" aria-pressed="false" style="height: 38px; padding: 0 12px; background: #FFFDF9; color: #29241F; border: 0; font: inherit; cursor: pointer">Table</button>
+</div>
+</div>
+
+<section aria-label="Summary for this view" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); background: #FFFDF9; border: 1px solid #E3D9CB; border-radius: 15px; margin-bottom: 16px">
+<sc-for list="{{stats}}" as="s" hint-placeholder-count="4">
+<div style="padding: 16px 20px; border-right: 1px solid #E3D9CB">
+<div style="font-size: 13px; color: #746C63">{{s.label}}</div>
+<div style="font-size: 24px; font-weight: 600; letter-spacing: -0.02em; margin-top: 2px">{{s.value}}</div>
+<div style="{{s.noteStyle}}">{{s.note}}</div>
+</div>
+</sc-for>
+</section>
+
+<div style="overflow-x: auto">
+<div style="display: grid; grid-template-columns: repeat(4, minmax(240px, 1fr)); gap: 12px; min-width: 1000px">
+<sc-for list="{{columns}}" as="col" hint-placeholder-count="4">
+<section style="display: flex; flex-direction: column; background: #FBF8F2; border: 1px solid #E3D9CB; border-radius: 15px">
+<h2 style="margin: 0; padding: 14px 16px 10px; font-size: 14px; font-weight: 600; display: flex; justify-content: space-between">{{col.name}}<span style="color: #746C63; font-weight: 500">{{col.count}}</span></h2>
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 0 10px 10px; flex-grow: 1">
+<sc-for list="{{col.cards}}" as="c" hint-placeholder-count="2">
+<article style="background: #FFFDF9; border: 1px solid #E3D9CB; border-radius: 11px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px">
+<a href="#" style="font-weight: 600; text-decoration: none">{{c.donor}}</a>
+<div style="display: flex; justify-content: space-between; gap: 8px"><span style="font-variant-numeric: tabular-nums">{{c.amount}}</span><span style="color: #746C63; font-size: 13px">{{c.close}}</span></div>
+<div style="border-top: 1px solid #E3D9CB; padding-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px">
+<div style="min-width: 0"><div style="font-size: 13px">{{c.next}}</div><div style="{{c.dueStyle}}">{{c.due}}</div></div>
+<span style="flex: none; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 999px; background: #F5E5DB; color: #7D4223; font-size: 12px; font-weight: 700">{{c.owner}}</span>
+</div>
+</article>
+</sc-for>
+</div>
+<div style="padding: 10px 16px; border-top: 1px solid #E3D9CB; font-size: 13px; color: #746C63; display: flex; justify-content: space-between"><span>Total asked</span><span style="color: #29241F; font-weight: 600; font-variant-numeric: tabular-nums">{{col.total}}</span></div>
+</section>
+</sc-for>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 4px 0">
+<span style="color: #746C63">9 asks in this view</span>
+<button type="button" style="height: 36px; padding: 0 14px; background: #FFFDF9; border: 1px solid #CDBEAA; border-radius: 9px; font: inherit; color: #29241F; cursor: pointer">Export</button>
+</div>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+renderVals() {
+const base = 'display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 9px; text-decoration: none; ';
+const nav = ['Home', 'Work', 'Programs', 'Fundraising', 'Comms', 'Finance', 'Impact', 'Organization'].map((label) => ({
+label,
+style: base + (label === 'Fundraising' ? 'background: #2A241E; color: #F3EDE4; font-weight: 600; box-shadow: inset 3px 0 0 #C96B38' : 'color: #A89B8D')
+}));
+const muted = 'font-size: 12px; color: #746C63; margin-top: 2px';
+const warn = 'font-size: 12px; color: #AE4339; font-weight: 600; margin-top: 2px';
+const stats = [
+{ label: 'Open asks', value: '$412,000', note: '9 asks assigned to you', noteStyle: muted },
+{ label: 'Expected this quarter', value: '$135,000', note: '4 asks closing by Dec 31', noteStyle: muted },
+{ label: 'Asks with no next step', value: '2', note: 'Add a next step', noteStyle: warn },
+{ label: 'Closed this year', value: '$298,500', note: '11 gifts from asks', noteStyle: muted }
+];
+const late = 'font-size: 12px; color: #AE4339; font-weight: 600';
+const soon = 'font-size: 12px; color: #746C63';
+const card = (donor, amount, close, next, due, isLate) => ({ donor, amount, close, next, due, dueStyle: isLate ? late : soon, owner: 'RS' });
+const columns = [
+{ name: 'Researching', count: 2, total: '$60,000', cards: [
+card('Tidewater Community Trust', '$50,000', 'Closes Mar', 'Draft proposal', 'Due Dec 5', false),
+card('Marcus Oyelaran', '$10,000', 'Closes Feb', 'No next step yet', 'Add one', true)
+] },
+{ name: 'Cultivating', count: 3, total: '$167,000', cards: [
+card('Northgate Credit Union', '$40,000', 'Closes Jan', 'Share impact summary', 'Due Nov 26', false),
+card('Elena Brandt', '$2,000', 'Closes Dec', 'Reconnect call', '1 day late', true),
+card('Harlow Family Fund', '$125,000', 'Closes Feb', 'Renewal call', '3 days late', true)
+] },
+{ name: 'Ask made', count: 3, total: '$135,000', cards: [
+card('Dana Whitfield', '$25,000', 'Closes Dec', 'Send year-end ask', '12 days late', true),
+card('Jon and Mei Castellano', '$10,000', 'Closes Dec', 'No next step yet', 'Add one', true),
+card('Pacific Ridge Foundation', '$100,000', 'Closes Dec', 'Answer budget questions', 'Due Nov 25', false)
+] },
+{ name: 'Verbal yes', count: 1, total: '$50,000', cards: [
+card('Okafor Family', '$50,000', 'Closes Dec', 'Send pledge form', 'Due Nov 24', false)
+] }
+];
+return { nav, stats, columns };
+}
+}
+</script>
+</body>
+</html>

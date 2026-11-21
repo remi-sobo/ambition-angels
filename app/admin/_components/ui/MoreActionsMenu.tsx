@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { TYPE } from "@/lib/admin/typeScale";
 import { buttonClass, type ButtonSize } from "./Button";
 
@@ -58,6 +58,28 @@ export default function MoreActionsMenu({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const itemRefs = useRef<(HTMLElement | null)[]>([]);
   const menuId = useId();
+  const menuRef = useRef<HTMLDivElement>(null);
+  // The side the menu hangs from. Starts at `align`; flips when that side
+  // would run off the viewport (a row menu on a phone, where actions sit left).
+  const [side, setSide] = useState<"left" | "right">(align);
+  const flipped = useRef(false);
+  useLayoutEffect(() => {
+    if (!open) {
+      flipped.current = false;
+      setSide(align);
+      return;
+    }
+    if (flipped.current) return; // at most one flip per open
+    const r = menuRef.current?.getBoundingClientRect();
+    if (!r) return;
+    if (side === "right" && r.left < 8) {
+      flipped.current = true;
+      setSide("left");
+    } else if (side === "left" && r.right > window.innerWidth - 8) {
+      flipped.current = true;
+      setSide("right");
+    }
+  }, [open, align, side]);
 
   useEffect(() => {
     if (!open) return;
@@ -120,7 +142,9 @@ export default function MoreActionsMenu({
       <button
         ref={triggerRef}
         type="button"
-        aria-label={triggerText ? undefined : label}
+        // A text trigger keeps the fuller label only when it starts with the
+        // visible text (WCAG 2.5.3 label in name): "Change" → "Change owner…".
+        aria-label={!triggerText || label.startsWith(triggerText.replace(/…$/, "")) ? label : undefined}
         aria-haspopup="menu"
         disabled={disabled}
         aria-expanded={open}
@@ -168,11 +192,12 @@ export default function MoreActionsMenu({
       {open ? (
         <div
           id={menuId}
+          ref={menuRef}
           role="menu"
           aria-label={label}
           onKeyDown={onMenuKey}
           className={`elevate-menu absolute ${placement === "above" ? "bottom-full mb-1" : "top-full mt-1"} z-40 min-w-[220px] max-h-[320px] overflow-y-auto p-1 bg-surface border border-outline rounded-control ${
-            align === "right" ? "right-0" : "left-0"
+            side === "right" ? "right-0" : "left-0"
           }`}
         >
           {items.map((item, i) => {

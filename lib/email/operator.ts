@@ -46,6 +46,27 @@ export async function getOperatorEmails(orgId: string): Promise<string[]> {
   return selectOperatorRecipients((data ?? []) as AllowlistRow[], orgId);
 }
 
+/** The shared Resend sender for operator mail. The address stays on the one
+ *  verified sending domain; only the display name is per org. */
+const OPERATOR_FROM_ADDRESS = "careers@mail.ambitionangels.org";
+
+/** Pure: the From line for an operator email about `orgName`. Neutral
+ *  BloomOS branding plus the org the email is about, never another org's. */
+export function operatorFromLine(orgName: string | null | undefined): string {
+  const name = (orgName ?? "").replace(/[<>"]/g, "").trim();
+  return `${name ? `BloomOS · ${name}` : "BloomOS"} <${OPERATOR_FROM_ADDRESS}>`;
+}
+
+async function orgDisplayName(orgId: string | null | undefined): Promise<string | null> {
+  if (!orgId) return null;
+  try {
+    const { data } = await getSupabaseAdmin().from("orgs").select("name").eq("id", orgId).maybeSingle();
+    return (data?.name as string | undefined) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** One message to every operator of `orgId`. */
 export async function sendOperatorEmail(orgId: string, subject: string, html: string): Promise<boolean> {
   const key = process.env.RESEND_API_KEY;
@@ -55,27 +76,38 @@ export async function sendOperatorEmail(orgId: string, subject: string, html: st
   }
   const to = await getOperatorEmails(orgId);
   if (to.length === 0) return false;
-  return sendTo(key, to, subject, html);
+  return sendTo(key, to, subject, html, operatorFromLine(await orgDisplayName(orgId)));
 }
 
 // Single-recipient send — used when the body is personalised per operator
 // (e.g. the assignee-scoped Monday digest) or addressed to a specific user
 // (notifications). The caller is responsible for having resolved `to` inside
-// the org whose data the body carries.
-export async function sendOperatorEmailTo(to: string, subject: string, html: string): Promise<boolean> {
+// the org whose data the body carries, and passes that org for the From line.
+export async function sendOperatorEmailTo(
+  to: string,
+  subject: string,
+  html: string,
+  orgId?: string | null
+): Promise<boolean> {
   const key = process.env.RESEND_API_KEY;
   if (!key) {
     console.error("sendOperatorEmailTo: RESEND_API_KEY not set");
     return false;
   }
-  return sendTo(key, to, subject, html);
+  return sendTo(key, to, subject, html, operatorFromLine(await orgDisplayName(orgId)));
 }
 
-async function sendTo(key: string, to: string | string[], subject: string, html: string): Promise<boolean> {
+async function sendTo(
+  key: string,
+  to: string | string[],
+  subject: string,
+  html: string,
+  from: string
+): Promise<boolean> {
   try {
     const resend = new Resend(key);
     const { error } = await resend.emails.send({
-      from: "BloomOS · Ambition Angels <careers@mail.ambitionangels.org>",
+      from,
       to,
       subject,
       html,

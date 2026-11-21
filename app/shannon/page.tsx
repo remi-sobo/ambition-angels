@@ -1,14 +1,18 @@
 "use client";
 
-import { Lora } from "next/font/google";
+import localFont from "next/font/local";
 import { FormEvent, useEffect, useState } from "react";
 
-const lora = Lora({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  style: ["normal", "italic"],
+// Self-hosted Lora (full upstream variable wght), app/fonts/lora/. Same 400-500
+// normal + italic, CSS variable and display as the old next/font/google call.
+const lora = localFont({
+  src: [
+    { path: "../fonts/lora/Lora-wght.woff2", weight: "400 500", style: "normal" },
+    { path: "../fonts/lora/Lora-Italic-wght.woff2", weight: "400 500", style: "italic" },
+  ],
   variable: "--font-lora",
   display: "swap",
+  adjustFontFallback: "Times New Roman",
 });
 
 const SHANNON_FIELDS = [

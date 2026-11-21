@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { resolveEnvIntegrationOwner } from "@/lib/integrations/env-owner";
 
 /**
  * HubSpot connection gate.
@@ -6,35 +7,44 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
  * BloomOS is standalone by default: nothing here writes to HubSpot unless an
  * org has an *active* HubSpot connection with outbound sync explicitly turned
  * on (`connections.meta.sync_out === true`). With no connection row — the
- * default — every check returns false and the outbound mappers no-op, so the
- * product behaves exactly as it does today.
+ * default — every check returns null and the outbound mappers no-op.
+ *
+ * Single-tenant by nature: the access token is ONE env credential
+ * (HUBSPOT_ACCESS_TOKEN), so the only connection row that counts is the one
+ * belonging to the org that owns the env integration
+ * (lib/integrations/env-owner.ts). Every gate returns that org's id, and
+ * callers must scope every record they read or write to it, so another org's
+ * donors can never reach this portal and this portal's data never lands in
+ * another org.
  *
  * `connections` is service-path only (RLS deny-all), so this uses the
- * service-role client. The access token still comes from HUBSPOT_ACCESS_TOKEN
- * for now (same as the read sync); moving it into the encrypted
- * `connections.access_token_enc` column is a follow-up.
+ * service-role client.
  */
-async function hubspotMeta(): Promise<Record<string, unknown> | null> {
+async function hubspotConnection(): Promise<{ orgId: string; meta: Record<string, unknown> } | null> {
   if (!process.env.HUBSPOT_ACCESS_TOKEN) return null;
   try {
+    const owner = await resolveEnvIntegrationOwner("hubspot");
+    if (!owner.ok) return null;
     const { data } = await getSupabaseAdmin()
       .from("connections")
       .select("meta")
+      .eq("org_id", owner.orgId)
       .eq("provider", "hubspot")
       .eq("status", "active")
       .limit(1)
       .maybeSingle();
     if (!data) return null;
-    return (data.meta ?? {}) as Record<string, unknown>;
+    return { orgId: owner.orgId, meta: (data.meta ?? {}) as Record<string, unknown> };
   } catch {
     // Missing table / any error → fail closed (standalone).
     return null;
   }
 }
 
-export async function hubspotWriteEnabled(): Promise<boolean> {
-  const meta = await hubspotMeta();
-  return meta?.sync_out === true;
+/** The owner org id when outbound sync is on, else null. */
+export async function hubspotWriteOrg(): Promise<string | null> {
+  const c = await hubspotConnection();
+  return c && c.meta.sync_out === true ? c.orgId : null;
 }
 
 /**
@@ -42,9 +52,9 @@ export async function hubspotWriteEnabled(): Promise<boolean> {
  * really a pipeline construct), so it requires an extra opt-in beyond sync_out.
  * Opportunities → Deals only needs sync_out.
  */
-export async function hubspotGiftDealsEnabled(): Promise<boolean> {
-  const meta = await hubspotMeta();
-  return meta?.sync_out === true && meta?.sync_gifts_as_deals === true;
+export async function hubspotGiftDealsOrg(): Promise<string | null> {
+  const c = await hubspotConnection();
+  return c && c.meta.sync_out === true && c.meta.sync_gifts_as_deals === true ? c.orgId : null;
 }
 
 /**
@@ -52,7 +62,7 @@ export async function hubspotGiftDealsEnabled(): Promise<boolean> {
  * an org can run outbound-only, inbound-only, or both. Off by default →
  * webhooks are acknowledged but ignored.
  */
-export async function hubspotReadEnabled(): Promise<boolean> {
-  const meta = await hubspotMeta();
-  return meta?.sync_in === true;
+export async function hubspotReadOrg(): Promise<string | null> {
+  const c = await hubspotConnection();
+  return c && c.meta.sync_in === true ? c.orgId : null;
 }

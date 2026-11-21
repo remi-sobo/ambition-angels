@@ -6,6 +6,10 @@
  * nearly spent — the next cron tick picks up any remainder.
  *
  * Requires the gmail.readonly scope on GOOGLE_REFRESH_TOKEN.
+ *
+ * The mailbox belongs to one org, resolved from data
+ * (lib/integrations/env-owner.ts). If that can't be resolved unambiguously the
+ * cron does nothing and says why.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
@@ -15,6 +19,7 @@ import {
   latestGmailJob,
   type GmailJob,
 } from "@/lib/fundraising/gmail-sync";
+import { resolveEnvIntegrationOwner } from "@/lib/integrations/env-owner";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -25,15 +30,17 @@ export async function GET(req: NextRequest) {
   if (!secret || auth !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  const owner = await resolveEnvIntegrationOwner("gmail_sync");
+  if (!owner.ok) {
+    return NextResponse.json({ status: "skipped", reason: owner.reason });
+  }
   const supabase = getSupabaseAdmin();
 
-  let job: GmailJob | null = await latestGmailJob(supabase);
+  let job: GmailJob | null = await latestGmailJob(supabase, owner.orgId);
   if (!job || job.status !== "running") {
     const watermark = job?.last_internal_date ?? 0;
-    // Single tenant today: the mailbox belongs to the only org.
-    const { data: org } = await supabase.from("orgs").select("id").limit(1).maybeSingle();
     job = await createGmailJob(supabase, {
-      orgId: (org?.id as string | undefined) ?? null,
+      orgId: owner.orgId,
       mode: watermark > 0 ? "incremental" : "backfill",
       watermark,
     });

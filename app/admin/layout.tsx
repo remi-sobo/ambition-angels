@@ -119,6 +119,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     // viewers get none). The entitlement is still the gate; the API is the
     // boundary (402/403).
     const canCapture = captureEnabled && !!perms?.includes("ops.write");
+    // V4 Stage D: "Capture a story" (StoryPhone) for roles that can write
+    // the story bank in an org with Comms.
+    const canStory = !!features?.includes("modules.comms") && !!perms?.includes("comms.manage");
     const nav = resolveShellNav(features, await getShellTermLabels(), perms);
     // V4 A2: global search's page list is generated from the same nav (and
     // the Settings sections this person can see), never a hand-kept list.
@@ -172,10 +175,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
               More, derived from the same resolved nav as the sidebar. The
               centre is voice Capture behind ai.capture (V4 §8), else the ＋
               quick-add sheet. */}
-          <V2MobileBar nav={nav} currentUser={user} reedEnabled={reedEnabled} captureEnabled={canCapture} />
+          <V2MobileBar nav={nav} currentUser={user} reedEnabled={reedEnabled} captureEnabled={canCapture} storyEnabled={canStory} />
           {/* B6: the shell-level Quick Add — capture, report-an-issue, and
               the search overlay, at every desktop width (V2 has no rail). */}
-          <V2QuickAdd currentUser={user} reedEnabled={reedEnabled} captureEnabled={canCapture} />
+          <V2QuickAdd currentUser={user} reedEnabled={reedEnabled} captureEnabled={canCapture} storyEnabled={canStory} />
           {/* V4 §8: the one desktop Capture modal, opened by the sidebar's
               Talk to log button, Today, and record pages. */}
           <CaptureLauncher enabled={canCapture} />

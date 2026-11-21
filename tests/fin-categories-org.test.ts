@@ -33,7 +33,7 @@ function builder(table: string) {
     return { data: { id: "row-1" }, error: null, count: 1 };
   };
   const b: Record<string, unknown> = {
-    select: (..._a: unknown[]) => b,
+    select: () => b,
     insert: (...a: unknown[]) => ((call.op = "insert"), (call.args = a), b),
     update: (...a: unknown[]) => ((call.op = "update"), (call.args = a), b),
     upsert: (row: unknown, opts: unknown) => ((call.op = "upsert"), (call.args = [row]), (call.opts = opts), b),

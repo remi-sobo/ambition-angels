@@ -1,3 +1,4 @@
+import { StaticTable } from "@/app/admin/_components/ui/DataTable";
 import Link from "next/link";
 import EmptyState from "../../_components/EmptyState";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -175,56 +176,54 @@ export default async function AskLog({
               )}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-xs uppercase tracking-wider text-ink-3 border-b border-hairline">
-                    <th className="text-left font-semibold px-5 py-3">Funder</th>
-                    <th className="text-left font-semibold px-3 py-3">Ask</th>
-                    <th className="text-left font-semibold px-3 py-3">Form</th>
-                    <th className="text-right font-semibold px-3 py-3">Requested</th>
-                    <th className="text-left font-semibold px-3 py-3">Date</th>
-                    <th className="text-left font-semibold px-3 py-3">Status</th>
-                    <th className="text-left font-semibold px-3 py-3">Owner</th>
-                    <th className="text-center font-semibold px-3 py-3">Docs</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-hairline">
-                  {asks.map((a) => {
-                    const docCount = a.ask_documents?.[0]?.count ?? 0;
-                    return (
-                      <tr key={a.id} className="hover:bg-orange/[0.04] transition-colors">
-                        <td className="px-5 py-3">
-                          <Link href={`/admin/fundraising/asks/${a.id}`} className="text-ink-1 font-medium hover:text-orange transition-colors">
-                            {a.funder ? constituentName(a.funder) : "—"}
-                          </Link>
-                        </td>
-                        <td className="px-3 py-3 text-ink-2 max-w-[220px] truncate">{a.title || "—"}</td>
-                        <td className="px-3 py-3 text-ink-2 whitespace-nowrap">{ASK_FORM_LABELS[a.form] ?? a.form}</td>
-                        <td className="px-3 py-3 text-right text-ink-1 tabular-nums whitespace-nowrap">
-                          {a.amount_requested != null ? money(a.amount_requested) : "—"}
-                        </td>
-                        <td className="px-3 py-3 text-ink-2 whitespace-nowrap">{fmtDate(a.ask_date)}</td>
-                        <td className="px-3 py-3"><StatusChip status={a.status} /></td>
-                        <td className="px-3 py-3 max-w-[180px]">
-                          <OwnerChip
-                            entity="asks"
-                            id={a.id}
-                            ownerId={a.owner_id}
-                            fallbackText={a.owner}
-                            members={members}
-                            meId={ctx.userId}
-                            canEdit={canAssign}
-                            variant="compact"
-                          />
-                        </td>
-                        <td className="px-3 py-3 text-center text-ink-2 tabular-nums">{docCount || "—"}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            // The kit table (V4 P1): cards under 640px.
+            <StaticTable
+              label="Asks"
+              noun={{ one: "ask", many: "asks" }}
+              rows={asks}
+              getRowId={(a) => a.id}
+              getRowLabel={(a) => (a.funder ? constituentName(a.funder) : a.title || "Ask")}
+              columns={[
+                {
+                  key: "funder",
+                  header: "Funder",
+                  card: "title",
+                  render: (a) => (
+                    <Link href={`/admin/fundraising/asks/${a.id}`} className="text-ink-1 font-medium hover:text-orange transition-colors">
+                      {a.funder ? constituentName(a.funder) : "—"}
+                    </Link>
+                  ),
+                },
+                { key: "ask", header: "Ask", className: "max-w-[220px] truncate", render: (a) => <span className="text-ink-2">{a.title || "—"}</span> },
+                { key: "form", header: "Form", render: (a) => <span className="text-ink-2 whitespace-nowrap">{ASK_FORM_LABELS[a.form] ?? a.form}</span> },
+                {
+                  key: "requested",
+                  header: "Requested",
+                  align: "right",
+                  render: (a) => <span className="text-ink-1 tabular-nums whitespace-nowrap">{a.amount_requested != null ? money(a.amount_requested) : "—"}</span>,
+                },
+                { key: "date", header: "Date", render: (a) => <span className="text-ink-2 whitespace-nowrap">{fmtDate(a.ask_date)}</span> },
+                { key: "status", header: "Status", render: (a) => <StatusChip status={a.status} /> },
+                {
+                  key: "owner",
+                  header: "Owner",
+                  className: "max-w-[180px]",
+                  render: (a) => (
+                    <OwnerChip
+                      entity="asks"
+                      id={a.id}
+                      ownerId={a.owner_id}
+                      fallbackText={a.owner}
+                      members={members}
+                      meId={ctx.userId}
+                      canEdit={canAssign}
+                      variant="compact"
+                    />
+                  ),
+                },
+                { key: "docs", header: "Docs", align: "right", render: (a) => <span className="text-ink-2 tabular-nums">{a.ask_documents?.[0]?.count || "—"}</span> },
+              ]}
+            />
           )}
         </section>
       </div>

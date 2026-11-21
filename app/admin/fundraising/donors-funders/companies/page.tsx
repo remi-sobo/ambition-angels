@@ -9,6 +9,7 @@ import { money } from "../../../finance/_components/charts";
 import { loadCompanies, type CompanyRow } from "@/lib/fundraising/companies";
 import { COMPANY_STAGES, COMPANY_STAGE_HELP, COMPANY_STAGE_LABELS } from "@/lib/fundraising/company-stages";
 import { AddCompany } from "../_components/CompanyControls";
+import { StaticTable } from "../../../_components/ui/DataTable";
 
 // Companies (specs/bloomos-companies.md, Stage 1): organization constituents
 // that staff track with a company stage. A view of the one Donors & Funders
@@ -112,43 +113,51 @@ export default async function CompaniesPage({ searchParams }: { searchParams: { 
             })}
           </div>
         ) : (
-          <div className="bg-tile border-hairline rounded-panel-lg overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left border-b border-hairline">
-                  {["Company", "Stage", "Given to date", "Open asks", "Last activity", "Next step"].map((h) => (
-                    <th key={h} className={`${TYPE.tableHeader} px-4 py-3 whitespace-nowrap`}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-hairline">
-                {rows.map((r) => (
-                  <tr key={r.id}>
-                    <td className="px-4 py-3">
-                      <Link href={PROFILE(r.id)} className="font-semibold text-ink-1 hover:text-orange transition-colors">
-                        {r.name}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap" title={COMPANY_STAGE_HELP[r.stage]}>
-                      {COMPANY_STAGE_LABELS[r.stage]}
-                    </td>
-                    <td className="px-4 py-3 tabular-nums whitespace-nowrap">{money(r.given)}</td>
-                    <td className="px-4 py-3 tabular-nums whitespace-nowrap">
-                      {r.openAskCount > 0 ? `${r.openAskCount} · ${money(r.openAskTotal)}` : <span className="text-ink-2">None</span>}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {r.lastActivity ? fmtDate(r.lastActivity) : <span className="text-ink-2">None</span>}
-                    </td>
-                    <td className="px-4 py-3">
-                      <NextStep row={r} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          // The kit table (V4 P1): cards under 640px, the next step last.
+          <StaticTable
+            label="Companies"
+            noun={{ one: "company", many: "companies" }}
+            rows={rows}
+            getRowId={(r) => r.id}
+            getRowLabel={(r) => r.name}
+            columns={[
+              {
+                key: "company",
+                header: "Company",
+                card: "title",
+                render: (r) => (
+                  <Link href={PROFILE(r.id)} className="font-semibold text-ink-1 hover:text-orange transition-colors">
+                    {r.name}
+                  </Link>
+                ),
+              },
+              {
+                key: "stage",
+                header: "Stage",
+                render: (r) => (
+                  <span className="whitespace-nowrap" title={COMPANY_STAGE_HELP[r.stage]}>
+                    {COMPANY_STAGE_LABELS[r.stage]}
+                  </span>
+                ),
+              },
+              { key: "given", header: "Given to date", align: "right", render: (r) => <span className="tabular-nums whitespace-nowrap">{money(r.given)}</span> },
+              {
+                key: "asks",
+                header: "Open asks",
+                render: (r) => (
+                  <span className="tabular-nums whitespace-nowrap">
+                    {r.openAskCount > 0 ? `${r.openAskCount} · ${money(r.openAskTotal)}` : <span className="text-ink-2">None</span>}
+                  </span>
+                ),
+              },
+              {
+                key: "activity",
+                header: "Last activity",
+                render: (r) => <span className="whitespace-nowrap">{r.lastActivity ? fmtDate(r.lastActivity) : <span className="text-ink-2">None</span>}</span>,
+              },
+            ]}
+            nextStep={{ header: "Next step", render: (r) => <NextStep row={r} /> }}
+          />
         )}
       </div>
     </div>

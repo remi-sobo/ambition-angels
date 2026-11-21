@@ -1,17 +1,15 @@
 import type { ReactNode } from "react";
-import FeatureGate from "@/app/admin/_components/FeatureGate";
+import AaOnlyGate from "@/app/admin/_components/AaOnlyGate";
 
-// Module gate (core fence B1): every route under this group renders only when
-// the org holds the `modules.content` entitlement; otherwise the not-authorized
-// panel. Direct URL hits are covered here — sidebar hiding alone is cosmetic.
-// B1 moved the NAV gate off aa.quiz onto modules.content (the quiz and the
-// career library are different products) and deferred this layout's key "to
-// its destination move" — that move is B2's /admin/programs/content host, so
-// the two gates align here. AA holds both keys; no visible change.
+// AA-only gate (pre-SafeSpace fence): the career library and teen-games
+// admin read and write GLOBAL tables (ms_*, game_*) that feed Ambition
+// Angels' public teen games, so they require the AA-only aa.career_library
+// entitlement — not modules.content, a generic module another tenant may
+// hold. The sidebar row still keys on modules.content (lib/admin/nav.ts).
 export default function CareersLayout({ children }: { children: ReactNode }) {
   return (
-    <FeatureGate feature="modules.content" label="Career Library">
+    <AaOnlyGate feature="aa.career_library" label="Career Library">
       {children}
-    </FeatureGate>
+    </AaOnlyGate>
   );
 }

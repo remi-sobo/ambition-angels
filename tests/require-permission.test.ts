@@ -29,7 +29,11 @@ vi.mock("next/headers", () => ({
 
 function fakeClient() {
   return {
-    auth: { getUser: async () => ({ data: { user: state.user } }) },
+    auth: {
+        getUser: async () => ({ data: { user: state.user } }),
+        // An aal2 access token: these sessions have finished two-step login.
+        getSession: async () => ({ data: { session: { access_token: "x.eyJhYWwiOiJhYWwyIn0.s" } } }),
+      },
     from(table: string) {
       let rows = [...(state.db[table] ?? [])];
       const q = {

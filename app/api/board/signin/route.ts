@@ -63,10 +63,11 @@ export async function POST(req: NextRequest) {
     email,
     options: {
       emailRedirectTo: `${origin}/auth/callback?next=/board`,
-      // Directors are provisioned by the seed's allowlist, not by self-signup.
-      // A roster address with no auth user yet still needs one created on
-      // first use, so this stays true — the roster check above is the gate.
-      shouldCreateUser: true,
+      // A sign-in never creates a user (pre-SafeSpace item D). A director
+      // with no account yet is invited from Settings → People and roles
+      // (role Board viewer), which creates the account; until then this
+      // sends nothing and the response stays the same generic shape.
+      shouldCreateUser: false,
     },
   });
 

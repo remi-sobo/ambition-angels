@@ -1,5 +1,6 @@
 import { TYPE } from "@/lib/admin/typeScale";
 import { Alert, Card } from "@/app/admin/_components/ui";
+import { StaticTable } from "@/app/admin/_components/ui/DataTable";
 import {
   formatGiftMoney,
   type ClosedSnapshot,
@@ -63,53 +64,42 @@ export default function PlanVsActual({
           Conversion is placed names that became committed money. It is the number
           next year&rsquo;s table should be built on, and the one nobody writes down.
         </p>
-        <div className="mt-3 overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className={TYPE.tableHeader}>
-                <th className="py-1.5 pr-3">Level</th>
-                <th className="py-1.5 pr-3 text-right">Value</th>
-                <th className="py-1.5 pr-3 text-right">Needed</th>
-                <th className="py-1.5 pr-3 text-right">Placed</th>
-                <th className="py-1.5 pr-3 text-right">Gap</th>
-                <th className="py-1.5 pr-3 text-right">Committed</th>
-                <th className="py-1.5 pr-3 text-right">Value</th>
-                <th className="py-1.5 pr-3 text-right">Conversion</th>
-                <th className="py-1.5 text-right">Now</th>
-              </tr>
-            </thead>
-            <tbody>
-              {snapshot.levels.map((l) => {
-                const now = liveByLevel.get(l.levelId);
-                // A level deleted after close has no live row. Saying so is
-                // better than printing a dash that reads as zero.
-                const nowLabel = !now
-                  ? "level removed"
-                  : drifted(now.committedValue, l.committedValue)
-                    ? formatGiftMoney(now.committedValue)
-                    : "unchanged";
-                return (
-                  <tr key={l.levelId} className="border-t border-hairline">
-                    <td className={`${TYPE.body} py-1.5 pr-3`}>{l.label}</td>
-                    <td className={`${TYPE.body} py-1.5 pr-3 text-right tabular-nums`}>
-                      {formatGiftMoney(l.value)}
-                    </td>
-                    <td className={`${TYPE.body} py-1.5 pr-3 text-right tabular-nums`}>{l.needed}</td>
-                    <td className={`${TYPE.body} py-1.5 pr-3 text-right tabular-nums`}>{l.placed}</td>
-                    <td className={`${TYPE.body} py-1.5 pr-3 text-right tabular-nums`}>{l.gap}</td>
-                    <td className={`${TYPE.body} py-1.5 pr-3 text-right tabular-nums`}>{l.committed}</td>
-                    <td className={`${TYPE.body} py-1.5 pr-3 text-right tabular-nums`}>
-                      {formatGiftMoney(l.committedValue)}
-                    </td>
-                    <td className={`${TYPE.body} py-1.5 pr-3 text-right tabular-nums`}>
-                      {Math.round(l.conversion * 100)}%
-                    </td>
-                    <td className={`${TYPE.metadata} py-1.5 text-right tabular-nums`}>{nowLabel}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        {/* The kit table (V4 P1): cards under 640px. */}
+        <div className="mt-3">
+          <StaticTable
+            label={`By level, frozen on ${snapshot.closedOn}`}
+            noun={{ one: "level", many: "levels" }}
+            rows={snapshot.levels}
+            getRowId={(l) => l.levelId}
+            getRowLabel={(l) => l.label}
+            minWidth={760}
+            columns={[
+              { key: "level", header: "Level", card: "title", render: (l) => <span className={TYPE.body}>{l.label}</span> },
+              { key: "value", header: "Value", align: "right", render: (l) => <span className="tabular-nums">{formatGiftMoney(l.value)}</span> },
+              { key: "needed", header: "Needed", align: "right", render: (l) => <span className="tabular-nums">{l.needed}</span> },
+              { key: "placed", header: "Placed", align: "right", render: (l) => <span className="tabular-nums">{l.placed}</span> },
+              { key: "gap", header: "Gap", align: "right", render: (l) => <span className="tabular-nums">{l.gap}</span> },
+              { key: "committed", header: "Committed", align: "right", render: (l) => <span className="tabular-nums">{l.committed}</span> },
+              { key: "committedValue", header: "Committed value", align: "right", render: (l) => <span className="tabular-nums">{formatGiftMoney(l.committedValue)}</span> },
+              { key: "conversion", header: "Conversion", align: "right", render: (l) => <span className="tabular-nums">{Math.round(l.conversion * 100)}%</span> },
+              {
+                key: "now",
+                header: "Now",
+                align: "right",
+                render: (l) => {
+                  const now = liveByLevel.get(l.levelId);
+                  // A level deleted after close has no live row. Saying so is
+                  // better than printing a dash that reads as zero.
+                  const nowLabel = !now
+                    ? "level removed"
+                    : drifted(now.committedValue, l.committedValue)
+                      ? formatGiftMoney(now.committedValue)
+                      : "unchanged";
+                  return <span className={`${TYPE.metadata} tabular-nums`}>{nowLabel}</span>;
+                },
+              },
+            ]}
+          />
         </div>
       </Card>
     </div>

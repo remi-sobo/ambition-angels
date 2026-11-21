@@ -196,3 +196,43 @@ export function DataTableSkeleton({ rows = 8, columns = 5, label = "Loading the 
     </SkeletonGroup>
   );
 }
+
+/**
+ * A small list that is already in hand and fits on one page (a section of a
+ * record, a preview, a settings list): DataTable v2's frame, phone cards and
+ * empty state with no sort, paging or URL. Server-safe like DataTable, so a
+ * client component can pass render functions too.
+ *
+ *   <StaticTable label="Pledge payments" noun={{ one: "payment", many: "payments" }}
+ *     columns={[…]} rows={payments} getRowId={(p) => p.id} />
+ *
+ * Anything that can grow past a page, or that people sort, uses DataTable
+ * with a TableSpec instead.
+ */
+export function StaticTable<Row>({
+  rows,
+  ...rest
+}: {
+  label: string;
+  noun: { one: string; many: string };
+  columns: DataTableColumn<Row>[];
+  rows: Row[];
+  getRowId: (row: Row) => string;
+  getRowLabel?: (row: Row) => string;
+  nextStep?: { header: string; render: (row: Row) => ReactNode };
+  bulkActions?: DataTableBulkAction[];
+  empty?: ReactNode;
+  emptyMessage?: ReactNode;
+  minWidth?: number;
+}) {
+  const pageSize = Math.max(rows.length, 1);
+  return (
+    <DataTable<Row>
+      {...rest}
+      data={{ rows, total: rows.length, page: 0, pageSize }}
+      spec={{ sortable: [], defaultSort: null, pageSize }}
+      state={{ page: 0, sort: null }}
+      baseHref=""
+    />
+  );
+}

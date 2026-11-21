@@ -1,3 +1,4 @@
+import { StaticTable } from "@/app/admin/_components/ui/DataTable";
 import type { BriefContent } from "@/lib/agents/funder-research/types";
 
 export default function WhatTheyCareAbout({
@@ -49,34 +50,19 @@ export default function WhatTheyCareAbout({
             <div className="text-xs uppercase tracking-wider text-ink-3 mb-2">
               Recent grants
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-xs uppercase tracking-wider text-ink-2 border-b border-hairline">
-                    <th className="text-left font-medium pb-2 pr-4">Recipient</th>
-                    <th className="text-right font-medium pb-2 pr-4">Amount</th>
-                    <th className="text-left font-medium pb-2 pr-4">Purpose</th>
-                    <th className="text-left font-medium pb-2">Year</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-hairline">
-                  {data.recent_grants.map((g, i) => (
-                    <tr key={i} className="text-ink-1">
-                      <td className="py-2 pr-4">{g.recipient}</td>
-                      <td className="py-2 pr-4 text-right font-mono">
-                        {g.amount ?? "—"}
-                      </td>
-                      <td className="py-2 pr-4 text-ink-2">
-                        {g.purpose ?? "—"}
-                      </td>
-                      <td className="py-2 text-ink-2 font-mono">
-                        {g.year ?? "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <StaticTable
+              label="Recent grants"
+              noun={{ one: "grant", many: "grants" }}
+              rows={data.recent_grants.map((g, i) => ({ ...g, rowId: String(i) }))}
+              getRowId={(g) => g.rowId}
+              getRowLabel={(g) => g.recipient}
+              columns={[
+                { key: "recipient", header: "Recipient", card: "title", render: (g) => <span className="text-ink-1">{g.recipient}</span> },
+                { key: "amount", header: "Amount", align: "right", render: (g) => <span className="font-mono">{g.amount ?? "—"}</span> },
+                { key: "purpose", header: "Purpose", render: (g) => <span className="text-ink-2">{g.purpose ?? "—"}</span> },
+                { key: "year", header: "Year", render: (g) => <span className="text-ink-2 font-mono">{g.year ?? "—"}</span> },
+              ]}
+            />
           </div>
         )}
 

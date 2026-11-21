@@ -139,6 +139,16 @@ export default function DataTableFrame({
       }
       return;
     }
+    if (action.kind === "run") {
+      setBusy(action.key);
+      try {
+        await action.run(ids);
+      } finally {
+        setBusy(null);
+      }
+      setSelected(new Set());
+      return;
+    }
     if (action.kind === "link") {
       const [path, hash] = action.href.split("#");
       const sep = path.includes("?") ? "&" : "?";

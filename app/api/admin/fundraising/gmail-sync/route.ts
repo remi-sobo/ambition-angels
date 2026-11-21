@@ -12,6 +12,10 @@
  *
  * The mailbox belongs to one org (lib/integrations/env-owner.ts); every other
  * org gets a 403, and every job read is scoped to the owner.
+ *
+ * PAUSED: see lib/fundraising/gmail-sync-flag.ts. While GMAIL_SYNC_PAUSED is
+ * true, POST returns 503 { paused: true } without touching Gmail or creating a
+ * job. GET still returns the last job (a database read only).
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
@@ -24,6 +28,7 @@ import {
   latestGmailJob,
   type GmailJob,
 } from "@/lib/fundraising/gmail-sync";
+import { GMAIL_SYNC_PAUSED, GMAIL_SYNC_PAUSED_MESSAGE } from "@/lib/fundraising/gmail-sync-flag";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -31,6 +36,9 @@ export const maxDuration = 60;
 export async function POST(req: NextRequest) {
   const guard = await requirePermission("fundraising.write");
   if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  if (GMAIL_SYNC_PAUSED) {
+    return NextResponse.json({ error: GMAIL_SYNC_PAUSED_MESSAGE, paused: true }, { status: 503 });
+  }
   const gate = await requireEnvIntegrationOwner("gmail_sync");
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
   const orgId = gate.ctx.orgId;

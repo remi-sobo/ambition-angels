@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { userMessage } from "@/lib/admin/errors";
+import { GMAIL_SYNC_PAUSED } from "@/lib/fundraising/gmail-sync-flag";
 
 type Status = "running" | "completed" | "failed" | "partial";
 type Job = {
@@ -35,7 +36,30 @@ function looksLikeScopeError(msg: string): boolean {
   return m.includes("scope") || m.includes("insufficient") || m.includes("permission") || m.includes("403");
 }
 
+// While the sync is paused (lib/fundraising/gmail-sync-flag.ts) the button is a
+// disabled label: no fetches, nothing to click.
 export default function GmailSyncButton() {
+  return GMAIL_SYNC_PAUSED ? <GmailSyncPaused /> : <GmailSyncActive />;
+}
+
+function GmailSyncPaused() {
+  return (
+    <div className="flex flex-col items-end gap-0.5">
+      <button
+        type="button"
+        disabled
+        className="text-xs font-semibold px-4 py-2 rounded-full border-hairline bg-tile text-ink-3 opacity-60 cursor-not-allowed"
+      >
+        Email sync paused
+      </button>
+      <span className="text-xs text-ink-3 max-w-[230px] text-right leading-tight">
+        BloomOS isn&apos;t reading the mailbox right now. Log emails by hand for now.
+      </span>
+    </div>
+  );
+}
+
+function GmailSyncActive() {
   const router = useRouter();
   const [job, setJob] = useState<Job | null>(null);
   const [error, setError] = useState<string | null>(null);

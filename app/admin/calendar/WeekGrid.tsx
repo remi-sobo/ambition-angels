@@ -219,13 +219,17 @@ export default function WeekGrid({
 
   const apiDeleteBlock = useCallback(
     async (id: string) => {
+      // #609: if Google refuses the delete, the server keeps the block and
+      // answers 409 with "Reconnect it in Settings, then try again".
+      // saveAction shows that server message (no fixed failure text here)
+      // and the rollback re-reads the week so the kept block reappears.
       await saveAction({
         request: { url: `/api/admin/calendar/blocks/${id}`, method: "DELETE" },
         optimistic: () => {
           setBlocks((prev) => prev.filter((b) => b.id !== id));
           setSelectedId(null);
         },
-        failure: "Couldn't delete the block. Try again.",
+        rollback: () => refresh(),
         toast,
       });
       refresh();

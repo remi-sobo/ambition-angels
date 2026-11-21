@@ -30,7 +30,7 @@ const GLOBALS: { title: string; body: string; feature?: FeatureKey }[] = [
   },
   {
     title: "Your calendar",
-    body: "Connect Google Calendar under Settings and BloomOS shows your day on Today and My Week. BloomOS only reads your calendar.",
+    body: "Connect Google Calendar under Settings and BloomOS shows your day on Today and My Week. Work blocks you draw on My Week go onto your Google Calendar; BloomOS only changes events it created. Disconnect any time under Settings.",
     feature: "modules.meetings",
   },
   {

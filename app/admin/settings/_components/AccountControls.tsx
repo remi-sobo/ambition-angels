@@ -233,8 +233,9 @@ export function ConnectCalendarControls({
   oauthReason?: string;
 }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [picking, setPicking] = useState(oauthResult === "pick");
-  const [busy, setBusy] = useState<null | "sync">(null);
+  const [busy, setBusy] = useState<null | "sync" | "disconnect">(null);
   const [error, setError] = useState<string | null>(
     oauthResult === "error" ? (oauthReason || "The Google connection failed. Try again.") : null
   );
@@ -271,6 +272,35 @@ export function ConnectCalendarControls({
         return;
       }
       setMsg("Calendar refreshed.");
+      router.refresh();
+    } catch {
+      setError("Something went wrong. Try again.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const disconnect = async () => {
+    const ok = await confirm({
+      title: "Disconnect Google Calendar?",
+      body:
+        "BloomOS stops reading your calendar and deletes its copy of your events and the stored permission. " +
+        "Work blocks stay in BloomOS, and events already on your Google Calendar stay there.",
+      confirmLabel: "Disconnect",
+      destructive: true,
+    });
+    if (!ok) return;
+    setError(null);
+    setMsg(null);
+    setBusy("disconnect");
+    try {
+      const res = await fetch("/api/admin/agenda/connect-google/disconnect", { method: "POST" });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(userMessage(res, j));
+        return;
+      }
+      setMsg("Calendar disconnected.");
       router.refresh();
     } catch {
       setError("Something went wrong. Try again.");
@@ -336,6 +366,15 @@ export function ConnectCalendarControls({
           >
             {busy === "sync" ? "Refreshing…" : "Refresh calendar now"}
           </button>
+          {status.connected && (
+            <button
+              onClick={disconnect}
+              disabled={busy !== null}
+              className="text-xs font-semibold text-ink-2 hover:text-expense px-3 py-2.5 transition-colors disabled:opacity-50"
+            >
+              {busy === "disconnect" ? "Disconnecting…" : "Disconnect"}
+            </button>
+          )}
         </div>
       )}
 

@@ -30,7 +30,6 @@ const SCAN_ROOT = join(process.cwd(), "app", "admin");
 const DISPLAY_BLACK_ALLOWLIST: { file: string; reason: string }[] = [
   { file: "app/admin/ops/_components/CategoryCounts.tsx", reason: "display metric (category count)" },
   { file: "app/admin/ops/_components/MondayCommit.tsx", reason: "display metric (commit count)" },
-  { file: "app/admin/work/my-week/page.tsx", reason: "the one ritual-door title (Spec Work W2) — same voice as the doors page it replaces" },
   { file: "app/admin/programs/overview/page.tsx", reason: "display metrics (headline band numerals, Spec Programs P2)" },
   { file: "app/admin/ops/friday/CloseSection.tsx", reason: "display metric (close count — the page body extracted at Spec Work W1, entry moved with it)" },
   { file: "app/admin/_components/LoginScreen.tsx", reason: "D5 exemption: marketing-style dark surface" },

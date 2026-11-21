@@ -12,9 +12,11 @@
  *                                               the drawer's own save records the
  *                                               money, then the card is marked
  *                                               filed with the gift's id
- *   story         dest 'thought', held,         the card itself is the held story
- *                 payload.card_kind = 'story'   draft (no story bank or consent
- *                                               table exists on main yet)
+ *   story         dest 'thought', held,         "Keep" files it into the Comms story
+ *                 payload.card_kind = 'story'   bank (stories + story_subjects, V4
+ *                                               Stage D), held until consent is on
+ *                                               file; without Comms access the card
+ *                                               itself stays the held draft
  *
  * Why 'thought' + held for the two new kinds: capture_cards.dest is
  * check-constrained to the four C1 values, and a migration is out of scope for
@@ -139,12 +141,14 @@ export function buildGiftFields(r: Record<string, unknown>, opts: { todayIso: st
 // ── Story, and the consent hold ─────────────────────────────────────────────
 
 /**
- * Is there anywhere to record a participant's consent? Not on main: the story
- * bank (stories, story_subjects, story_consents) lives on an unmerged branch
- * (specs/v4-phase0/06-comms.md). While this is false, a story that can
- * identify a participant can never become usable, whatever a card says.
+ * Is there anywhere to record a participant's consent? Yes since V4 Stage D:
+ * the story bank (stories, story_subjects, story_consents) landed on main.
+ * A capture card still never carries consent itself; consent is recorded on
+ * the story in Comms, and the consent gate (lib/comms/story-gate.ts) decides
+ * whether a story may be used. A card's hold stays "consent" for an
+ * identifiable story because consentOnFile is never true for a card.
  */
-export const CONSENT_STORAGE_EXISTS = false;
+export const CONSENT_STORAGE_EXISTS = true;
 
 /** "Jaylen Moore" -> "Jaylen M." ; "Jaylen" -> "Jaylen". Never a full surname. */
 export function shortName(name: string | null | undefined): string | null {
@@ -230,7 +234,8 @@ export function storyUsable(story: { identifiable?: unknown; consent?: unknown }
 export type FiledElsewhere =
   | { table: "gifts"; id: string; amount: number | null }
   | { table: "pledges"; manual: true }
-  | { table: "capture_cards"; kept: true };
+  | { table: "capture_cards"; kept: true }
+  | { table: "stories"; id: string };
 
 export function filedElsewhere(payload: Record<string, unknown> | null | undefined): FiledElsewhere | null {
   const f = payload?.filed as Record<string, unknown> | undefined;
@@ -238,5 +243,6 @@ export function filedElsewhere(payload: Record<string, unknown> | null | undefin
   if (f.table === "gifts" && typeof f.id === "string") return { table: "gifts", id: f.id, amount: typeof f.amount === "number" ? f.amount : null };
   if (f.table === "pledges" && f.manual === true) return { table: "pledges", manual: true };
   if (f.table === "capture_cards" && f.kept === true) return { table: "capture_cards", kept: true };
+  if (f.table === "stories" && typeof f.id === "string") return { table: "stories", id: f.id };
   return null;
 }

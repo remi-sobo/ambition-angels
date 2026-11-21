@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { requireAaOnly } from "@/lib/admin/aaOnly";
 
 export async function GET() {
-  if (!await isAuthed()) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const gate = await requireAaOnly("aa.quiz");
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase

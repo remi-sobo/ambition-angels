@@ -65,6 +65,13 @@ export const FEATURE_KEYS = [
   // this key the page rendered them for ANY finance-holding org (a
   // cross-tenant leak the Forecast absorption would have widened).
   "aa.finance_model",
+  // The career library + teen-games admin (ms_occupations, ms_cards,
+  // game_pool, game_daily): global, tenant-less tables behind AA's PUBLIC teen
+  // games. Distinct from modules.content (a generic module another tenant
+  // may one day hold); writing these tables is AA-only. Added pre-SafeSpace.
+  "aa.career_library",
+  // The /strategy Strategy Room (AA's funder framing, read by slug) — AA-only.
+  "aa.strategy_room",
 ] as const;
 
 export type FeatureKey = (typeof FEATURE_KEYS)[number];

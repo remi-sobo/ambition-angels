@@ -127,6 +127,12 @@ export default async function DonorsFundersPage({
           // V4 B1: the list's one primary action opens the gift drawer; the
           // donor is picked there (GiftFlow.dc.html).
           primaryAction={<RecordGiftButton />}
+          moreActions={[
+            // V4 B2: gift reports and segment exports were linked only from
+            // the old donors list (now a 308).
+            { label: "Gift reports and exports", href: "/admin/fundraising/reports" },
+            { label: "Import donors and gifts", href: "/admin/settings/imports/donors" },
+          ]}
         />
 
         {/* ── Views + filters (URL-driven, server-rendered) ── */}

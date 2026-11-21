@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 // Confirmed /meet bookings that could fulfil this connection — matched to the
 // task's linked constituent by attendee email (case-insensitive). Feeds the
@@ -13,10 +13,9 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("ops.read");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   const supabase = getSupabaseAdmin();
 
   // Org fence: service-role client bypasses RLS — scope to the caller's org.

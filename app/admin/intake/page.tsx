@@ -12,6 +12,7 @@ import {
   type CohortOption,
 } from "./_components/IntakeControls";
 import { APP_STATUS_LABELS } from "./_lib/constants";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Intake pipeline (Ring 3, modules/02-program.md "Intake"): screen public
 // applications (eligible/ineligible), set priority tiers, run the waitlist
@@ -40,6 +41,8 @@ const SECTION_ORDER = ["new", "eligible", "waitlisted", "offered", "accepted"] a
 const CLOSED = ["ineligible", "declined", "expired"];
 
 export default async function IntakePage() {
+  const roleGate = await requirePagePermission("program.read", "Intake");
+  if (!roleGate.ok) return roleGate.page;
   const supabase = getSupabaseAdmin();
   // Org fence: the service-role client bypasses RLS, so every read is scoped to
   // the active org. No session → empty.

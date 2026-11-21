@@ -8,6 +8,7 @@ import SetupWizard, {
   type WizKpi,
   type WizInitiative,
 } from "./_components/SetupWizard";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Setup / refresh wizard (BloomOS Strategy, Phase 5). Helps a tenant turn loose
 // intentions into a measurable plan: it shapes and measures, it never authors
@@ -17,6 +18,8 @@ import SetupWizard, {
 export const dynamic = "force-dynamic";
 
 export default async function StrategySetupPage() {
+  const roleGate = await requirePagePermission("reports.read", "Strategic plan");
+  if (!roleGate.ok) return roleGate.page;
   const ctx = await getOrgContext();
   if (!ctx) return <div className="px-4 lg:px-8 py-6 text-sm text-ink-2">Not authorized.</div>;
   const orgId = ctx.orgId;

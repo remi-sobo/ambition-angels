@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
+import { getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 const isISODate = (v: unknown): v is string =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -13,10 +14,9 @@ const isUuid = (v: string) => /^[0-9a-f-]{36}$/i.test(v);
  * edited per-filing via PATCH /filings/[filingId].
  */
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("compliance.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   if (!isUuid(params.id)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }

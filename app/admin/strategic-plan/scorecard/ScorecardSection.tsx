@@ -7,6 +7,7 @@ import PageHeader from "../../_components/PageHeader";
 import { RefreshMetricsButton } from "../_components/PlanControls";
 import ScorecardCard, { type ScorecardKpi } from "./_components/ScorecardCard";
 import { TYPE } from "@/lib/admin/typeScale";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // KPI Scorecard (BloomOS Strategy) — the owner-segmented view: each person's
 // KPIs as cards with progress-to-target, paced status, and a growth sparkline.
@@ -30,6 +31,8 @@ type KpiRow = {
 };
 
 export default async function ScorecardSection({ embedded = false }: { embedded?: boolean }) {
+  const roleGate = await requirePagePermission("reports.read", "Strategic plan");
+  if (!roleGate.ok) return embedded ? null : roleGate.page;
   const ctx = await getOrgContext();
   if (!ctx) {
     if (embedded) return null;

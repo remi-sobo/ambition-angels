@@ -6,6 +6,7 @@ import ForecastBoard, { type SeedLever } from "./_components/ForecastBoard";
 import ModelSection from "../model/ModelSection";
 import RevenueSection from "../revenue/RevenueSection";
 import PledgesSection from "../../fundraising/pledges/PledgesSection";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Forecast / scenario planning. Starts from the canonical cash + burn and lets
 // the CEO stack levers (a hire, a grant landing, a campaign) to see when cash
@@ -28,6 +29,8 @@ export default async function FinanceForecastPage({
 }: {
   searchParams?: { year?: string };
 }) {
+  const roleGate = await requirePagePermission("finance.read", "Finance");
+  if (!roleGate.ok) return roleGate.page;
   const snap = await getFinanceSnapshot();
   const sb = getSupabaseAdmin();
   const today = new Date().toISOString().slice(0, 10);

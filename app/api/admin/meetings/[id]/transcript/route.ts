@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
 import { parseTranscript } from "@/lib/meetings/reed";
 import {
   externalEmails,
@@ -9,14 +8,16 @@ import {
   primaryMatch,
 } from "@/lib/meetings/match";
 import { loadLatestMeetingAgenda } from "@/lib/meetings/dossier";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 // POST /api/admin/meetings/[id]/transcript — ingest a pasted transcript, run Reed
 // to produce a summary + 1–3 suggested follow-ups (staged, not live tasks). The
 // raw transcript is persisted only when the user opts in (store_transcript);
 // otherwise just the summary is kept (privacy decision §10.1).
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const ctx = await getOrgContext();
-  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requirePermission("ops.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
 
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const transcript = typeof body?.transcript === "string" ? body.transcript.trim() : "";

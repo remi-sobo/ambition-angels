@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
 import { excludeSeries, seriesKey } from "@/lib/meetings/exclusions";
 import type { FollowUpStatus } from "@/lib/meetings/types";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 const FOLLOW_UP_STATUSES: FollowUpStatus[] = [
   "needs_follow_up",
@@ -17,8 +17,9 @@ const FOLLOW_UP_STATUSES: FollowUpStatus[] = [
 // calendar series is excluded from the follow-up loop — existing open records
 // are swept to the same status and future instances never create records.
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const ctx = await getOrgContext();
-  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requirePermission("ops.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
 
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });

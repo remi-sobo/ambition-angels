@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
 import { isEnvIntegrationOwner, requireEnvIntegrationOwner } from "@/lib/integrations/env-owner";
 import { audit } from "@/lib/audit";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 // X7 — HubSpot connection management. `connections` is service-path only
 // (RLS deny-all), so all reads/writes here go through the service-role client
@@ -27,8 +27,9 @@ async function readRow(orgId: string) {
 }
 
 export async function GET() {
-  const ctx = await getOrgContext();
-  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requirePermission("fundraising.read");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   const available = await isEnvIntegrationOwner("hubspot", ctx.orgId);
   const row = available ? await readRow(ctx.orgId) : null;
   const meta = (row?.meta ?? {}) as Record<string, unknown>;
@@ -46,6 +47,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const guard = await requirePermission("fundraising.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
   const gate = await requireEnvIntegrationOwner("hubspot");
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
   const ctx = gate.ctx;

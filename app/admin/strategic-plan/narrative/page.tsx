@@ -6,6 +6,7 @@ import MovementPlan from "./_components/MovementPlan";
 import MovementRaise from "./_components/MovementRaise";
 import MovementHow from "./_components/MovementHow";
 import Presenter from "./_components/Presenter";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 /**
  * Strategy Narrative — the login-gated, presentation-grade view Remi pulls up
@@ -51,6 +52,8 @@ export default async function StrategyNarrativePage({
 }: {
   searchParams?: { [key: string]: string | string[] | undefined };
 }) {
+  const roleGate = await requirePagePermission("reports.read", "Strategic plan");
+  if (!roleGate.ok) return roleGate.page;
   const ctx = await getOrgContext();
   if (!ctx) {
     return <div className="px-4 lg:px-8 py-6 text-sm text-ink-2">Not authorized.</div>;

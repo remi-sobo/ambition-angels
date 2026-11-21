@@ -4,6 +4,7 @@ import { eligibilityIssues } from "@/lib/games/pool";
 import PageHeader from "../../_components/PageHeader";
 import StatCard from "../../_components/StatCard";
 import { PoolControls, type PoolOccupation, type PoolRow } from "./_components/PoolControls";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // The play pool (specs/teen-games-v1.md Phase 1): the gate between the
 // imported occupations and anything a teen sees in the games. This screen
@@ -15,6 +16,8 @@ export const dynamic = "force-dynamic";
 const ELIGIBLE_TARGET = 300;
 
 export default async function PoolPage() {
+  const roleGate = await requirePagePermission("program.read", "Career library");
+  if (!roleGate.ok) return roleGate.page;
   const supabase = getSupabaseAdmin();
   const [{ data: occData }, { data: poolData }] = await Promise.all([
     supabase

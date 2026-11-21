@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
 
 // CSV export of constituents, filterable by the segment definition keys:
@@ -22,7 +22,8 @@ function csvCell(v: unknown): string {
 }
 
 export async function GET(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const p = req.nextUrl.searchParams;
@@ -33,12 +34,15 @@ export async function GET(req: NextRequest) {
   const minTotal = Number(p.get("min_total") ?? "") || 0;
   const since = /^\d{4}-\d{2}-\d{2}$/.test(p.get("since") ?? "") ? p.get("since")! : "";
 
+  // Org fence: RLS returns every org the user belongs to, so both reads pin
+  // the ACTIVE org — a user in two orgs must never export a mixed donor list.
   const supabase = createServerSupabase();
   let query = supabase
     .from("constituents")
     .select(
       "id, type, first_name, last_name, org_name, emails, phones, tags, source, do_not_contact, external_ids"
     )
+    .eq("org_id", ctx.orgId)
     .limit(CEILING);
   if (type === "person" || type === "organization") query = query.eq("type", type);
   if (source) query = query.eq("source", source);
@@ -61,6 +65,7 @@ export async function GET(req: NextRequest) {
   const { data: gifts } = await supabase
     .from("gifts")
     .select("constituent_id, amount, gift_date")
+    .eq("org_id", ctx.orgId)
     .not("constituent_id", "is", null)
     .limit(CEILING);
   const agg = new Map<string, { total: number; count: number; last: string }>();

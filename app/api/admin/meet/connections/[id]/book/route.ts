@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
+import { getAdminUser } from "@/lib/admin/auth";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 // Mark a connection booked (Phase 5 — close the loop). "Booked" is a status
 // outcome: the task goes to done. Optionally link the /meet booking that
@@ -13,10 +14,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("ops.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   const adminUser = await getAdminUser();
   if (!adminUser) {
     return NextResponse.json({ error: "Unknown admin user" }, { status: 401 });

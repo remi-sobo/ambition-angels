@@ -3,6 +3,7 @@ import CloseSection from "@/app/admin/ops/friday/CloseSection";
 import { resolveRitual, ritualForToday } from "@/lib/admin/ops/planClose";
 import SegmentedControl, { type Segment } from "@/app/admin/_components/ui/SegmentedControl";
 import Badge from "@/app/admin/_components/ui/Badge";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Spec Work W1 — Plan & Close, the merged ritual screen (recon §G: a
 // recomposition of /admin/ops/monday + /admin/ops/friday). One screen, both
@@ -39,6 +40,8 @@ export default async function PlanClosePage({
 }: {
   searchParams?: { ritual?: string };
 }) {
+  const roleGate = await requirePagePermission("ops.read", "My work");
+  if (!roleGate.ok) return roleGate.page;
   const ritual = resolveRitual(searchParams?.ritual);
   const lit = ritualForToday();
 

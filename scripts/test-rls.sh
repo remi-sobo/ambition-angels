@@ -249,6 +249,7 @@ ordered=(
   add_company_stage_to_constituents.sql
   revoke_anon_obligation_rpcs.sql
   seed_aa_only_gate_entitlements.sql
+  fin_categories_org_scope.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { isOrgCategory } from "@/lib/finance/categories";
 
 // PATCH /api/admin/finance/transactions/:id
 //
@@ -71,6 +72,10 @@ export async function PATCH(
   }
 
   const supabase = getSupabaseAdmin();
+  // Categories are per-org: only one of this org's categories may be set.
+  if (typeof update.category_id === "string" && !(await isOrgCategory(supabase, ctx.orgId, update.category_id))) {
+    return NextResponse.json({ error: "Unknown category" }, { status: 400 });
+  }
   const { data, error } = await supabase
     .from("fin_transactions")
     .update(update)

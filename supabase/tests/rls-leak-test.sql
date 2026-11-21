@@ -2369,4 +2369,155 @@ delete from public.capture_cards where id = current_setting('leak.c6_card')::uui
 delete from public.captures where transcript = 'leak-test C6 capture';
 delete from public.constituents where id in (current_setting('leak.c6_a')::uuid, current_setting('leak.c6_b')::uuid);
 
+-- ════ Finance categories are per-org (fin_categories_org_scope.sql) ════════
+-- The same text id lives in two orgs; a row can only reference a category of
+-- its own org (composite FK, enforced even for the service role); tenant two
+-- can neither read nor write Ambition Angels' categories, budget or rules.
+reset role;
+reset request.jwt.claim.sub;
+
+-- Service role (like the operator seed): tenant two gets its own copy of ids
+-- AA already uses, and budgets one for the same year AA budgets it.
+do $$
+declare aa uuid; t2 uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  select id into t2 from public.orgs where slug = 'tenant-two';
+  insert into public.fin_categories (org_id, id, group_name, display_name, kind, functional_class, sort_order)
+    values (aa, 'leak.fin.shared', 'ADMINISTRATION', 'AA shared-id line', 'expense', 'admin', 1),
+           (aa, 'leak.fin.aa-only', 'ADMINISTRATION', 'AA-only line', 'expense', 'admin', 2),
+           (t2, 'leak.fin.shared', 'ADMINISTRATION', 'T2 shared-id line', 'expense', 'admin', 1);
+  insert into public.fin_budget (org_id, year, category_id, base_amount)
+    values (aa, 2026, 'leak.fin.shared', 111), (t2, 2026, 'leak.fin.shared', 222);
+  insert into public.fin_category_rules (org_id, pattern, category_id)
+    values (aa, 'LEAK-FIN-AA', 'leak.fin.shared');
+  if (select count(*) from public.fin_categories where id = 'leak.fin.shared') <> 2 then
+    raise exception 'fin categories: the same id could not exist in two orgs';
+  end if;
+  -- The operator starter seed works for a second org and is re-runnable.
+  if public.fin_seed_starter_categories(t2) = 0 then
+    raise exception 'fin categories: starter seed inserted nothing for tenant two';
+  end if;
+  if public.fin_seed_starter_categories(t2) <> 0 then
+    raise exception 'fin categories: starter seed is not idempotent';
+  end if;
+end $$;
+
+-- Even the service role cannot point a tenant-two row at an AA-only category.
+do $$
+declare t2 uuid;
+begin
+  select id into t2 from public.orgs where slug = 'tenant-two';
+  begin
+    insert into public.fin_transactions (org_id, txn_date, description, amount, category_id, dedup_hash)
+      values (t2, '2026-03-01', 'leak-fin-xorg', -5, 'leak.fin.aa-only', 'leak-fin-xorg-h');
+    raise exception 'LEAK: a tenant-two transaction references an AA category';
+  exception when foreign_key_violation then null;
+  end;
+  begin
+    insert into public.fin_budget (org_id, year, category_id, base_amount)
+      values (t2, 2026, 'leak.fin.aa-only', 1);
+    raise exception 'LEAK: a tenant-two budget line references an AA category';
+  exception when foreign_key_violation then null;
+  end;
+  begin
+    insert into public.fin_category_rules (org_id, pattern, category_id)
+      values (t2, 'LEAK-FIN-T2', 'leak.fin.aa-only');
+    raise exception 'LEAK: a tenant-two rule references an AA category';
+  exception when foreign_key_violation then null;
+  end;
+end $$;
+
+-- Tenant-two owner: sees only its own categories/budget/rules, can write its own.
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
+
+do $$
+declare aa uuid; t2 uuid; n int;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  select id into t2 from public.orgs where slug = 'tenant-two';
+  if (select count(*) from public.fin_categories where org_id = aa) <> 0 then raise exception 'LEAK: tenant-two reads AA fin_categories'; end if;
+  if (select count(*) from public.fin_budget where org_id = aa) <> 0 then raise exception 'LEAK: tenant-two reads AA fin_budget'; end if;
+  if (select count(*) from public.fin_category_rules where org_id = aa) <> 0 then raise exception 'LEAK: tenant-two reads AA fin_category_rules'; end if;
+  if (select display_name from public.fin_categories where id = 'leak.fin.shared') is distinct from 'T2 shared-id line' then
+    raise exception 'tenant-two does not see exactly its own copy of a shared category id';
+  end if;
+  if (select base_amount from public.fin_budget where category_id = 'leak.fin.shared' and year = 2026) is distinct from 222 then
+    raise exception 'tenant-two does not see exactly its own budget line';
+  end if;
+
+  -- Own-org writes succeed (a category id AA also uses, and a rule on it).
+  insert into public.fin_categories (org_id, id, group_name, display_name, kind, sort_order)
+    values (t2, 'leak.fin.aa-only', 'ADMINISTRATION', 'T2 now has this id too', 'expense', 3);
+  insert into public.fin_category_rules (org_id, pattern, category_id)
+    values (t2, 'LEAK-FIN-T2', 'leak.fin.shared');
+
+  -- AA rows are invisible, so updates and deletes touch nothing.
+  update public.fin_categories set display_name = 'pwned' where org_id = aa;
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'LEAK: tenant-two renamed % AA categor(ies)', n; end if;
+  delete from public.fin_categories where org_id = aa;
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'LEAK: tenant-two deleted % AA categor(ies)', n; end if;
+  update public.fin_budget set base_amount = 0 where org_id = aa;
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'LEAK: tenant-two edited % AA budget line(s)', n; end if;
+end $$;
+
+-- Writing a category INTO the AA org is denied by WITH CHECK.
+do $$
+declare aa uuid;
+begin
+  select id into aa from public.orgs where slug = 'ambition-angels';
+  insert into public.fin_categories (org_id, id, group_name, display_name, kind)
+    values (aa, 'leak.fin.smuggle', 'X', 'smuggled', 'expense');
+  raise exception 'LEAK: tenant-two inserted a category into the AA org';
+exception when insufficient_privilege then null;
+end $$;
+
+-- No org_id default left to smuggle through: an org-less category is refused.
+do $$ begin
+  insert into public.fin_categories (id, group_name, display_name, kind)
+    values ('leak.fin.no-org', 'X', 'no org', 'expense');
+  raise exception 'LEAK: a category was created without an org';
+exception when insufficient_privilege or not_null_violation then null;
+end $$;
+
+-- Browser roles cannot run the operator seed.
+do $$
+declare t2 uuid;
+begin
+  select id into t2 from public.orgs where slug = 'tenant-two';
+  perform public.fin_seed_starter_categories(t2);
+  raise exception 'LEAK: an authenticated user can run fin_seed_starter_categories';
+exception when insufficient_privilege then null;
+end $$;
+
+-- AA owner: its rows are intact and tenant two's are invisible.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+
+do $$
+declare t2 uuid;
+begin
+  select id into t2 from public.orgs where slug = 'tenant-two';
+  if (select count(*) from public.fin_categories where org_id = t2) <> 0 then raise exception 'LEAK: AA reads tenant-two fin_categories'; end if;
+  if (select display_name from public.fin_categories where id = 'leak.fin.shared') is distinct from 'AA shared-id line' then
+    raise exception 'AA lost or changed its own copy of a shared category id';
+  end if;
+  if (select base_amount from public.fin_budget where category_id = 'leak.fin.shared' and year = 2026) is distinct from 111 then
+    raise exception 'AA budget line was changed by another org';
+  end if;
+  if (select count(*) from public.fin_categories where id = 'leak.fin.aa-only') <> 1 then
+    raise exception 'AA sees a category count other than its own for leak.fin.aa-only';
+  end if;
+end $$;
+
+reset role;
+reset request.jwt.claim.sub;
+delete from public.fin_category_rules where pattern like 'LEAK-FIN-%';
+delete from public.fin_budget where category_id like 'leak.fin.%';
+delete from public.fin_categories where id like 'leak.fin.%';
+delete from public.fin_categories where org_id = (select id from public.orgs where slug = 'tenant-two');
+
 select 'RLS leak test: ALL CHECKS PASSED' as result;

@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { userMessage } from "@/lib/admin/errors";
-import { TYPE } from "@/lib/admin/typeScale";
+import Drawer from "@/app/admin/_components/ui/Drawer";
+import Button from "@/app/admin/_components/ui/Button";
+import { TextField, TextareaField } from "@/app/admin/_components/ui/Field";
 
 // Manually add a prospect to the bench. The simplest intake — someone you know
 // is worth tracking, no HubSpot record needed. POSTs to /prospects/add.
@@ -23,12 +25,6 @@ export default function AddProspectModal({ onClose }: { onClose: () => void }) {
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && !saving && onClose();
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose, saving]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -63,72 +59,71 @@ export default function AddProspectModal({ onClose }: { onClose: () => void }) {
     }
   }
 
-  const fieldCls =
-    "w-full bg-tile border-hairline rounded-control px-3 py-2.5 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50 text-base sm:text-sm";
-
+  // The kit Drawer (V4 P1): focus trap, Escape and scrim cancel (held while
+  // saving), a phone sheet and a pinned footer.
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:px-4"
-      onClick={() => !saving && onClose()}
+    <Drawer
+      open
+      onClose={() => !saving && onClose()}
+      title="Add prospect"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} disabled={saving}>
+            Cancel
+          </Button>
+          <Button type="submit" form="add-prospect-form" loading={saving}>
+            {saving ? "Adding…" : "Add to bench"}
+          </Button>
+        </>
+      }
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full sm:max-w-md rounded-t-2xl sm:rounded-panel border-hairline bg-ink shadow-2xl max-h-[92vh] overflow-y-auto"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-      >
-        <form onSubmit={submit} className="p-5 sm:p-6 space-y-4">
-          <h2 className={TYPE.modalTitle}>Add prospect</h2>
+      <form id="add-prospect-form" onSubmit={submit} className="space-y-4">
+        <TextField
+          label="Name"
+          required
+          data-autofocus
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Person or organization"
+        />
 
-          <label className="block">
-            <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">Name <span className="text-orange">*</span></div>
-            <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Person or organization" className={fieldCls} />
-          </label>
-
-          <div>
-            <div className="text-xs uppercase tracking-wider text-ink-2 mb-1.5">Type</div>
-            <div className="grid grid-cols-3 gap-2">
-              {TYPES.map((t) => (
-                <button
-                  key={t.value}
-                  type="button"
-                  onClick={() => setType(t.value)}
-                  className={`py-2 rounded-control text-sm font-medium transition-colors ${
-                    type === t.value ? "border-orange bg-orange/15 text-ink-1" : "border-hairline bg-tile text-ink-2 hover:text-ink-1"
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
+        <div role="group" aria-labelledby="add-prospect-type">
+          <div id="add-prospect-type" className="text-xs uppercase tracking-wider text-ink-2 mb-1.5">
+            Type
           </div>
-
-          <div className="grid grid-cols-1 gap-3">
-            <label className="block">
-              <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">Email</div>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="optional" className={fieldCls} />
-            </label>
-            <label className="block">
-              <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">Organization</div>
-              <input value={org} onChange={(e) => setOrg(e.target.value)} placeholder="optional" className={fieldCls} />
-            </label>
-            <label className="block">
-              <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">Why / angle</div>
-              <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="Why they're a fit (optional)" className={`${fieldCls} resize-y`} />
-            </label>
+          <div className="grid grid-cols-3 gap-2">
+            {TYPES.map((t) => (
+              <button
+                key={t.value}
+                type="button"
+                aria-pressed={type === t.value}
+                onClick={() => setType(t.value)}
+                className={`py-2 rounded-control text-sm font-medium transition-colors ${
+                  type === t.value ? "border-orange bg-orange/15 text-ink-1" : "border-hairline bg-tile text-ink-2 hover:text-ink-1"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
           </div>
+        </div>
 
-          {error && <p className="text-expense text-xs">{error}</p>}
+        <TextField label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="optional" />
+        <TextField label="Organization" value={org} onChange={(e) => setOrg(e.target.value)} placeholder="optional" />
+        <TextareaField
+          label="Why / angle"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          rows={2}
+          placeholder="Why they're a fit (optional)"
+        />
 
-          <div className="flex items-center justify-end gap-3 pt-1">
-            <button type="button" onClick={onClose} disabled={saving} className="text-sm text-ink-2 hover:text-ink-1 px-4 py-2.5">
-              Cancel
-            </button>
-            <button type="submit" disabled={saving} className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-control transition-colors">
-              {saving ? "Adding…" : "Add to bench"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        {error && (
+          <p role="alert" className="text-status-critical-text text-xs">
+            {error}
+          </p>
+        )}
+      </form>
+    </Drawer>
   );
 }

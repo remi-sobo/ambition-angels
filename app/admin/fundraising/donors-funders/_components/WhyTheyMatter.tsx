@@ -59,7 +59,7 @@ export default function WhyTheyMatter({
       </div>
       {editing ? (
         <div className="space-y-2">
-          <textarea
+          <textarea aria-label="Why they matter"
             autoFocus
             value={text}
             onChange={(e) => setText(e.target.value)}

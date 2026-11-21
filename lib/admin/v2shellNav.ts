@@ -127,6 +127,15 @@ export function resolveShellNav(
  */
 export const MOBILE_BAR_KEYS: readonly string[] = ["home", "work", "fundraising"];
 
+/**
+ * V4 P1: a bar slot whose destination the nav lacks goes to its stand-in, so
+ * the room is used rather than lost. Program staff (program.write without
+ * fundraising, or an org without the fundraising module) get Programs in the
+ * bar: attendance is one tap to Programs instead of More, then Programs. An
+ * owner or staff member with both keeps Fundraising, per the 2026-09-09 swap.
+ */
+export const MOBILE_BAR_STAND_IN: Readonly<Record<string, string>> = { fundraising: "programs" };
+
 export function shellMobileSplit(nav: ShellNav): {
   /** Bar slots in order (Home renders as "Today"). */
   bar: ShellDestination[];
@@ -134,11 +143,13 @@ export function shellMobileSplit(nav: ShellNav): {
    *  chrome, appended by the component (Reed behind ai.reed). */
   more: ShellDestination[];
 } {
-  const bar = MOBILE_BAR_KEYS.map((k) => nav.destinations.find((d) => d.key === k)).filter(
+  const find = (k: string | undefined) => (k ? nav.destinations.find((d) => d.key === k) : undefined);
+  const bar = MOBILE_BAR_KEYS.map((k) => find(k) ?? find(MOBILE_BAR_STAND_IN[k])).filter(
     (d): d is ShellDestination => d !== undefined,
   );
+  const inBar = new Set(bar.map((d) => d.key));
   const more = [
-    ...nav.destinations.filter((d) => !MOBILE_BAR_KEYS.includes(d.key)),
+    ...nav.destinations.filter((d) => !inBar.has(d.key)),
     ...(nav.inbox ? [nav.inbox] : []),
   ];
   return { bar, more };

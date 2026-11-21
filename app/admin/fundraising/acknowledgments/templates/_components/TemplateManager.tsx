@@ -140,12 +140,14 @@ export default function TemplateManager({ initial }: { initial: AckTemplate[] })
         <div className="bg-tile border-hairline rounded-panel-lg p-5 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <input
+              aria-label="Template name"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="Template name"
               className={`${field} sm:col-span-1`}
             />
             <select
+              aria-label="Who it's for"
               value={form.subject_type}
               onChange={(e) => setForm({ ...form, subject_type: e.target.value })}
               className={field}
@@ -157,6 +159,7 @@ export default function TemplateManager({ initial }: { initial: AckTemplate[] })
               ))}
             </select>
             <select
+              aria-label="Channel"
               value={form.channel}
               onChange={(e) => setForm({ ...form, channel: e.target.value })}
               className={field}
@@ -171,6 +174,7 @@ export default function TemplateManager({ initial }: { initial: AckTemplate[] })
 
           {form.channel === "email" && (
             <input
+              aria-label="Email subject line"
               value={form.subject}
               onChange={(e) => setForm({ ...form, subject: e.target.value })}
               placeholder="Email subject line"
@@ -179,6 +183,7 @@ export default function TemplateManager({ initial }: { initial: AckTemplate[] })
           )}
 
           <textarea
+            aria-label="Message"
             value={form.body}
             onChange={(e) => setForm({ ...form, body: e.target.value })}
             rows={6}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import QuickAddModal from "../QuickAddModal";
 import { openCapture } from "../../capture/_lib/openCapture";
 import ReportModal from "../ReportModal";
@@ -35,13 +35,23 @@ export default function V2QuickAdd({
   const [modal, setModal] = useState<"task" | "report" | null>(null);
   const { open: openReed } = useReedLauncher();
 
+  // A popover menu, not a dialog: Escape or a press anywhere outside the
+  // menu and its button closes it (no full-screen click catcher).
+  const boxRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!menuOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setMenuOpen(false);
     };
+    const onDown = (e: PointerEvent) => {
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onDown);
+    };
   }, [menuOpen]);
 
   const offset = {
@@ -56,14 +66,7 @@ export default function V2QuickAdd({
 
   return (
     <>
-      {menuOpen && (
-        <button
-          aria-label="Close menu"
-          onClick={() => setMenuOpen(false)}
-          className="fixed inset-0 z-40 cursor-default hidden lg:block"
-        />
-      )}
-
+      <div ref={boxRef}>
       {menuOpen && (
         <div
           className="fixed z-40 hidden lg:flex flex-col items-end gap-2"
@@ -118,6 +121,7 @@ export default function V2QuickAdd({
       >
         +
       </button>
+      </div>
 
       {modal === "task" && <QuickAddModal currentUser={currentUser} onClose={() => setModal(null)} />}
       {modal === "report" && <ReportModal onClose={() => setModal(null)} />}

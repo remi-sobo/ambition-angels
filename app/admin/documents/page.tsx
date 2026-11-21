@@ -17,6 +17,7 @@ import DocumentFilterRow from "./_components/DocumentFilterRow";
 import UploadDocumentButton from "./_components/UploadDocumentButton";
 import { applyTableSort, parseTableState, rowRange } from "@/lib/admin/dataTable";
 import { DOCUMENT_TABLE, documentNextStep, documentFilterParams } from "@/lib/documents/hubList";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 export const dynamic = "force-dynamic";
 
@@ -74,6 +75,10 @@ export default async function DocumentsHubPage({
 }: {
   searchParams?: Record<string, string | string[] | undefined>;
 }) {
+  // V4 Stage P role pass: a role without documents.read gets the not-authorized
+  // panel, not an empty page with write controls.
+  const roleGate = await requirePagePermission("documents.read", "Documents");
+  if (!roleGate.ok) return roleGate.page;
   const ctx = await getOrgContext();
   if (!ctx) return null; // middleware gates /admin/*; belt-and-suspenders
   const supabase = createServerSupabase();

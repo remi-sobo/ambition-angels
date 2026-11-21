@@ -359,7 +359,7 @@ export default function SetupWizard({
           <p className="text-xs text-ink-2 mt-1">
             {objectives.length} objectives · {goals.length} goals · {kpis.length} measures ({autoCount} wired to live data) ·{" "}
             {initiatives.length} initiatives. Run it from the{" "}
-            <Link href="/admin/strategic-plan" className="text-orange hover:underline">plan</Link> and review monthly.
+            <Link href="/admin/strategic-plan" className="text-orange underline underline-offset-2">plan</Link> and review monthly.
           </p>
         </div>
       )}

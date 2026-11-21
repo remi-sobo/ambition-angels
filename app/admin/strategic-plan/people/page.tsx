@@ -90,7 +90,7 @@ export default async function StrategyPeoplePage() {
       {sorted.length === 0 ? (
         <p className="text-sm text-ink-2">
           No owners assigned yet. Set an owner on objectives, goals, measures, or initiatives and they&apos;ll
-          show up here. Start from the <Link href="/admin/organization/strategy" className="text-orange hover:underline">plan</Link>.
+          show up here. Start from the <Link href="/admin/organization/strategy" className="text-orange underline underline-offset-2">plan</Link>.
         </p>
       ) : (
         <div className="space-y-5">

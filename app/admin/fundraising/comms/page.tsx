@@ -12,6 +12,7 @@ import { TYPE } from "@/lib/admin/typeScale";
 import DraftAudience from "@/app/admin/comms/_components/DraftAudience";
 import Notice from "../../_components/ui/Notice";
 import type { SegmentOption } from "@/app/admin/comms/_components/AudienceBuilder";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Epic I — donor communications: compose campaigns against saved segments,
 // test, and send (DNC/unsubscribe honored by the send path).
@@ -74,6 +75,10 @@ export default async function CommsPage({
 }: {
   searchParams?: Record<string, string | string[] | undefined>;
 }) {
+  // V4 Stage P role pass: a role without fundraising.read gets the not-authorized
+  // panel, not an empty page with write controls.
+  const roleGate = await requirePagePermission("fundraising.read", "Comms");
+  if (!roleGate.ok) return roleGate.page;
   // Every read is pinned to the ACTIVE org — RLS alone would merge rows from
   // every org the user belongs to.
   const ctx = await getOrgContext();

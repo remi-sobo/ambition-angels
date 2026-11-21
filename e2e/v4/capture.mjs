@@ -32,8 +32,8 @@ const args = Object.fromEntries(
   }, [])
 );
 const RUN = args.run || "adhoc";
-const BASE = args.base || "http://localhost:3000";
-const MOCK = args.mock || "http://127.0.0.1:55321";
+const BASE = args.base || process.env.V4_BASE || "http://localhost:3000";
+const MOCK = args.mock || process.env.V4_MOCK || "http://127.0.0.1:55321";
 const OUT = path.join(args.out || process.env.V4_SHOTS || path.join(here, "out"), RUN);
 const VIEWPORTS = (args.viewports || "desktop,phone").split(",");
 const SET = args.set || "all";

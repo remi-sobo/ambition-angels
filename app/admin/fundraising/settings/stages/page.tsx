@@ -5,6 +5,7 @@ import PageHeader from "../../../_components/PageHeader";
 import { fetchAll } from "@/lib/supabase/fetchAll";
 import StagesEditor from "./_components/StagesEditor";
 import { loadPipelineConfig } from "@/lib/fundraising/stages";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Epic 1b — the pipeline stage editor. Stages are per-org rows
 // (pipeline_stages, seeded by fundraising_pipeline_config.sql); this page is
@@ -14,6 +15,10 @@ import { loadPipelineConfig } from "@/lib/fundraising/stages";
 export const dynamic = "force-dynamic";
 
 export default async function PipelineStagesSettingsPage() {
+  // V4 Stage P role pass: a role without fundraising.write gets the not-authorized
+  // panel, not an empty page with write controls.
+  const roleGate = await requirePagePermission("fundraising.write", "Pipeline stages");
+  if (!roleGate.ok) return roleGate.page;
   const ctx = await getOrgContext();
   if (!ctx) {
     return <div className="px-4 lg:px-8 py-6 text-sm text-ink-2">Not authorized.</div>;

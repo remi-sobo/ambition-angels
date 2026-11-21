@@ -1,9 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import type { AdminUser } from "@/lib/admin/auth";
+import { saveAction } from "@/lib/admin/saveAction";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import FilterRow from "@/app/admin/_components/ui/FilterRow";
+import SegmentedControl from "@/app/admin/_components/ui/SegmentedControl";
+import Button from "@/app/admin/_components/ui/Button";
+import EmptyState from "@/app/admin/_components/EmptyState";
+import { Select } from "@/app/admin/_components/ui/Input";
 import TaskListView, { type GroupBy } from "./TaskListView";
 import TaskBoardView from "./TaskBoardView";
 import TaskRow from "./TaskRow";
@@ -14,11 +20,8 @@ import { TYPE } from "@/lib/admin/typeScale";
 type View = "list" | "board";
 type Scope = "active" | "archived";
 type LinkFilter = "all" | "any" | "partner" | "constituent";
-// "all" | "unassigned" | any org member's handle.
-type AssigneeFilter = string;
 
-const LINK_OPTIONS: { value: LinkFilter; label: string }[] = [
-  { value: "all", label: "All tasks" },
+const LINK_FILTERS: { value: Exclude<LinkFilter, "all">; label: string }[] = [
   { value: "any", label: "CRM-linked" },
   { value: "partner", label: "Partners" },
   { value: "constituent", label: "Donors" },
@@ -31,12 +34,17 @@ const GROUP_OPTIONS: { value: GroupBy; label: string }[] = [
   { value: "project", label: "Project" },
 ];
 
+const pick = <T extends string>(v: string | null, allowed: readonly T[], fallback: T): T =>
+  v && (allowed as readonly string[]).includes(v) ? (v as T) : fallback;
+
 /**
- * One Tasks surface. Defaults to the Active scope — everything not archived
- * (open tasks and done-but-not-yet-archived) — with the List / Board switch,
- * grouping, and CRM filter. Archiving is a separate, explicit step (the row
- * menu's "Archive"): archived tasks drop off the active surface into the
- * Archived scope, where they can be reviewed, reopened, or unarchived.
+ * One Tasks surface (V4 Stage G: List archetype on the kit). Every choice
+ * lives in the URL so a refresh, a shared link or the router.refresh() after
+ * a completion keeps the screen as it was: scope (?scope=archived), view
+ * (?view=board), grouping (?group=), the CRM filter (?linked=), the owner
+ * (?assignee=) and a title search (?q=). Archiving stays an explicit step
+ * (the row menu's "Archive"); "Archive done" files every finished task at
+ * once through saveAction, so a failure is said, never silent.
  */
 export default function TasksSurface({
   tasks,
@@ -51,38 +59,39 @@ export default function TasksSurface({
   const toast = useToast();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [scope, setScope] = useState<Scope>("active");
-  const [view, setView] = useState<View>("list");
-  const [groupBy, setGroupBy] = useState<GroupBy>("priority");
-  const [linkFilter, setLinkFilter] = useState<LinkFilter>("all");
   const [archiving, setArchiving] = useState(false);
 
-  // The assignee filter lives in the URL (?assignee=) so it survives the
-  // router.refresh() fired when a task is completed — client state would reset
-  // to "Everyone", forcing the user to reselect their name.
-  const rawAssignee = searchParams.get("assignee")?.trim();
-  const assignee: AssigneeFilter = rawAssignee || "all";
+  const scope = pick<Scope>(searchParams.get("scope"), ["active", "archived"], "active");
+  const view = pick<View>(searchParams.get("view"), ["list", "board"], "list");
+  const groupBy = pick<GroupBy>(searchParams.get("group"), ["priority", "status", "category", "project"], "priority");
+  const linkFilter = pick<LinkFilter>(searchParams.get("linked"), ["all", "any", "partner", "constituent"], "all");
+  const assignee = searchParams.get("assignee")?.trim() || "all";
+  const q = searchParams.get("q") ?? "";
+  const [text, setText] = useState(q);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const members = useAssignees();
   const assigneeOptions = [
     { value: "all", label: "Everyone" },
     ...withSelected(members, assignee === "all" || assignee === "unassigned" ? "" : assignee),
     { value: "unassigned", label: "Unassigned" },
   ];
-  const setAssignee = (value: AssigneeFilter) => {
+
+  const hrefWith = (updates: Record<string, string | null>) => {
     const sp = new URLSearchParams(Array.from(searchParams.entries()));
-    if (value === "all") sp.delete("assignee");
-    else sp.set("assignee", value);
+    for (const [k, v] of Object.entries(updates)) {
+      if (v === null || v === "") sp.delete(k);
+      else sp.set(k, v);
+    }
     const qs = sp.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    return qs ? `${pathname}?${qs}` : pathname;
   };
+  const go = (updates: Record<string, string | null>) => router.replace(hrefWith(updates), { scroll: false });
 
   const activeTasks = useMemo(() => tasks.filter((t) => !t.archived_at), [tasks]);
   const archivedTasks = useMemo(
-    () =>
-      tasks
-        .filter((t) => !!t.archived_at)
-        .sort((a, b) => (b.archived_at ?? "").localeCompare(a.archived_at ?? "")),
-    [tasks]
+    () => tasks.filter((t) => !!t.archived_at).sort((a, b) => (b.archived_at ?? "").localeCompare(a.archived_at ?? "")),
+    [tasks],
   );
 
   const visibleTasks = useMemo(() => {
@@ -91,158 +100,130 @@ export default function TasksSurface({
     else if (linkFilter !== "all") list = list.filter((t) => t.linked_entity_type === linkFilter);
     if (assignee === "unassigned") list = list.filter((t) => !t.assigned_to);
     else if (assignee !== "all") list = list.filter((t) => t.assigned_to === assignee);
+    const needle = q.trim().toLowerCase();
+    if (needle) list = list.filter((t) => t.title.toLowerCase().includes(needle));
     return list;
-  }, [activeTasks, linkFilter, assignee]);
+  }, [activeTasks, linkFilter, assignee, q]);
 
-  // One-tap archive of every done-but-not-yet-archived task on the active surface.
   const doneActive = useMemo(() => activeTasks.filter((t) => t.status === "done"), [activeTasks]);
 
   async function archiveAllDone() {
     if (doneActive.length === 0 || archiving) return;
     setArchiving(true);
-    try {
-      const now = new Date().toISOString();
-      await Promise.all(
-        doneActive.map((t) =>
-          fetch(`/api/admin/ops/tasks/${t.id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ archived_at: now }),
-          })
-        )
-      );
-      router.refresh();
-    } catch (e) {
-      console.error("Archive-all-done failed:", e);
-      toast.error("Couldn't archive some tasks. Try again.");
-    } finally {
-      setArchiving(false);
-    }
+    const now = new Date().toISOString();
+    const results = await Promise.all(
+      doneActive.map((t) =>
+        saveAction({ request: { url: `/api/admin/ops/tasks/${t.id}`, method: "PATCH", body: { archived_at: now } }, failure: false }),
+      ),
+    );
+    const failed = results.filter((r) => !r.ok).length;
+    setArchiving(false);
+    if (failed > 0) toast.error(`${failed} of ${results.length} tasks could not be archived. Try again.`);
+    else toast.success(`Archived ${results.length} done ${results.length === 1 ? "task" : "tasks"}`);
+    router.refresh();
   }
 
+  const filtersOn = (linkFilter !== "all" ? 1 : 0) + (assignee !== "all" ? 1 : 0) + (q ? 1 : 0);
+
   return (
-    <section className="rounded-panel border-hairline bg-surface p-6">
-      <header className="flex flex-wrap items-center justify-between gap-3 mb-5">
-        <div className="flex items-center gap-3">
-          <h2 className={TYPE.sectionHeader}>Tasks</h2>
-
-          <div className="inline-flex rounded-control border-hairline bg-surface p-1">
-            {(["active", "archived"] as Scope[]).map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setScope(s)}
-                className={`px-3 py-1 text-xs font-medium rounded-control transition-colors ${
-                  scope === s ? "bg-orange text-white" : "text-ink-2 hover:text-ink-1 hover:bg-tile"
-                }`}
-              >
-                {s === "active" ? "Active" : `Archived (${archivedTasks.length})`}
-              </button>
-            ))}
+    <section aria-label="Tasks" className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <SegmentedControl<Scope>
+          label="Which tasks"
+          value={scope}
+          segments={[
+            { value: "active", label: "Active", hint: String(activeTasks.length) },
+            { value: "archived", label: "Archived", hint: String(archivedTasks.length) },
+          ]}
+          hrefFor={(s) => hrefWith({ scope: s === "active" ? null : s })}
+        />
+        {scope === "active" ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {doneActive.length > 0 ? (
+              <Button type="button" variant="secondary" size="sm" onClick={archiveAllDone} loading={archiving}>
+                {archiving ? "Archiving" : `Archive done (${doneActive.length})`}
+              </Button>
+            ) : null}
+            <SegmentedControl<View>
+              label="Layout"
+              value={view}
+              segments={[
+                { value: "list", label: "List" },
+                { value: "board", label: "Board" },
+              ]}
+              hrefFor={(v) => hrefWith({ view: v === "list" ? null : v })}
+            />
           </div>
+        ) : null}
+      </div>
 
-          <span className="text-xs text-ink-3">
-            {scope === "active" ? visibleTasks.length : archivedTasks.length}
-            {scope === "active" && activeTasks.length !== visibleTasks.length
-              ? ` / ${activeTasks.length}`
-              : ""}
-          </span>
-        </div>
-
-        {scope === "active" && (
-          <div className="flex flex-wrap items-center gap-3">
-            {doneActive.length > 0 && (
-              <button
-                type="button"
-                onClick={archiveAllDone}
-                disabled={archiving}
-                className="text-xs font-semibold text-ink-1 bg-tile hover:bg-tile border-hairline px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
-              >
-                {archiving ? "Archiving…" : `Archive done (${doneActive.length})`}
-              </button>
-            )}
-            <label className="flex items-center gap-2 text-xs uppercase tracking-wider text-ink-2">
-              Assignee
-              <select
-                value={assignee}
-                onChange={(e) => setAssignee(e.target.value as AssigneeFilter)}
-                className="bg-tile border-hairline rounded-control px-2.5 py-1.5 text-xs text-ink-1 normal-case tracking-normal focus:outline-none focus:border-orange/50"
-              >
+      {scope === "active" ? (
+        <FilterRow
+          search={{
+            value: text,
+            onChange: (v) => {
+              setText(v);
+              if (timer.current) clearTimeout(timer.current);
+              timer.current = setTimeout(() => go({ q: v.trim() || null }), 300);
+            },
+            label: "Search tasks",
+            placeholder: "Search by title",
+          }}
+          quickFilters={LINK_FILTERS.map((f) => ({
+            key: f.value,
+            label: f.label,
+            active: linkFilter === f.value,
+            onClick: () => go({ linked: linkFilter === f.value ? null : f.value }),
+          }))}
+          onClearAll={
+            filtersOn > 0
+              ? () => {
+                  setText("");
+                  go({ linked: null, assignee: null, q: null });
+                }
+              : undefined
+          }
+          right={
+            <div className="flex flex-wrap items-center gap-2">
+              <Select aria-label="Owner" value={assignee} onChange={(e) => go({ assignee: e.target.value === "all" ? null : e.target.value })} className="!w-auto">
                 {assigneeOptions.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
                   </option>
                 ))}
-              </select>
-            </label>
-            <label className="flex items-center gap-2 text-xs uppercase tracking-wider text-ink-2">
-              Linked
-              <select
-                value={linkFilter}
-                onChange={(e) => setLinkFilter(e.target.value as LinkFilter)}
-                className="bg-tile border-hairline rounded-control px-2.5 py-1.5 text-xs text-ink-1 normal-case tracking-normal focus:outline-none focus:border-orange/50"
-              >
-                {LINK_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {view === "list" && (
-              <label className="flex items-center gap-2 text-xs uppercase tracking-wider text-ink-2">
-                Group by
-                <select
-                  value={groupBy}
-                  onChange={(e) => setGroupBy(e.target.value as GroupBy)}
-                  className="bg-tile border-hairline rounded-control px-2.5 py-1.5 text-xs text-ink-1 normal-case tracking-normal focus:outline-none focus:border-orange/50"
-                >
+              </Select>
+              {view === "list" ? (
+                <Select aria-label="Group by" value={groupBy} onChange={(e) => go({ group: e.target.value === "priority" ? null : e.target.value })} className="!w-auto">
                   {GROUP_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>
-                      {o.label}
+                      Group by {o.label.toLowerCase()}
                     </option>
                   ))}
-                </select>
-              </label>
-            )}
+                </Select>
+              ) : null}
+            </div>
+          }
+        />
+      ) : null}
 
-            <div className="inline-flex rounded-control border-hairline bg-surface p-1">
-              {(["list", "board"] as View[]).map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => setView(v)}
-                  className={`px-3 py-1 text-xs font-medium rounded-control capitalize transition-colors ${
-                    view === v ? "bg-orange text-white" : "text-ink-2 hover:text-ink-1 hover:bg-tile"
-                  }`}
-                >
-                  {v}
-                </button>
+      <div className="rounded-panel border border-hairline bg-surface p-4 sm:p-6">
+        {scope === "archived" ? (
+          archivedTasks.length === 0 ? (
+            <EmptyState label="archived tasks" hint="Use a task's menu, then Archive, to file it here. Archived tasks can be reopened." />
+          ) : (
+            <div className="space-y-1.5">
+              <p className={`${TYPE.bodyMuted} mb-2`}>Newest first. Reopen or unarchive from a task&apos;s menu.</p>
+              {archivedTasks.map((t) => (
+                <TaskRow key={t.id} task={t} projectName={t.project_id ? projectNames[t.project_id] ?? null : null} />
               ))}
             </div>
-          </div>
-        )}
-      </header>
-
-      {scope === "archived" ? (
-        archivedTasks.length === 0 ? (
-          <p className="text-sm text-ink-2 italic">No archived tasks yet. Use a task&apos;s ⋯ menu → Archive to file it here.</p>
+          )
+        ) : view === "list" ? (
+          <TaskListView tasks={visibleTasks} projectNames={projectNames} groupBy={groupBy} currentUser={currentUser} />
         ) : (
-          <div className="space-y-1.5">
-            {archivedTasks.map((t) => (
-              <TaskRow
-                key={t.id}
-                task={t}
-                projectName={t.project_id ? projectNames[t.project_id] ?? null : null}
-              />
-            ))}
-          </div>
-        )
-      ) : view === "list" ? (
-        <TaskListView tasks={visibleTasks} projectNames={projectNames} groupBy={groupBy} currentUser={currentUser} />
-      ) : (
-        <TaskBoardView tasks={visibleTasks} projectNames={projectNames} />
-      )}
+          <TaskBoardView tasks={visibleTasks} projectNames={projectNames} />
+        )}
+      </div>
     </section>
   );
 }

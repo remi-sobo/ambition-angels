@@ -50,7 +50,9 @@ export {
 // Overlays (one focus-trap behaviour, shared)
 export { default as Modal } from "./Modal";
 export { default as Drawer } from "./Drawer";
-export { useFocusTrap } from "./useFocusTrap";
+// The shared focus trap lives in ./useFocusTrap (a "use client" hook).
+// Import it from there in client code; a hook re-exported here would be
+// read as a value through a server module (tests/client-boundary.test.ts).
 export { default as MoreActionsMenu } from "./MoreActionsMenu";
 export type { MenuAction } from "./MoreActionsMenu";
 

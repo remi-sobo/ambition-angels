@@ -117,10 +117,11 @@ export default function LogAckButton() {
   if (!open) {
     return (
       <button
+        type="button"
         onClick={() => setOpen(true)}
-        className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full transition-colors"
+        className="inline-flex items-center h-9 px-3 rounded-control border border-outline bg-surface text-sm font-semibold text-ink-1 hover:bg-tile transition-colors"
       >
-        + Log a thank-you
+        Log a thank-you
       </button>
     );
   }

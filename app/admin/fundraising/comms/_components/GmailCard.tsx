@@ -47,7 +47,7 @@ export function GmailCard({
       const res = await fetch("/api/admin/comms/connect-gmail", { method: "DELETE" });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(userMessage(res, j));
-      router.replace("/admin/fundraising/comms");
+      router.replace("/admin/comms/emails");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : networkMessage());

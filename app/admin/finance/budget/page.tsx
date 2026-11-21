@@ -94,7 +94,7 @@ export default async function BudgetPage({
           actions={
             <div className="flex items-center gap-2 text-xs">
               <Link
-                href={`/admin/finance/budget/import?year=${year}`}
+                href={`/admin/settings/finance/budget-import?year=${year}`}
                 className="px-3 py-1 rounded-full border border-orange/40 bg-orange/15 text-orange hover:bg-orange/25"
               >
                 ⇪ Import from QuickBooks

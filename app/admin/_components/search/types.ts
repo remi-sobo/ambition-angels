@@ -96,62 +96,22 @@ export type ProfilePayload = {
   timeline: ProfileTimelineItem[];
 };
 
-// ── Static page index ────────────────────────────────────────────────────────
-// The navigable surface of BloomOS, matched client-side so pages appear
-// instantly (no network round-trip) and search is never empty. Keywords cover
-// synonyms a user might type that don't appear in the label.
-export type PageEntry = { label: string; href: string; keywords?: string[] };
-
-export const PAGES: PageEntry[] = [
-  { label: "Overview", href: "/admin", keywords: ["home", "command center", "dashboard"] },
-  { label: "Strategy", href: "/admin/strategic-plan", keywords: ["plan", "objectives", "okrs", "scorecard"] },
-  { label: "Executive Briefing", href: "/admin/briefing", keywords: ["brief", "morning", "summary"] },
-
-  { label: "My Week", href: "/admin/ops/my-week", keywords: ["work", "week", "today", "plan"] },
-  { label: "Tasks", href: "/admin/ops", keywords: ["ops", "work", "todo", "to-do", "moves"] },
-  { label: "Monday Plan", href: "/admin/ops/monday", keywords: ["weekly", "planning"] },
-  { label: "Friday Review", href: "/admin/ops/friday", keywords: ["weekly", "retro"] },
-  { label: "Projects", href: "/admin/ops/projects", keywords: ["initiatives"] },
-  { label: "Meetings", href: "/admin/meetings", keywords: ["calendar", "notes", "follow-ups", "bookings", "upcoming"] },
-  { label: "Connections", href: "/admin/meetings/connections", keywords: ["scheduling", "intros", "backlog", "meet"] },
-  { label: "Booking page", href: "/admin/meetings/booking-page", keywords: ["schedule", "availability", "meeting types", "blackouts", "bookings", "history"] },
-
-  { label: "Today's Moves", href: "/admin/fundraising/today", keywords: ["fundraising", "daily"] },
-  { label: "Donors", href: "/admin/fundraising/donors", keywords: ["constituents", "people", "households"] },
-  { label: "Pipeline", href: "/admin/fundraising", keywords: ["major gifts", "fundraising", "opportunities"] },
-  { label: "Fundraising Strategy", href: "/admin/fundraising/strategy", keywords: ["plan"] },
-  { label: "Prospects", href: "/admin/fundraising/prospects", keywords: ["leads", "research", "bench"] },
-  { label: "Ask Log", href: "/admin/fundraising/asks", keywords: ["asks", "solicitations"] },
-  { label: "Grants", href: "/admin/fundraising/grants", keywords: ["foundations", "deadlines", "loi"] },
-  { label: "Campaigns", href: "/admin/fundraising/campaigns", keywords: ["appeals", "email"] },
-
-  { label: "Students", href: "/admin/students", keywords: ["roster", "teens", "program"] },
-  { label: "Cohorts", href: "/admin/cohorts", keywords: ["attendance", "sessions", "camp"] },
-  { label: "Intake", href: "/admin/intake", keywords: ["applications", "forms"] },
-  { label: "Demo Day", href: "/admin/demoday", keywords: ["signups", "mentors", "event"] },
-  { label: "YGB Camp", href: "/admin/ygb", keywords: ["young gifted black", "creators"] },
-  { label: "Schools & Partners", href: "/admin/partners", keywords: ["mou", "champions"] },
-
-  { label: "Finance Overview", href: "/admin/finance", keywords: ["runway", "cash", "money"] },
-  { label: "Revenue", href: "/admin/finance/revenue", keywords: ["income", "commitments", "pledges"] },
-  { label: "Expenses", href: "/admin/finance/transactions", keywords: ["spend", "transactions", "burn"] },
-  { label: "Budget vs Actual", href: "/admin/finance/budget", keywords: ["budget", "forecast"] },
-
-  { label: "Analytics", href: "/admin/analytics", keywords: ["traffic", "ga4", "data", "website"] },
-
-  { label: "Board", href: "/admin/board", keywords: ["directors", "governance", "meetings"] },
-  { label: "Compliance", href: "/admin/compliance", keywords: ["filings", "renewals", "legal"] },
-
-  { label: "Settings", href: "/admin/settings", keywords: ["account", "preferences"] },
-  { label: "How-To", href: "/admin/howto", keywords: ["help", "docs", "guide"] },
-];
+// ── Page index ───────────────────────────────────────────────────────────────
+// V4 Stage A2: the page list is no longer a hand-kept V1 list. It is
+// generated from the nav model for THIS org (lib/admin/navIndex.ts →
+// navPageIndex, computed in app/admin/layout.tsx and passed to GlobalSearch),
+// so search offers exactly the destinations, tabs and Settings sections the
+// org can see, under their current labels. Matched client-side so pages
+// appear instantly and search is never empty.
+export type { PageEntry } from "@/lib/admin/navIndex";
+import type { PageEntry } from "@/lib/admin/navIndex";
 
 /** Client-side page match → SearchHit[]. Mirrors the server scoring tiers. */
-export function matchPages(query: string): SearchHit[] {
+export function matchPages(query: string, pages: readonly PageEntry[]): SearchHit[] {
   const q = query.trim().toLowerCase();
   if (!q) return [];
   const hits: SearchHit[] = [];
-  for (const p of PAGES) {
+  for (const p of pages) {
     const label = p.label.toLowerCase();
     let score = 0;
     if (label.startsWith(q)) score = 100;

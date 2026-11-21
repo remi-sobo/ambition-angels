@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 import { V2_ROUTE_MAP, activeRedirects, v2Href } from "@/lib/admin/v2routes";
@@ -103,7 +103,6 @@ describe("v2Href: the translation the choke points ride", () => {
     // monday/friday/calendar/connections left this list at W4 — they moved.
     for (const path of [
       "/admin/staff/reviews",
-      "/admin/meetings/booking-page",
       "/admin/careers/daily",
       "/admin/careers/pool",
       "/admin/strategic-plan/narrative",
@@ -151,9 +150,10 @@ describe("v2Href: the translation the choke points ride", () => {
     expect(v2Href(`/admin/calendar?week=2026-09-07&owner=${UUID}`)).toBe(
       `/admin/work/my-week?week=2026-09-07&owner=${UUID}`,
     );
-    // decision 3, resolved: settings → merged. booking-page alone stays.
+    // decision 3, resolved: settings → merged. booking-page stayed until
+    // V4 A2 seated it under Settings → Organization.
     expect(v2Href("/admin/meetings/connections")).toBe("/admin/work/meetings");
-    expect(v2Href("/admin/meetings/booking-page")).toBe("/admin/meetings/booking-page");
+    expect(v2Href("/admin/meetings/booking-page")).toBe("/admin/settings/organization/booking-page");
     // The weekly briefing's NO_HOME ruling stands (decision 4): the ritual
     // rows are exact, so it never rides their 308s.
     expect(v2Href("/admin/briefing/weekly")).toBe("/admin/briefing/weekly");
@@ -177,10 +177,10 @@ describe("v2Href: the translation the choke points ride", () => {
 
   test("I4: the scorecard lands on KPIs; the stay-put strategic-plan siblings stay put", () => {
     expect(v2Href("/admin/strategic-plan/scorecard")).toBe("/admin/impact/kpis");
-    // The settings row and the NO_HOME pair survive every cutover
-    // (objective/review moved with Spec Org O2 — asserted below).
+    // The NO_HOME pair survives every cutover (objective/review moved with
+    // Spec Org O2; setup moved to its Settings seat at V4 A2, both below).
+    expect(v2Href("/admin/strategic-plan/setup")).toBe("/admin/settings/organization/strategy-setup");
     for (const path of [
-      "/admin/strategic-plan/setup",
       "/admin/strategic-plan/narrative",
       "/admin/strategic-plan/people",
     ]) {
@@ -210,7 +210,8 @@ describe("v2Href: the translation the choke points ride", () => {
       `/admin/fundraising/donors-funders/${UUID}`,
     );
     expect(v2Href(`/admin/fundraising/asks/${UUID}`)).toBe(`/admin/fundraising/pipeline/${UUID}`);
-    expect(v2Href("/admin/fundraising/acknowledgments")).toBe("/admin/fundraising/today");
+    // V4 A2 removed the acknowledgments row: the queue is the Thank-yous tab.
+    expect(v2Href("/admin/fundraising/acknowledgments")).toBe("/admin/fundraising/acknowledgments");
     expect(v2Href("/admin/fundraising/recurring")).toBe("/admin/fundraising/donors-funders");
     expect(v2Href("/admin/fundraising/journeys")).toBe("/admin/fundraising/donors-funders");
     // Narrowed on purpose (exact / uuid-child): these named children keep
@@ -233,12 +234,62 @@ describe("v2Href: the translation the choke points ride", () => {
     expect(v2Href("/admin/kpis")).toBe("/admin/impact/kpis");
     expect(v2Href("/admin/intake")).toBe("/admin/programs/intake");
     expect(v2Href("/admin/cohorts")).toBe("/admin/programs/cohorts");
-    // Acknowledgments moved with Spec Fundraising F6 (Thank someone lives on
-    // Today's Moves); reconcile moved with Spec Finance N4 (Transactions
-    // absorbed the inbox at N1); grants is kept.
-    expect(v2Href("/admin/fundraising/acknowledgments")).toBe("/admin/fundraising/today");
+    // Acknowledgments moved to Today's Moves at F6 and came back as its own
+    // tab (Fundraising → Thank-yous) at V4 A2; reconcile moved with Spec
+    // Finance N4 (Transactions absorbed the inbox at N1); grants is kept.
+    expect(v2Href("/admin/fundraising/acknowledgments")).toBe("/admin/fundraising/acknowledgments");
     expect(v2Href("/admin/finance/reconcile")).toBe("/admin/finance/transactions");
     expect(v2Href("/admin/fundraising/grants")).toBe("/admin/fundraising/grants");
+  });
+});
+
+describe("V4 Stage A2: Comms and the Settings home", () => {
+  test("Fundraising → Comms moves to Comms → Emails, campaign details included, queries kept", () => {
+    expect(v2Href("/admin/fundraising/comms")).toBe("/admin/comms/emails");
+    expect(v2Href(`/admin/fundraising/comms/${UUID}`)).toBe(`/admin/comms/emails/${UUID}`);
+    expect(v2Href("/admin/fundraising/comms?gmail=connected")).toBe("/admin/comms/emails?gmail=connected");
+    expect(existsSync(join(__dirname, "..", "app", "admin", "comms", "emails", "[id]", "page.tsx"))).toBe(true);
+  });
+
+  test("every reserved settings row graduated onto its /admin/settings seat", () => {
+    const moves: Record<string, string> = {
+      "/admin/fundraising/settings": "/admin/settings/fundraising/general",
+      "/admin/fundraising/settings/stages": "/admin/settings/fundraising/stages",
+      "/admin/fundraising/duplicates": "/admin/settings/fundraising/duplicates",
+      "/admin/fundraising/import": "/admin/settings/imports/donors",
+      "/admin/finance/rules": "/admin/settings/finance/rules",
+      "/admin/finance/config": "/admin/settings/finance/config",
+      "/admin/finance/upload": "/admin/settings/finance/upload",
+      "/admin/finance/budget/import": "/admin/settings/finance/budget-import",
+      "/admin/imports": "/admin/settings/imports/csv",
+      "/admin/meetings/booking-page": "/admin/settings/organization/booking-page",
+      "/admin/strategic-plan/setup": "/admin/settings/organization/strategy-setup",
+      "/admin/howto": "/admin/settings/help",
+    };
+    for (const [from, to] of Object.entries(moves)) expect(v2Href(from), from).toBe(to);
+    // The budget import's ?year= rides the hop.
+    expect(v2Href("/admin/finance/budget/import?year=2026")).toBe("/admin/settings/finance/budget-import?year=2026");
+    // No settings-null row is left waiting.
+    expect(V2_ROUTE_MAP.filter((r) => r.disposition === "settings" && r.activation !== "now")).toEqual([]);
+    // Kept-in-place neighbours are untouched.
+    expect(v2Href("/admin/finance/budget")).toBe("/admin/finance/budget");
+    expect(v2Href("/admin/fundraising/acknowledgments/templates")).toBe("/admin/fundraising/acknowledgments/templates");
+  });
+
+  test("each new seat keeps the module gate its V1 section used", () => {
+    const app = join(__dirname, "..", "app", "admin");
+    const gate = (dir: string, key: string) => {
+      const src = readFileSync(join(app, dir, "layout.tsx"), "utf8");
+      expect(src, dir).toMatch(new RegExp(`feature=\\{[^}]*"${key.replace(".", "\\.")}"`));
+    };
+    gate("comms", "modules.comms");
+    gate("settings/fundraising", "modules.fundraising");
+    gate("settings/finance", "modules.finance");
+    gate("settings/imports/csv", "modules.program");
+    gate("settings/imports/csv", "modules.fundraising");
+    gate("settings/imports/donors", "modules.fundraising");
+    gate("settings/organization/booking-page", "modules.meetings");
+    gate("settings/organization/strategy-setup", "modules.strategy");
   });
 });
 

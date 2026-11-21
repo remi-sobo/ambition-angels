@@ -417,13 +417,13 @@ export default async function DonorsPage({
           }
           actions={
             <div className="flex items-center gap-3">
-              <Link href="/admin/imports" className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors">Import CSV</Link>
-              <Link href="/admin/fundraising/comms" className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors">Comms</Link>
+              <Link href="/admin/settings/imports/csv" className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors">Import CSV</Link>
+              <Link href="/admin/comms/emails" className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors">Comms</Link>
               <Link href="/admin/fundraising/journeys" className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors">Journeys</Link>
               <Link href="/admin/fundraising/recurring" className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors">Recurring</Link>
               <Link href="/admin/fundraising/pledges" className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors">Pledges</Link>
               <Link href="/admin/fundraising/reports" className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors">Reports</Link>
-              <Link href="/admin/fundraising/settings" className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors">Settings</Link>
+              <Link href="/admin/settings/fundraising/general" className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors">Settings</Link>
               <Link
                 href="/admin/fundraising/acknowledgments"
                 className={`text-xs font-semibold px-4 py-2 rounded-full transition-colors ${
@@ -580,7 +580,7 @@ export default async function DonorsPage({
               Donor records live in BloomOS and are fed by Stripe donations, CSV imports, and the
               HubSpot sync: contacts, companies and closed-won deals project in twice a day, or on
               demand from{" "}
-              <Link href="/admin/fundraising/settings" className="text-orange hover:text-orange-mid">
+              <Link href="/admin/settings/fundraising/general" className="text-orange hover:text-orange-mid">
                 Settings → Sync now
               </Link>
               . Edits made in HubSpot arrive on the next sync and fill anything left blank here

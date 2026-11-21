@@ -87,7 +87,7 @@ export async function raiseAlarms(
       c.org_id,
       `"${c.name}" is still sending after a day`,
       `${c.sent_count} of ${c.recipient_count} have gone out. A big list can take a few days at your daily cap; if the count isn't moving, check the Gmail connection on the Comms page.`,
-      `/admin/fundraising/comms/${c.id}`
+      `/admin/comms/emails/${c.id}`
     );
     await admin.from("email_campaigns").update({ stuck_alerted_at: new Date(now).toISOString() }).eq("org_id", c.org_id).eq("id", c.id);
     raised += 1;
@@ -98,7 +98,7 @@ export async function raiseAlarms(
     const { data: s } = await admin.from("org_comms_settings").select("blocked_alerted_at").eq("org_id", b.orgId).maybeSingle();
     const last = s?.blocked_alerted_at ? Date.parse(s.blocked_alerted_at as string) : 0;
     if (now - last < DAY_MS) continue;
-    await alertManagers(admin, b.orgId, "Campaign emails are waiting and can't send", b.reason, "/admin/fundraising/comms");
+    await alertManagers(admin, b.orgId, "Campaign emails are waiting and can't send", b.reason, "/admin/comms/emails");
     await admin.from("org_comms_settings").update({ blocked_alerted_at: new Date(now).toISOString() }).eq("org_id", b.orgId);
     raised += 1;
   }

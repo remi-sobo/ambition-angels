@@ -50,10 +50,12 @@ describe("Q5: adoption on the first-run screens and V2 converge targets", () => 
   test("first-run empties carry a creating action (the DoD tests the action, not the prose)", () => {
     // Donors & Funders offers the import; the roster offers the roster
     // import; Today's mission-health empty opens the Metric Catalog.
+    // V4 A2: the imports moved to their Settings seats (lib/admin/v2routes.ts),
+    // and the links point at the new paths so nobody rides a 308.
     expect(src("admin", "fundraising", "donors-funders", "page.tsx")).toMatch(
-      /href="\/admin\/fundraising\/import"/,
+      /href="\/admin\/settings\/imports\/donors"/,
     );
-    expect(src("admin", "students", "page.tsx")).toMatch(/href="\/admin\/imports"/);
+    expect(src("admin", "students", "page.tsx")).toMatch(/href="\/admin\/settings\/imports\/csv"/);
     expect(src("admin", "today", "page.tsx")).toMatch(/href="\/admin\/impact\/kpis"/);
   });
 

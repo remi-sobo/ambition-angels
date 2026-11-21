@@ -92,7 +92,7 @@ export default async function StudentsPage() {
         subtitle={`One roster across ${terms.programs.toLowerCase()} · organized by ${terms.stage.toLowerCase()}`}
         actions={
           <>
-            <a href="/admin/imports"
+            <a href="/admin/settings/imports/csv"
               className="text-xs font-semibold text-ink-2 bg-tile hover:bg-tile px-4 py-2 rounded-full transition-colors">
               Import CSV
             </a>
@@ -159,7 +159,7 @@ export default async function StudentsPage() {
             label={terms.students.toLowerCase()}
             hint={`Add your first ${terms.student.toLowerCase()} with the button above, or bring a whole roster in at once.`}
             action={
-              <Link href="/admin/imports" className="text-xs font-semibold text-orange hover:text-orange-dark">
+              <Link href="/admin/settings/imports/csv" className="text-xs font-semibold text-orange hover:text-orange-dark">
                 Import a roster (CSV) →
               </Link>
             }

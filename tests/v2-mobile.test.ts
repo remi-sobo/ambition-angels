@@ -44,16 +44,31 @@ describe("shellMobileSplit: bar + More derive from one resolved nav", () => {
 
   test("the fifth-tenant rule: a missing destination narrows the bar, never dead-links it", () => {
     // No ops/meetings/documents keys → Work hides; no fundraising key →
-    // Fundraising hides; the bar simply loses those slots.
+    // Fundraising hides and Programs takes its slot (V4 P1 stand-in).
     const { bar } = shellMobileSplit(resolveShellNav(["modules.program", "modules.finance"]));
-    expect(bar.map((d) => d.key)).toEqual(["home"]);
+    expect(bar.map((d) => d.key)).toEqual(["home", "programs"]);
+    const { bar: none } = shellMobileSplit(resolveShellNav(["modules.finance"]));
+    expect(none.map((d) => d.key)).toEqual(["home"]);
   });
 
   test("More is entitlement-filtered like everything else", () => {
     // No governance/metrics/fundraising keys → those More rows are absent;
-    // Programs (in More since the bar swap) survives on modules.program.
-    const { more } = shellMobileSplit(resolveShellNav(["modules.program", "modules.ops"]));
-    expect(more.map((d) => d.key)).toEqual(["programs", "inbox"]);
+    // Programs stands in for the missing Fundraising slot, so More is Inbox.
+    const { bar, more } = shellMobileSplit(resolveShellNav(["modules.program", "modules.ops"]));
+    expect(bar.map((d) => d.key)).toEqual(["home", "work", "programs"]);
+    expect(more.map((d) => d.key)).toEqual(["inbox"]);
+  });
+
+  test("program staff (program.write, no fundraising): Programs is in the bar, one tap to attendance", () => {
+    const owner = ["program.read", "program.write", "fundraising.read", "fundraising.write", "ops.read", "ops.write"];
+    const programStaff = owner.filter((p) => !p.startsWith("fundraising."));
+    const forOwner = shellMobileSplit(resolveShellNav(AA, null, owner));
+    expect(forOwner.bar.map((d) => d.key)).toContain("fundraising");
+    expect(forOwner.more.map((d) => d.key)).toContain("programs");
+    const forStaff = shellMobileSplit(resolveShellNav(AA, null, programStaff));
+    expect(forStaff.bar.map((d) => d.key)).toContain("programs");
+    expect(forStaff.bar.map((d) => d.key)).not.toContain("fundraising");
+    expect(forStaff.more.map((d) => d.key)).not.toContain("programs");
   });
 
   test("every bar and More entry carries a live href (no dead links on any org)", () => {

@@ -77,16 +77,13 @@ export default async function StrategyReviewPage() {
     new Date(iso).toLocaleDateString("en-US", { timeZone: "America/Los_Angeles", year: "numeric", month: "short", day: "numeric" });
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1000px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
       <PageHeader
-        title="Monthly OGSM Review"
-        subtitle={
-          <>
-            Walk the objectives, refresh the numbers, update what changed, then log it · back to the{" "}
-            <Link href="/admin/strategic-plan" className="text-orange hover:underline">full plan</Link>
-          </>
-        }
-        actions={<RefreshMetricsButton />}
+        breadcrumb={[{ label: "Strategic Plan", href: "/admin/organization/strategy" }]}
+        title="Monthly review"
+        subtitle="Walk the objectives, refresh the numbers, update what changed, then log it"
+        secondaryActions={<RefreshMetricsButton />}
+        moreActions={[{ label: "Whole plan", href: "/admin/organization/strategy" }]}
       />
 
       {objectives.length === 0 && orphanGoals.length === 0 ? (
@@ -96,7 +93,7 @@ export default async function StrategyReviewPage() {
       ) : (
         <div className="space-y-5">
           <p className="text-sm text-ink-2">
-            Step 1: hit <strong>↻ Refresh metrics</strong> to pull the latest auto numbers. Step 2: walk each
+            Step 1: choose <strong>Refresh metrics</strong> to pull the latest auto numbers. Step 2: walk each
             objective below, update the manual measures and statuses. Step 3: log the review at the bottom.
           </p>
 

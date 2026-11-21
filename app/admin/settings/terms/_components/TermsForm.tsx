@@ -40,7 +40,7 @@ export default function TermsForm({ rows }: { rows: Row[] }) {
     <form onSubmit={submit} className="rounded-panel border border-hairline bg-surface" aria-labelledby="terms-h">
       <div className="px-5 pt-5">
         <h2 id="terms-h" className="text-[17px] font-semibold text-ink-1">Your words</h2>
-        <p className="text-sm text-ink-2 mt-0.5">Write each word singular, like &ldquo;Youth&rdquo; or &ldquo;Chapter&rdquo;. BloomOS adds the plural. Leave a box empty to use the word on the right.</p>
+        <p className="text-sm text-ink-2 mt-0.5">Write each word singular, like &ldquo;Youth&rdquo; or &ldquo;Chapter&rdquo;. BloomOS adds the plural. Leave a box empty to keep the BloomOS word shown in it.</p>
       </div>
       <ul className="mt-3 divide-y divide-outline border-t border-hairline">
         {rows.map((r) => (

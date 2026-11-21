@@ -40,7 +40,7 @@ UPDATE fin_budget SET base_amount = 0, contingency_t2 = 90000, updated_at = now(
 --    a) create the category if it does not already exist
 INSERT INTO fin_categories (id, group_name, display_name, kind, functional_class, sort_order, enabled, org_id)
 VALUES ('payroll.program-lead','PAYROLL','Program Lead (net-new)','expense','program',104,true,'17c75da8-082d-4c8f-b00b-a4100fb2eb22')
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (org_id, id) DO NOTHING;  -- categories are per-org since fin_categories_org_scope.sql
 --    b) budget it at 90,000 in the committed base (ESTIMATE -- set the real fully-loaded figure)
 INSERT INTO fin_budget (year, category_id, base_amount, contingency_t1, contingency_t2, activated_contingency, org_id)
 VALUES (2026,'payroll.program-lead',90000,0,0,0,'17c75da8-082d-4c8f-b00b-a4100fb2eb22');

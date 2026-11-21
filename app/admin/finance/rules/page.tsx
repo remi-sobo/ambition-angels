@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import type { FinCategory } from "@/lib/finance/types";
 import RulesEditor from "./_components/RulesEditor";
+import NoCategories from "../_components/NoCategories";
 import PageHeader from "../../_components/PageHeader";
 
 type Rule = {
@@ -70,7 +71,13 @@ export default async function RulesPage() {
         />
       </header>
 
-      <RulesEditor initialRules={rules} categories={categories} />
+      {categories.length === 0 ? (
+        <div className="mt-6">
+          <NoCategories />
+        </div>
+      ) : (
+        <RulesEditor initialRules={rules} categories={categories} />
+      )}
     </div>
   );
 }

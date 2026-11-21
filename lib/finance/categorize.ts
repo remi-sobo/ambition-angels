@@ -61,6 +61,7 @@ export async function loadRules(
 // import. Best-effort; failures here are logged but don't break the import.
 export async function bumpHitCounts(
   supabase: SupabaseClient,
+  orgId: string,
   hits: Map<string, number>
 ): Promise<void> {
   const entries: Array<[string, number]> = [];
@@ -77,12 +78,14 @@ export async function bumpHitCounts(
       const { data } = await supabase
         .from("fin_category_rules")
         .select("hit_count")
+        .eq("org_id", orgId)
         .eq("id", ruleId)
         .single();
       const next = (data?.hit_count ?? 0) + count;
       await supabase
         .from("fin_category_rules")
         .update({ hit_count: next })
+        .eq("org_id", orgId)
         .eq("id", ruleId);
     }
   }

@@ -222,7 +222,7 @@ export async function POST(req: NextRequest) {
     console.error("[finance import] audit row insert failed:", impErr.message);
   }
 
-  await bumpHitCounts(supabase, ruleHits);
+  await bumpHitCounts(supabase, ctx.orgId, ruleHits);
 
   await audit(req, {
     action: "finance.transactions.import",

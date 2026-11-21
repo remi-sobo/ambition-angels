@@ -28,8 +28,9 @@ describe("shellMobileSplit: bar + More derive from one resolved nav", () => {
   test("AA: the bar is Home/Work/Fundraising (Remi's 2026-09-09 swap); More is the rest plus Inbox", () => {
     const { bar, more } = shellMobileSplit(resolveShellNav(AA));
     expect(bar.map((d) => d.key)).toEqual(["home", "work", "fundraising"]);
+    // V4 A2: Comms (modules.comms) is a More destination, never a bar slot.
     expect(more.map((d) => d.key)).toEqual([
-      "programs", "finance", "impact", "organization", "inbox",
+      "programs", "comms", "finance", "impact", "organization", "inbox",
     ]);
   });
 
@@ -85,5 +86,16 @@ describe("B5 structural invariants (spec §Mobile)", () => {
 
   test("the Home slot renders as Today", () => {
     expect(src).toMatch(/"home" \? "Today"/);
+  });
+
+  test("V4 A2 (spec §8): the centre is Capture with ai.capture, the ＋ sheet without it", () => {
+    expect(src).toMatch(/\{captureEnabled \? \(/);
+    expect(src).toMatch(/aria-label="Capture"/);
+    expect(src).toMatch(/onClick=\{\(\) => setModal\("record"\)\}/);
+    expect(src).toMatch(/aria-label="Quick actions"/);
+    // The ＋ sheet's Add task stays reachable for capture orgs via More.
+    expect(src.match(/setModal\("task"\)/g)?.length).toBeGreaterThanOrEqual(2);
+    // No V1 messages path from the bar.
+    expect(src).not.toMatch(/"\/admin\/messages"/);
   });
 });

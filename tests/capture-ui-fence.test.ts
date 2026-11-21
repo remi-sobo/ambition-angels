@@ -81,12 +81,17 @@ describe("Record entry points", () => {
     expect(layout).toMatch(/<V2QuickAdd [^>]*captureEnabled=\{captureEnabled\}/);
   });
 
-  test("mobile: Record in the + sheet and the More sheet, both gated", () => {
-    expect(mobile.match(/captureEnabled && \(/g)?.length).toBe(2);
-    expect(mobile.match(/setModal\("record"\)/g)?.length).toBe(2);
+  test("mobile (V4 A2, spec §8): Capture IS the bar's centre button with ai.capture; without it the ＋ sheet stays", () => {
+    // One gated branch picks the centre: Capture (voice) or the ＋ sheet.
+    expect(mobile).toMatch(/\{captureEnabled \? \(/);
+    expect(mobile).toMatch(/aria-label="Capture"/);
+    expect(mobile.indexOf('aria-label="Capture"')).toBeLessThan(mobile.indexOf('aria-label="Quick actions"'));
+    // The centre is the only Record entry on phones; Add task moves into
+    // More (gated) because the ＋ sheet no longer opens for capture orgs.
+    expect(mobile.match(/setModal\("record"\)/g)?.length).toBe(1);
+    expect(mobile.match(/captureEnabled && \(/g)?.length).toBe(1);
     expect(mobile).toMatch(/<CaptureModal surface="mobile_plus"/);
-    // Record sits above Add task in the + sheet.
-    expect(mobile.indexOf('title="Record"')).toBeLessThan(mobile.indexOf('title="Add task"'));
+    expect(mobile).not.toMatch(/title="Record"/);
   });
 
   test("desktop: Record chip in Quick Add, gated", () => {

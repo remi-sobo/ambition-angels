@@ -14,6 +14,9 @@ import ThisWeekView from "./_components/ThisWeekView";
 import ActiveProjectsList from "./_components/ActiveProjectsList";
 import CategoryCounts from "./_components/CategoryCounts";
 import PageHeader from "../_components/PageHeader";
+import Figure, { SummaryStrip } from "../_components/ui/Figure";
+import Notice from "../_components/ui/Notice";
+import NewTaskButton from "./_components/NewTaskButton";
 import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Force dynamic — this page is task-state-dependent; we don't want a
@@ -35,7 +38,7 @@ export default async function OpsLandingPage({
   const ctx = await getOrgContext();
   if (!ctx) {
     return (
-      <div className="px-4 lg:px-8 py-6 lg:py-8">
+      <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
         <PageHeader title="Tasks" subtitle="Sign in to view your organization's work." />
       </div>
     );
@@ -82,6 +85,9 @@ export default async function OpsLandingPage({
   ]);
 
   const allTasks = (allTasksRes.data as OpsTask[] | null) ?? [];
+  const readFailed = !!allTasksRes.error;
+  // The page reads up to 1,000 tasks; say so if it hit the cap.
+  const capped = allTasks.length >= 1000;
   const activeProjects = (activeProjectsRes.data as OpsProject[] | null) ?? [];
 
   // Pin/due-derived slices for the preserved Today / This Week sections.
@@ -156,36 +162,68 @@ export default async function OpsLandingPage({
     }
   }
 
+  // Summary strip (spec §5 List: "Summary strip"; every figure sourced).
+  const mine = (t: OpsTask) => matchesAssignee(t);
+  const openMine = openTasks.filter(mine);
+  const overdue = openMine.filter((t) => t.due_date && t.due_date < today).length;
+  const oldestLate = openMine
+    .filter((t) => t.due_date && t.due_date < today)
+    .reduce<string | null>((min, t) => (!min || (t.due_date as string) < min ? (t.due_date as string) : min), null);
+  const lateDays = oldestLate ? Math.round((Date.parse(today) - Date.parse(oldestLate)) / 86_400_000) : 0;
+  const scopeNote = assignee === "all" ? "everyone" : assignee === "unassigned" ? "unassigned tasks" : assignee;
+  const value = (n: number) => (readFailed ? null : n);
+
   return (
-    <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8 space-y-6">
+    <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8">
       <PageHeader
         title="Tasks"
-        subtitle="Today, this week, projects, categories. Anchor for the day."
+        subtitle="What is due, what is stuck and what is next, for the whole team"
+        primaryAction={<NewTaskButton currentUser={currentUser} />}
+        moreActions={[
+          { label: "Plan & Close", href: "/admin/work/plan-close" },
+          { label: "My Week", href: "/admin/work/my-week" },
+          { label: "Projects", href: "/admin/work/projects" },
+          { label: "Archived tasks", href: "/admin/work/tasks?scope=archived" },
+        ]}
       />
 
-      <TasksSurface
-        tasks={allTasks}
-        projectNames={projectNames}
-        currentUser={currentUser}
-      />
+      {readFailed ? (
+        <div className="mb-4">
+          <Notice tone="danger" title="Tasks failed to load.">
+            Reload to retry. Nothing below is a real zero.
+          </Notice>
+        </div>
+      ) : capped ? (
+        <div className="mb-4">
+          <Notice tone="partial" title="Showing the first 1,000 tasks.">
+            Archive finished work to bring older tasks into view.
+          </Notice>
+        </div>
+      ) : null}
 
-      <StuckWorkRollup
-        tasks={stuckTasks}
-        projectNames={projectNames}
-        projectContext={stuckProjectContext}
-      />
+      <SummaryStrip label="Task summary">
+        <Figure label="Open" value={value(openMine.length)} source={`Not done or archived, for ${scopeNote}`} />
+        <Figure label="Due today" value={value(dueToday.length)} source="Due today and not done" />
+        <Figure
+          label="Late"
+          value={value(overdue)}
+          source="Open and past their due date"
+          compare={overdue > 0 ? `Oldest is ${lateDays} ${lateDays === 1 ? "day" : "days"} late` : undefined}
+          compareTone="danger"
+        />
+        <Figure label="Stuck" value={value(stuckTasks.length)} source="Whole team: open 14 days or more, untouched for a week" />
+      </SummaryStrip>
 
-      <TodayView
-        dueToday={dueToday}
-        pinnedToday={pinnedToday}
-        projectNames={projectNamesMap}
-      />
-      <ThisWeekView tasks={pinnedWeek} projectNames={projectNamesMap} />
-      <ActiveProjectsList
-        projects={activeProjects}
-        openTaskCounts={openTaskCountsByProject}
-      />
-      <CategoryCounts tasks={openTasks} projectNames={projectNames} />
+      <div className="space-y-6">
+        <TasksSurface tasks={allTasks} projectNames={projectNames} currentUser={currentUser} />
+
+        <StuckWorkRollup tasks={stuckTasks} projectNames={projectNames} projectContext={stuckProjectContext} />
+
+        <TodayView dueToday={dueToday} pinnedToday={pinnedToday} projectNames={projectNamesMap} />
+        <ThisWeekView tasks={pinnedWeek} projectNames={projectNamesMap} />
+        <ActiveProjectsList projects={activeProjects} openTaskCounts={openTaskCountsByProject} />
+        <CategoryCounts tasks={openTasks} projectNames={projectNames} />
+      </div>
     </div>
   );
 }

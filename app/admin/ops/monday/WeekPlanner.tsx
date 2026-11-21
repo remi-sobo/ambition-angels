@@ -1,5 +1,6 @@
 "use client";
 
+import { saveAction } from "@/lib/admin/saveAction";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { useState, useTransition } from "react";
@@ -107,80 +108,68 @@ export default function WeekPlanner({
     durationMinute: number
   ) {
     setBusyId(taskId);
-    try {
-      const r = await fetch("/api/admin/agenda/blocks", {
+    const r = await saveAction({
+      request: {
+        url: "/api/admin/agenda/blocks",
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ task_id: taskId, day: dayISO, start_minute: startMinute, duration_minute: durationMinute }),
-      });
-      if (!r.ok) {
-        toast.error(r.status === 409 ? "Connect a Google Calendar first." : "Couldn't schedule. Try again.");
-        return;
-      }
-      setScheduling(null);
-      startTransition(() => router.refresh());
-    } catch (e) {
-      console.error("Schedule block failed:", e);
-      toast.error("Couldn't schedule. Try again.");
-    } finally {
-      setBusyId(null);
+        body: { task_id: taskId, day: dayISO, start_minute: startMinute, duration_minute: durationMinute },
+      },
+      failure: (m) => m,
+      toast,
+    });
+    setBusyId(null);
+    if (!r.ok) {
+      if (r.status === 409) toast.error("Connect a Google Calendar first.");
+      return;
     }
+    setScheduling(null);
+    startTransition(() => router.refresh());
   }
 
   async function unscheduleBlock(taskId: string) {
     setBusyId(taskId);
-    try {
-      const r = await fetch(`/api/admin/agenda/blocks?task_id=${encodeURIComponent(taskId)}`, {
-        method: "DELETE",
-      });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      startTransition(() => router.refresh());
-    } catch (e) {
-      console.error("Unschedule block failed:", e);
-      toast.error("Couldn't unschedule. Try again.");
-    } finally {
-      setBusyId(null);
-    }
+    const r = await saveAction({
+      request: { url: `/api/admin/agenda/blocks?task_id=${encodeURIComponent(taskId)}`, method: "DELETE" },
+      failure: "Couldn't unschedule. Try again.",
+      toast,
+    });
+    setBusyId(null);
+    if (r.ok) startTransition(() => router.refresh());
   }
 
   async function createPrep(eventId: string, title: string, dayISO: string) {
     setPrepBusy(eventId);
-    try {
-      const r = await fetch("/api/admin/ops/prep", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ event_id: eventId, title, day: dayISO }),
-      });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      startTransition(() => router.refresh());
-    } catch (e) {
-      console.error("Create prep failed:", e);
-      toast.error("Couldn't add the prep task. Try again.");
-    } finally {
-      setPrepBusy(null);
-    }
+    const r = await saveAction({
+      request: { url: "/api/admin/ops/prep", method: "POST", body: { event_id: eventId, title, day: dayISO } },
+      failure: "Couldn't add the prep task. Try again.",
+      toast,
+    });
+    setPrepBusy(null);
+    if (r.ok) startTransition(() => router.refresh());
   }
 
   async function runPatches(
     patches: Array<{ id: string; body: Record<string, unknown> }>
   ) {
-    try {
-      await Promise.all(
-        patches.map((p) =>
-          fetch(`/api/admin/ops/tasks/${p.id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(p.body),
-          }).then((r) => {
-            if (!r.ok) throw new Error(`HTTP ${r.status}`);
-          })
-        )
-      );
-      startTransition(() => router.refresh());
-    } catch (e) {
-      console.error("Planner patch failed:", e);
-      toast.error("Couldn't save the change. Try again.");
-    }
+    const r = await saveAction({
+      request: async () => {
+        const responses = await Promise.all(
+          patches.map((p) =>
+            fetch(`/api/admin/ops/tasks/${p.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(p.body),
+            }),
+          ),
+        );
+        return responses.find((x) => !x.ok) ?? responses[0] ?? new Response("{}", { status: 200 });
+      },
+      failure: "Couldn't save the change. Try again.",
+      toast,
+    });
+    // Re-read either way: a partial failure leaves the server as the truth.
+    startTransition(() => router.refresh());
+    return r.ok;
   }
 
   async function patch(id: string, body: Record<string, unknown>) {

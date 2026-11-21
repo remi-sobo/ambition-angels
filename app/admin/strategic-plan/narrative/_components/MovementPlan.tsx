@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { StatusChip } from "../../../_components/StatusChip";
 import type { PlanMovement, NarrativeObjective } from "@/lib/admin/strategy/narrative";
 import { MeasureRow, MovementHeader, STATUS_LABEL, INITIATIVE_STATUS, DOT_BG } from "./shared";
 import { TYPE } from "@/lib/admin/typeScale";
+import { proofPointsToShow } from "@/lib/admin/strategy/proofPoints";
 
 /**
  * Movement 1 — The Plan. The OGSM tree straight from plan_*: the frame
@@ -86,18 +88,11 @@ function ObjectiveBlock({ objective, index }: { objective: NarrativeObjective; i
   );
 }
 
-// Shown only until an org sets its own proof points on the Foundation panel.
-const FALLBACK_PROOF = [
-  { value: "3,500+", label: "teens reached" },
-  { value: "87%", label: "Title I schools" },
-  { value: "1,100+", label: "program hours" },
-  { value: "14%", label: "future-orientation lift (directional)" },
-];
-
 export default function MovementPlan({ plan }: { plan: PlanMovement }) {
   const empty = plan.objectives.length === 0;
   const frame = plan.foundation && (plan.foundation.mission || plan.foundation.vision) ? plan.foundation : null;
-  const proof = plan.foundation?.proofPoints?.length ? plan.foundation.proofPoints : FALLBACK_PROOF;
+  // The org's own proof points, or none: never another org's numbers.
+  const proof = proofPointsToShow(plan.foundation);
 
   return (
     <div>
@@ -106,9 +101,9 @@ export default function MovementPlan({ plan }: { plan: PlanMovement }) {
 
       {/* Proof before the ask — what's already true, so a cold funder gets
           "why you" before the forward-looking plan. Editable on the Foundation
-          panel (plan_foundation.proof_points); falls back to the headline stats
-          when none are set, so a fresh org still reads right. */}
-      {proof.length > 0 && (
+          panel (plan_foundation.proof_points). With none set, a quiet note says
+          where to add them (V4 Stage G: no fallback numbers). */}
+      {proof.length > 0 ? (
         <div className="mb-12 grid grid-cols-2 sm:grid-cols-4 gap-3">
           {proof.map((s) => (
             <div key={s.label} className="rounded-panel border border-hairline bg-surface p-4">
@@ -117,6 +112,14 @@ export default function MovementPlan({ plan }: { plan: PlanMovement }) {
             </div>
           ))}
         </div>
+      ) : (
+        <p className="mb-12 text-sm text-ink-2" data-proof-empty>
+          No proof points yet. Add what is already true about your work on the{" "}
+          <Link href="/admin/organization/strategy" className="font-semibold text-orange hover:text-orange-dark">
+            Strategic Plan&apos;s Foundation panel
+          </Link>
+          .
+        </p>
       )}
 
       {empty ? (

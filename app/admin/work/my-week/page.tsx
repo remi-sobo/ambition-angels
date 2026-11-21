@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { ButtonLink } from "@/app/admin/_components/ui/Button";
+import Badge from "@/app/admin/_components/ui/Badge";
 import WeekSection from "@/app/admin/calendar/WeekSection";
 import { loadRhythmSnapshot } from "@/lib/admin/ops/rhythm";
 import { rhythmModeForToday } from "@/lib/admin/ops/rhythmMode";
@@ -41,7 +42,7 @@ export default async function MyWeekPage({
   const planLit = mode === "monday_plan";
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
       <PageHeader
         title="My Week"
         subtitle={
@@ -57,35 +58,31 @@ export default async function MyWeekPage({
             )}
           </span>
         }
+        primaryAction={
+          // The one ritual door: Plan & Close carries both flows, and the
+          // time of the week picks which one this button names.
+          <ButtonLink variant="primary" href="/admin/work/plan-close">
+            {planLit ? "Plan the week" : "Close the week"}
+          </ButtonLink>
+        }
+        moreActions={[
+          { label: "Tasks", href: "/admin/work/tasks" },
+          { label: "Meetings", href: "/admin/work/meetings" },
+          { label: "Calendar settings", href: "/admin/settings/connections" },
+        ]}
       />
 
-      {/* ── WeekStatus + the one ritual door ───────────────────────────── */}
-      <CalendarSyncBanner className="mt-6" />
-      <section className="mt-6 rounded-panel border-hairline bg-surface p-6">
+      {/* ── WeekStatus ─────────────────────────────────────────────────── */}
+      <CalendarSyncBanner className="mt-2" />
+      <section aria-label="This week" className="mt-4 rounded-panel border border-hairline bg-surface p-5">
+        <div className={`${TYPE.sectionHeader} mb-2`}>
+          {planLit ? "Monday · Aim" : "Friday · Account"} <Badge tone="accent">Now</Badge>
+        </div>
         {status ? (
           <WeekStatusLine status={status} />
         ) : (
           <p className="text-sm text-ink-2">Sign in to see this week&apos;s read.</p>
         )}
-        <Link
-          href="/admin/work/plan-close"
-          className="mt-4 group flex items-center justify-between gap-4 rounded-panel border-orange/40 bg-orange-light px-5 py-4 transition-colors hover:bg-orange-light"
-        >
-          <span className="flex items-baseline gap-3 flex-wrap">
-            <span className={`${TYPE.sectionHeader} !text-orange-dark`}>
-              {planLit ? "Monday · Aim" : "Friday · Account"}
-            </span>
-            <span className="font-display font-black uppercase tracking-tight text-2xl leading-none text-orange-dark">
-              {planLit ? "Plan" : "Close"}
-            </span>
-            <span className="text-xs uppercase tracking-wider font-semibold text-orange-dark border border-orange/40 rounded-full px-1.5 py-px">
-              Now
-            </span>
-          </span>
-          <span className="shrink-0 text-sm font-medium text-orange-dark">
-            Open Plan &amp; Close →
-          </span>
-        </Link>
       </section>
 
       {/* ── The week grid, embedded ────────────────────────────────────── */}

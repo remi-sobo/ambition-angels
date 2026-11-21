@@ -1,10 +1,10 @@
 "use client";
 
+import { saveAction } from "@/lib/admin/saveAction";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
-import { userMessage } from "@/lib/admin/errors";
 
 // Inline cancel for a booking-page booking shown in the Upcoming list. Sits
 // outside the row's link so cancelling never requires opening the meeting.
@@ -26,21 +26,13 @@ export default function CancelBookingButton({ bookingId }: { bookingId: string }
     });
     if (!ok) return;
     setBusy(true);
-    try {
-      const r = await fetch(`/api/admin/meet/bookings/${bookingId}/cancel`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: "cancelled by admin" }),
-      });
-      if (!r.ok) {
-        const data = await r.json().catch(() => ({}));
-        toast.error(userMessage(r, data));
-        return;
-      }
-      router.refresh();
-    } finally {
-      setBusy(false);
-    }
+    const r = await saveAction({
+      request: { url: `/api/admin/meet/bookings/${bookingId}/cancel`, method: "POST", body: { reason: "cancelled by admin" } },
+      success: "Booking cancelled",
+      toast,
+    });
+    setBusy(false);
+    if (r.ok) router.refresh();
   }
 
   return (

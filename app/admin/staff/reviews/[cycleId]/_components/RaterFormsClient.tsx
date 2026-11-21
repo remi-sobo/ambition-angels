@@ -1,9 +1,9 @@
 "use client";
 
+import { saveAction } from "@/lib/admin/saveAction";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
-import { userMessage } from "@/lib/admin/errors";
 import { StatusChip } from "../../../../_components/StatusChip";
 import type { RaterForm, ReviewCompetency } from "../../../_lib/reviews";
 
@@ -29,17 +29,13 @@ function FormCard({ form, competencies }: { form: RaterForm; competencies: Revie
 
   async function save(submit: boolean) {
     setBusy(true);
-    try {
-      const res = await fetch(`/api/admin/staff/reviews/feedback/${form.id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ratings, strengths, growth, comments, submit }),
-      });
-      if (res.ok) router.refresh();
-      else toast.error(userMessage(res, (await res.json().catch(() => null)) as { error?: string } | null));
-    } finally {
-      setBusy(false);
-    }
+    const r = await saveAction({
+      request: { url: `/api/admin/staff/reviews/feedback/${form.id}`, method: "POST", body: { ratings, strengths, growth, comments, submit } },
+      success: submit ? "Feedback submitted" : "Draft saved",
+      toast,
+    });
+    setBusy(false);
+    if (r.ok) router.refresh();
   }
 
   return (
@@ -79,7 +75,7 @@ function FormCard({ form, competencies }: { form: RaterForm; competencies: Revie
         ))}
       </div>
 
-      <textarea
+      <textarea aria-label="Strengths"
         className={FIELD}
         rows={2}
         placeholder="Strengths"
@@ -87,7 +83,7 @@ function FormCard({ form, competencies }: { form: RaterForm; competencies: Revie
         disabled={submitted}
         onChange={(e) => setStrengths(e.target.value)}
       />
-      <textarea
+      <textarea aria-label="Areas to grow"
         className={FIELD}
         rows={2}
         placeholder="Areas to grow"
@@ -95,7 +91,7 @@ function FormCard({ form, competencies }: { form: RaterForm; competencies: Revie
         disabled={submitted}
         onChange={(e) => setGrowth(e.target.value)}
       />
-      <textarea
+      <textarea aria-label="Anything else"
         className={FIELD}
         rows={2}
         placeholder="Anything else"

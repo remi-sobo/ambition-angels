@@ -1,7 +1,7 @@
 "use client";
 
 // Presenter mode for the Strategy Narrative (spec Phase 5). A full-screen,
-// chrome-free overlay Remi can run in a room: one movement per slide, large
+// chrome-free kit <Stage> (V4 Stage G) an ED can run in a room: one movement per slide, large
 // type, advanced by keyboard (← → / PageUp PageDown), Esc to exit. It sits at
 // the top of the z-stack over the admin shell — same gated route, no chrome.
 //
@@ -10,6 +10,7 @@
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import Stage from "@/app/admin/_components/ui/Stage";
 
 export default function Presenter({
   slides,
@@ -33,18 +34,14 @@ export default function Presenter({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (gated) {
-        if (e.key === "Escape") exit();
-        return;
-      }
+      // Escape is the Stage's (its focus trap closes to exit()).
+      if (gated) return;
       if (e.key === "ArrowRight" || e.key === "PageDown") {
         e.preventDefault();
         go(1);
       } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
         e.preventDefault();
         go(-1);
-      } else if (e.key === "Escape") {
-        exit();
       } else if (e.key === "Home") {
         setI(0);
       } else if (e.key === "End") {
@@ -57,7 +54,7 @@ export default function Presenter({
 
   if (gated) {
     return (
-      <div className="fixed inset-0 z-[100] bg-app overflow-y-auto flex items-center justify-center p-6">
+      <Stage label="Before you present" onClose={exit} className="flex items-center justify-center p-6">
         <div className="max-w-[640px] w-full rounded-panel-lg border-expense/30 bg-surface p-8">
           <div className="text-xs uppercase tracking-[0.16em] font-semibold text-expense mb-2">Not funder-ready</div>
           <h1 className="font-display text-3xl text-ink-1 leading-tight mb-3">
@@ -89,12 +86,12 @@ export default function Presenter({
             </button>
           </div>
         </div>
-      </div>
+      </Stage>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-[100] bg-app overflow-y-auto flex flex-col">
+    <Stage label="Strategy presenter" onClose={exit} className="flex flex-col">
       {/* Slide. Larger base type so it reads at arm's length. */}
       <div className="flex-1 w-full max-w-[1080px] mx-auto px-6 sm:px-12 lg:px-16 py-12 sm:py-16 text-[1.06rem] leading-relaxed">
         {slides[i]}
@@ -142,6 +139,6 @@ export default function Presenter({
           </div>
         </div>
       </div>
-    </div>
+    </Stage>
   );
 }

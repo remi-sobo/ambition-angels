@@ -23,6 +23,7 @@
  *     This is deliberately NOT lib/admin/overview/sources.ts::getForecast(),
  *     which counts steward at full value.
  */
+import { parseProofPoints, type ProofPoint } from "./proofPoints";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getFinanceSnapshot } from "@/lib/admin/finance";
 import { planHealthToStatus, type Status } from "@/lib/admin/status";
@@ -95,7 +96,7 @@ export type NarrativeObjective = {
 };
 
 /** A proof point shown before the plan — editable on plan_foundation. */
-export type ProofPoint = { value: string; label: string };
+export type { ProofPoint } from "./proofPoints";
 
 export type PlanMovement = {
   foundation: { mission: string | null; vision: string | null; proofPoints: ProofPoint[] } | null;
@@ -215,12 +216,7 @@ export async function getPlanMovement(orgId: string): Promise<PlanMovement> {
 
   // Proof points are stored as a jsonb array of { value, label }; coerce
   // defensively so a malformed row never breaks the render.
-  const rawProof = foundationRes.data?.proof_points;
-  const proofPoints: ProofPoint[] = Array.isArray(rawProof)
-    ? rawProof
-        .map((p) => ({ value: String((p as ProofPoint)?.value ?? "").trim(), label: String((p as ProofPoint)?.label ?? "").trim() }))
-        .filter((p) => p.value)
-    : [];
+  const proofPoints: ProofPoint[] = parseProofPoints(foundationRes.data?.proof_points);
   const foundation = foundationRes.data
     ? {
         mission: (foundationRes.data.mission as string | null) ?? null,

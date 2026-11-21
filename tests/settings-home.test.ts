@@ -54,11 +54,13 @@ describe("the sections (spec §4 order)", () => {
   });
 
   test("sections with no screen yet say so honestly and name who to ask (no fake forms)", () => {
-    for (const key of ["organization", "people", "terms", "modules"]) {
+    for (const key of ["organization", "terms", "modules"]) {
       const s = SETTINGS_SECTIONS.find((x) => x.key === key)!;
       expect(s.comingNext, key).toMatch(/coming in the next stage/);
       expect(s.comingNext, key).toMatch(/ask your BloomOS contact/);
     }
+    // People and roles has its screen now (V4 Stage A3).
+    expect(SETTINGS_SECTIONS.find((x) => x.key === "people")!.comingNext).toBeUndefined();
   });
 
   test("each section links the existing scattered setup screens (audit finding 3)", () => {

@@ -1,8 +1,9 @@
 /**
  * On-demand calendar sync (BloomOS Agenda Phase 2). Called when a Today/agenda
- * view loads with a stale cache. Any authed member may trigger it — it only
- * refreshes the cache; who can *read* the synced rows is still governed by
- * calendar_events RLS. Runs as service-role.
+ * view loads with a stale cache, or from Settings after connecting a calendar.
+ * Runs as service-role, so it is scoped explicitly: only the CALLER's own
+ * calendar connection(s) in the ACTIVE org are synced. The all-org sweep lives
+ * only on the cron path (app/api/cron/calendar-sync, behind CRON_SECRET).
  */
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
@@ -16,7 +17,8 @@ export async function POST() {
   const guard = await requirePermission("ops.write");
   if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
 
-  const results = await runCalendarSync(getSupabaseAdmin(), new Date());
+  const { userId, orgId } = guard.ctx;
+  const results = await runCalendarSync(getSupabaseAdmin(), new Date(), { userId, orgId });
   return NextResponse.json({
     users: results.length,
     ok: results.filter((r) => r.ok).length,

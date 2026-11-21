@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed } from "@/lib/admin/auth";
+import { requirePermission } from "@/lib/admin/requirePermission";
 import { audit } from "@/lib/audit";
 import { constituentName } from "@/lib/fundraising/display";
 
@@ -9,6 +9,11 @@ import { constituentName } from "@/lib/fundraising/display";
 //   campaign_id / fund_id / appeal_id   attribution
 //   method      card | cash | check | ach | in_kind | stock | other
 // Audited like the donor export — money data leaving the system.
+//
+// Tenancy: RLS answers "is the caller a member of this row's org", not "is
+// this the ACTIVE org", so a user in two orgs would export both ledgers. The
+// org comes from requirePermission (fundraising.read) and every table read is
+// pinned to it (tests/import-export-org-scope.test.ts guards this).
 
 const CEILING = 10000;
 const isUuid = (v: string) => /^[0-9a-f-]{36}$/i.test(v);
@@ -20,7 +25,9 @@ function csvCell(v: unknown): string {
 }
 
 export async function GET(req: NextRequest) {
-  if (!(await isAuthed())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const gate = await requirePermission("fundraising.read");
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
+  const ctx = gate.ctx;
   const p = req.nextUrl.searchParams;
   const from = p.get("from") ?? "";
   const to = p.get("to") ?? "";
@@ -35,6 +42,7 @@ export async function GET(req: NextRequest) {
     .select(
       "id, amount, gift_date, method, campaign_id, fund_id, appeal_id, constituent:constituents ( type, first_name, last_name, org_name )"
     )
+    .eq("org_id", ctx.orgId)
     .order("gift_date", { ascending: false })
     .limit(CEILING);
   if (isDate(from)) query = query.gte("gift_date", from);
@@ -52,9 +60,9 @@ export async function GET(req: NextRequest) {
 
   // Resolve attribution names once.
   const [camps, funds, appeals] = await Promise.all([
-    supabase.from("campaigns").select("id, name"),
-    supabase.from("funds").select("id, name"),
-    supabase.from("appeals").select("id, name"),
+    supabase.from("campaigns").select("id, name").eq("org_id", ctx.orgId),
+    supabase.from("funds").select("id, name").eq("org_id", ctx.orgId),
+    supabase.from("appeals").select("id, name").eq("org_id", ctx.orgId),
   ]);
   const nameMap = (rows: Array<{ id: string; name: string }> | null) =>
     new Map((rows ?? []).map((r) => [r.id, r.name]));

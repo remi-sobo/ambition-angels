@@ -3,6 +3,8 @@
  * Bearer CRON_SECRET (Vercel sets it on cron invocations). Syncs every active
  * google_calendar connection for a window around today. A token lapse or Google
  * outage degrades to a stale cache (logged per user), never a failed response.
+ * This is the ONLY caller of the unscoped (all orgs, all users) sweep; the
+ * user-triggered /api/admin/agenda/sync passes the caller's own scope.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";

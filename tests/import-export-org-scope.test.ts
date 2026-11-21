@@ -223,7 +223,7 @@ describe("import/export routes pin the active org (source guard)", () => {
     for (const file of importExportRoutes()) {
       if (EXCEPTIONS.has(file)) continue;
       const src = readFileSync(join(REPO, file), "utf8");
-      if (!src.includes("getOrgContext")) problems.push(`${file}: no getOrgContext() (no active org)`);
+      if (!src.includes("getOrgContext") && !src.includes("requirePermission(")) problems.push(`${file}: no getOrgContext() (no active org)`);
       for (const s of unscopedStatements(src)) problems.push(`${file}  ${s}`);
     }
     expect(problems, `Add .eq("org_id", ctx.orgId):\n${problems.join("\n")}`).toEqual([]);

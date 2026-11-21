@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 import { ACTIVE_ORG_COOKIE, sessionOrgHasEntitlement } from "@/lib/admin/activeOrg";
+import { isUnknownAdminPath } from "@/lib/admin/adminRoutes";
 
 /**
  * Host guard + server-side auth gates.
@@ -320,6 +321,17 @@ export async function middleware(req: NextRequest) {
   }
   if (!hasUser) {
     return NextResponse.redirect(new URL("/admin", req.url));
+  }
+  // V4 Stage G: an address no admin page claims answers a real 404 (not a
+  // 200 with the 404 screen). The rewrite lands on the [...not_found]
+  // catch-all, so the in-shell not-found page still renders.
+  if (isUnknownAdminPath(pathname)) {
+    const notFound = NextResponse.rewrite(new URL("/admin/__not_found", req.url), {
+      status: 404,
+      request: { headers: req.headers },
+    });
+    for (const c of response.cookies.getAll()) notFound.cookies.set(c);
+    return notFound;
   }
   return response;
 }

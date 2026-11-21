@@ -1,5 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { shortName } from "@/lib/capture/cardKind";
 import { todayISO } from "@/lib/comms/consent";
 import { MAX_BODY, MAX_OUTCOME, MAX_TITLE } from "@/lib/comms/stories";
@@ -115,4 +116,23 @@ export async function fileStory(db: SupabaseClient, orgId: string, input: FileSt
   }
 
   return { ok: true, storyId, identifiable };
+}
+
+/**
+ * The filer Talk to log's "Keep story" uses (lib/capture/v4Cards.ts
+ * keepStory). The route builds it only after requirePermission("comms.manage",
+ * { entitlement: "modules.comms" }) passed for this org.
+ */
+export function bankFiler(orgId: string, capturedBy: string | null) {
+  return async (story: { title: string | null; text: string; about: string | null; identifiable: unknown }) => {
+    const r = await fileStory(getSupabaseAdmin(), orgId, {
+      title: story.title,
+      body: story.text,
+      about: story.about,
+      identifiable: story.identifiable,
+      capturedBy,
+      source: "reed",
+    });
+    return r.ok ? { ok: true as const, storyId: r.storyId } : { ok: false as const, error: r.error };
+  };
 }

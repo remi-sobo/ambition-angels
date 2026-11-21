@@ -222,13 +222,13 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
       {
         label: "Import a CSV",
         href: "/admin/settings/imports/csv",
-        blurb: "People, participants or contacts from any system that exports CSV.",
+        blurb: "Donors, gifts or participants from any system that exports CSV. Preview first; undo after.",
         features: ["modules.program", "modules.fundraising"],
       },
       {
         label: "Donors and gifts",
         href: "/admin/settings/imports/donors",
-        blurb: "Donor records and gift history.",
+        blurb: "Donor records and gift history, through the same wizard.",
         features: ["modules.fundraising"],
       },
       {

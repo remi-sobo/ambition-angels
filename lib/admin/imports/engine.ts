@@ -1,6 +1,7 @@
 import { createHash } from "crypto";
 import Papa from "papaparse";
 import { validateAndMerge, type CustomFieldDef } from "@/lib/admin/customFields";
+import { normalizeGiftMethod } from "@/lib/fundraising/import-gifts";
 
 /**
  * Import engine (spec #5 E2) — the pure core of the staged import layer.
@@ -17,14 +18,16 @@ import { validateAndMerge, type CustomFieldDef } from "@/lib/admin/customFields"
  * semicolon-separated multiselects) but never its own registry rules.
  */
 
-export type ImportEntityType = "student" | "constituent";
+/** V4 Stage F: "gift" rows carry a donor and one gift each (the old
+ *  /admin/fundraising/import wizard, now inside this one). */
+export type ImportEntityType = "student" | "constituent" | "gift";
 
 // ── Spine fields ────────────────────────────────────────────────────────────
 // The universal columns an import may target, per entity. `kind` drives
 // coercion; everything lands as a string except where noted. Custom fields
 // (the org's registry) extend this list at mapping time.
 
-export type SpineFieldKind = "text" | "email" | "phone" | "date" | "stage" | "enum" | "cohort";
+export type SpineFieldKind = "text" | "email" | "phone" | "date" | "stage" | "enum" | "cohort" | "money" | "method";
 
 export type SpineField = {
   key: string;
@@ -62,7 +65,22 @@ export const SPINE_FIELDS: Record<ImportEntityType, SpineField[]> = {
     { key: "postal_code", label: "Postal code", kind: "text", maxLen: 20 },
     { key: "notes", label: "Notes", kind: "text", maxLen: 2000 },
   ],
+  gift: [
+    { key: "type", label: "Type", kind: "enum", options: ["person", "organization"] },
+    { key: "first_name", label: "First name", kind: "text", maxLen: 120 },
+    { key: "last_name", label: "Last name", kind: "text", maxLen: 120 },
+    { key: "org_name", label: "Organization name", kind: "text", maxLen: 200 },
+    { key: "email", label: "Email", kind: "email" },
+    { key: "phone", label: "Phone", kind: "phone" },
+    { key: "amount", label: "Gift amount", kind: "money", required: true },
+    { key: "gift_date", label: "Gift date", kind: "date", required: true },
+    { key: "method", label: "Payment method", kind: "method" },
+    { key: "notes", label: "Gift notes", kind: "text", maxLen: 2000 },
+  ],
 };
+
+/** Columns of a gift row that describe the donor (the rest describe the gift). */
+export const GIFT_DONOR_KEYS = ["type", "first_name", "last_name", "org_name", "email", "phone"] as const;
 
 // ── CSV parsing ─────────────────────────────────────────────────────────────
 
@@ -109,7 +127,7 @@ export function validateMapping(
     if (!target) continue;
     if (!headerSet.has(column)) return { ok: false, error: `Mapped column "${column}" is not in the file` };
     if (!spineKeys.has(target) && !customKeys.has(target)) {
-      return { ok: false, error: `"${target}" is not a field of this ${entity === "constituent" ? "constituent" : "participant"} (spine or custom)` };
+      return { ok: false, error: `"${target}" is not a field of this ${entity === "student" ? "participant" : entity === "gift" ? "gift import" : "constituent"} (spine or custom)` };
     }
     const prev = seen.get(target);
     if (prev) return { ok: false, error: `Both "${prev}" and "${column}" map to "${target}"` };
@@ -135,6 +153,11 @@ export function suggestMapping(
   for (const f of SPINE_FIELDS[entity]) {
     targets.set(norm(f.key), f.key);
     targets.set(norm(f.label), f.key);
+  }
+  if (entity === "gift") {
+    for (const [alias, key] of [["date", "gift_date"], ["donation_date", "gift_date"], ["amount", "amount"], ["donation_amount", "amount"], ["gift", "amount"], ["payment_method", "method"], ["company", "org_name"], ["organization", "org_name"]] as const) {
+      if (!targets.has(alias)) targets.set(alias, key);
+    }
   }
   for (const d of defs) {
     if (!targets.has(norm(d.key))) targets.set(norm(d.key), d.key);
@@ -274,6 +297,15 @@ export function buildRow(normalized: Record<string, string>, ctx: BuildContext):
           cohortId = id;
           break;
         }
+        case "money": {
+          const n = parseFloat(raw.replace(/[$,\s]/g, ""));
+          if (!Number.isFinite(n) || n <= 0) return { ok: false, error: `${sf.label}: "${raw}" is not an amount above zero` };
+          spine[key] = Math.round(n * 100) / 100;
+          break;
+        }
+        case "method":
+          spine[key] = normalizeGiftMethod(raw);
+          break;
         case "enum": {
           const v = raw.toLowerCase();
           if (!sf.options?.includes(v)) {
@@ -299,6 +331,12 @@ export function buildRow(normalized: Record<string, string>, ctx: BuildContext):
     if (typeof spine.first_name !== "string" || !spine.first_name) {
       return { ok: false, error: "First name is required" };
     }
+  } else if (ctx.entity === "gift") {
+    if (!spine.first_name && !spine.last_name && !spine.org_name && !spine.email) {
+      return { ok: false, error: "Each gift needs a donor: a name or an email" };
+    }
+    if (typeof spine.amount !== "number") return { ok: false, error: "Gift amount is required" };
+    if (typeof spine.gift_date !== "string") return { ok: false, error: "Gift date is required" };
   } else {
     if (!spine.first_name && !spine.last_name && !spine.org_name) {
       return { ok: false, error: "A name is required (first/last or organization)" };
@@ -338,15 +376,62 @@ export function dedupeEmails(entity: ImportEntityType, built: { spine: Record<st
 
 export type Verdict =
   | { verdict: "create" }
-  | { verdict: "skip"; reason: "already_imported" | "matches_existing"; matchedEntityId: string | null };
+  | { verdict: "skip"; reason: "already_imported" | "matches_existing" | "matches_name"; matchedEntityId: string | null };
 
 /**
  * Verdict precedence (spec §6c): a ledger hit (this exact row was imported
- * before) beats an email match beats create. Pure — the caller resolves the
- * fingerprint against external_refs and the emails against the org's rows.
+ * before) beats an email match beats a name match (V4 Stage F, donors only)
+ * beats create. Pure — the caller resolves the fingerprint against
+ * external_refs and the emails and names against the org's rows.
  */
-export function verdictFor(fingerprintHit: boolean, emailMatchId: string | null): Verdict {
+export function verdictFor(fingerprintHit: boolean, emailMatchId: string | null, nameMatchId: string | null = null): Verdict {
   if (fingerprintHit) return { verdict: "skip", reason: "already_imported", matchedEntityId: null };
   if (emailMatchId) return { verdict: "skip", reason: "matches_existing", matchedEntityId: emailMatchId };
+  if (nameMatchId) return { verdict: "skip", reason: "matches_name", matchedEntityId: nameMatchId };
   return { verdict: "create" };
+}
+
+// ── Donor name matching (V4 Stage F) ────────────────────────────────────────
+
+const squash = (v: unknown) => (typeof v === "string" ? v.trim().replace(/\s+/g, " ").toLowerCase() : "");
+
+/** "first last" for a person, the organization name for an org, or null. */
+export function donorNameKey(r: { type?: unknown; first_name?: unknown; last_name?: unknown; org_name?: unknown }): string | null {
+  const org = squash(r.org_name);
+  const person = [squash(r.first_name), squash(r.last_name)].filter(Boolean).join(" ");
+  if (r.type === "organization" || (!person && org)) return org ? `org:${org}` : null;
+  // A person needs both names to match on: "Dana" alone is not a match.
+  return squash(r.first_name) && squash(r.last_name) ? `person:${person}` : null;
+}
+
+export type DonorIndexRow = { id: string; type?: string | null; first_name?: string | null; last_name?: string | null; org_name?: string | null; emails?: string[] | null };
+
+export type DonorIndex = { byEmail: Map<string, string>; byName: Map<string, { id: string; hasEmail: boolean }> };
+
+/** Email and name lookups over the org's existing donors (first record wins). */
+export function buildDonorIndex(rows: DonorIndexRow[]): DonorIndex {
+  const byEmail = new Map<string, string>();
+  const byName = new Map<string, { id: string; hasEmail: boolean }>();
+  for (const c of rows) {
+    const emails = (c.emails ?? []).filter((e) => typeof e === "string" && e.includes("@"));
+    for (const e of emails) if (!byEmail.has(e.toLowerCase())) byEmail.set(e.toLowerCase(), c.id);
+    const key = donorNameKey(c);
+    if (key && !byName.has(key)) byName.set(key, { id: c.id, hasEmail: emails.length > 0 });
+  }
+  return { byEmail, byName };
+}
+
+/**
+ * The existing donor a row is, or null. Email first. A name match counts
+ * only when it cannot be two different people: the row has no email, or the
+ * existing record has none (two "Dana Whitfield"s with different emails stay
+ * two people).
+ */
+export function matchDonor(spine: Record<string, unknown>, idx: DonorIndex): { id: string; by: "email" | "name" } | null {
+  const email = typeof spine.email === "string" ? spine.email.toLowerCase() : "";
+  if (email && idx.byEmail.has(email)) return { id: idx.byEmail.get(email)!, by: "email" };
+  const key = donorNameKey(spine);
+  const hit = key ? idx.byName.get(key) : undefined;
+  if (hit && (!email || !hit.hasEmail)) return { id: hit.id, by: "name" };
+  return null;
 }

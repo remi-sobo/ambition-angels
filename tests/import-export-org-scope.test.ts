@@ -42,7 +42,6 @@ vi.mock("@/lib/supabase/fetchAll", () => ({
   },
 }));
 
-import { POST as importConstituents } from "@/app/api/admin/import/constituents/route";
 import { GET as exportDonors } from "@/app/api/admin/donors/export/route";
 import { GET as exportGifts } from "@/app/api/admin/gifts/export/route";
 
@@ -80,75 +79,10 @@ function seed() {
   );
 }
 
-const importReq = (rows: unknown[]) =>
-  new NextRequest("http://localhost/api/admin/import/constituents", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ rows }),
-  });
-
 beforeEach(() => {
   db = seed();
   ctx = ctxFor(ORG_A);
   perms = new Set(["fundraising.read"]);
-});
-
-describe("POST /api/admin/import/constituents: a two-org user", () => {
-  test("never matches, updates or attaches gifts to the other org's donors", async () => {
-    const before = JSON.parse(JSON.stringify(db.tables));
-    const res = await importConstituents(
-      importReq([
-        // Exists in both orgs: must match org A's record.
-        { email: "shared@example.org", first_name: "Ada", amount: 40, gift_date: "2025-03-01" },
-        // Exists ONLY in org B: must create a new org-A donor, not match B's.
-        { email: "only-b@example.org", first_name: "Bo", amount: 900, gift_date: "2025-01-01" },
-      ]),
-    );
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body).toMatchObject({ created: 1, matched: 1, gifts: 2, gift_duplicates: 0 });
-
-    // Every write is stamped with the active org.
-    expect(db.inserts.length).toBe(3);
-    for (const { row } of db.inserts) expect(row.org_id).toBe(ORG_A);
-
-    // Every new gift hangs off an org-A constituent.
-    const orgOf = new Map(db.tables.constituents.map((c) => [c.id, c.org_id]));
-    for (const { table, row } of db.inserts) {
-      if (table === "gifts") expect(orgOf.get(row.constituent_id as string)).toBe(ORG_A);
-    }
-    const shared = db.inserts.find((i) => i.table === "gifts" && i.row.amount === 40);
-    expect(shared?.row.constituent_id).toBe("a-shared");
-
-    // Org B's rows are untouched.
-    const orgB = (t: Record<string, unknown>[]) => t.filter((r) => r.org_id === ORG_B);
-    expect(orgB(db.tables.constituents)).toEqual(orgB(before.constituents));
-    expect(orgB(db.tables.gifts)).toEqual(orgB(before.gifts));
-  });
-
-  test("gift dedupe only consults the active org's ledger", async () => {
-    // Switch to org B: the shared email resolves to B's donor, and B's prior
-    // import of 500 on 2025-01-01 is the duplicate, not anything in A.
-    ctx = ctxFor(ORG_B);
-    const res = await importConstituents(
-      importReq([
-        { email: "shared@example.org", amount: 500, gift_date: "2025-01-01" },
-        { email: "shared@example.org", amount: 25, gift_date: "2025-02-01" }, // A's gift, new to B
-      ]),
-    );
-    const body = await res.json();
-    expect(body).toMatchObject({ created: 0, matched: 2, gifts: 1, gift_duplicates: 1 });
-    const gift = db.inserts.find((i) => i.table === "gifts");
-    expect(gift?.row).toMatchObject({ org_id: ORG_B, constituent_id: "b-shared", amount: 25 });
-  });
-
-  test("no org context is a 401 and nothing is read or written", async () => {
-    ctx = null;
-    const res = await importConstituents(importReq([{ email: "x@example.org" }]));
-    expect(res.status).toBe(401);
-    expect(await res.json()).toEqual({ error: "Unauthorized" });
-    expect(db.inserts).toHaveLength(0);
-  });
 });
 
 describe("GET /api/admin/donors/export: a two-org user", () => {
@@ -273,7 +207,7 @@ describe("import/export routes pin the active org (source guard)", () => {
   test("the guard covers the known import and export routes", () => {
     const routes = importExportRoutes();
     for (const r of [
-      "app/api/admin/import/constituents/route.ts",
+      "app/api/admin/imports/[id]/undo/route.ts",
       "app/api/admin/imports/[id]/stage/route.ts",
       "app/api/admin/donors/export/route.ts",
       "app/api/admin/gifts/export/route.ts",

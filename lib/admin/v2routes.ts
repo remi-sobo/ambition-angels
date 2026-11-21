@@ -166,7 +166,7 @@ const ACTIVE: V2RouteRow[] = [
   { v1: "/admin/fundraising/settings", v2: "/admin/settings/fundraising/general", kind: "exact", activation: "now", disposition: "settings" },
   { v1: "/admin/fundraising/settings/stages", v2: "/admin/settings/fundraising/stages", kind: "exact", activation: "now", disposition: "settings" },
   { v1: "/admin/fundraising/duplicates", v2: "/admin/settings/fundraising/duplicates", kind: "exact", activation: "now", disposition: "settings" },
-  { v1: "/admin/fundraising/import", v2: "/admin/settings/imports/donors", kind: "exact", activation: "now", disposition: "settings", note: "merging into the one import wizard is Stage F" },
+  { v1: "/admin/fundraising/import", v2: "/admin/settings/imports/donors", kind: "exact", activation: "now", disposition: "settings", note: "Stage F: the seat redirects into the one import wizard (target gift)" },
   { v1: "/admin/finance/rules", v2: "/admin/settings/finance/rules", kind: "exact", activation: "now", disposition: "settings" },
   { v1: "/admin/finance/config", v2: "/admin/settings/finance/config", kind: "exact", activation: "now", disposition: "settings" },
   { v1: "/admin/finance/upload", v2: "/admin/settings/finance/upload", kind: "exact", activation: "now", disposition: "settings" },

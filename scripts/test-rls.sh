@@ -257,6 +257,7 @@ ordered=(
   comms_phase3_outputs.sql
   comms_phase4_editions.sql
   comms_phase6_loop.sql
+  import_batch_undo.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

@@ -17,22 +17,58 @@
 
 // Layout
 export { default as PageShell, PageSection } from "./PageShell";
-export { default as PageHeader } from "../PageHeader";
+export { default as PageHeader, IdentityChip } from "../PageHeader";
+export type { Crumb } from "../PageHeader";
 export { default as SectionHeading } from "../SectionHeading";
 
 // Surfaces
 export { default as Card, CardHeader, CardMetric, CardFooter } from "./Card";
 export type { CardTone } from "./Card";
 export { default as StatCard } from "../StatCard";
+export type { StatCardProps, Delta } from "../StatCard";
+export { default as Figure, SummaryStrip } from "./Figure";
+export type { FigureProps } from "./Figure";
+// <MetricFigure> (catalog-fed Figure) is a server component that reads the
+// org's metric catalog; import it from "../MetricFigure" directly so client
+// components that use this barrel never pull a server read into their bundle.
+export { default as NextStepBar } from "./NextStepBar";
 export { default as EmptyState } from "../EmptyState";
 export { default as Alert } from "./Alert";
 export type { AlertTone } from "./Alert";
+export { default as Notice } from "./Notice";
+export type { NoticeTone } from "./Notice";
+export {
+  SkeletonBlock,
+  SkeletonGroup,
+  SkeletonHeader,
+  SkeletonFigure,
+  SkeletonStrip,
+  SkeletonTable,
+  SkeletonTimeline,
+} from "./Skeleton";
+
+// Overlays (one focus-trap behaviour, shared)
 export { default as Modal } from "./Modal";
+export { default as Drawer } from "./Drawer";
+// The shared focus trap lives in ./useFocusTrap (a "use client" hook).
+// Import it from there in client code; a hook re-exported here would be
+// read as a value through a server module (tests/client-boundary.test.ts).
+export { default as MoreActionsMenu } from "./MoreActionsMenu";
+export type { MenuAction } from "./MoreActionsMenu";
 
 // Controls
-export { default as Button, ButtonLink } from "./Button";
-export type { ButtonVariant, ButtonSize } from "./Button";
-export { default as Input, Field, Select, Textarea, Checkbox } from "./Input";
+export { default as Button, ButtonLink, buttonClass } from "./Button";
+export type { ButtonVariant, ButtonSize, ButtonProps } from "./Button";
+export { default as Input, Field, Select, Textarea, Checkbox, fieldDescribedBy } from "./Input";
+export type { ControlSize } from "./Input";
+export { TextField, SelectField, TextareaField, DateField, CheckboxField } from "./Field";
+export type { SelectOption } from "./Field";
+
+// List page controls
+export { default as FilterRow } from "./FilterRow";
+export type { QuickFilter } from "./FilterRow";
+export { default as SavedViews, SaveViewButton } from "./SavedViews";
+export type { SavedView } from "./SavedViews";
 
 // Navigation
 export { default as Tabs, TabLink } from "./Tabs";
@@ -48,3 +84,5 @@ export { default as ListRow, ListRows } from "./ListRow";
 export { default as Badge, StatusBadge, CountBadge } from "./Badge";
 export type { BadgeTone } from "./Badge";
 export { StatusChip, CategoryTag, ScoreBadge } from "../StatusChip";
+export { default as Timeline, TimelineChip } from "./Timeline";
+export type { TimelineEntry, TimelineFilter } from "./Timeline";

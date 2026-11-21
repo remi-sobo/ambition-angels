@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { type ReceiptGift } from "@/lib/fundraising/receipt";
+import { TransportError } from "@/lib/comms/transport";
 import {
-  receiptEmailText,
-  receiptEmailHtml,
-  type ReceiptGift,
-} from "@/lib/fundraising/receipt";
+  buildReceiptEmail,
+  resolveOrgEmailIdentity,
+  transportForIdentity,
+} from "@/lib/email/org-identity";
 import { closeAckTaskForGift } from "@/lib/fundraising/ack-tasks";
 import { constituentName } from "@/lib/fundraising/display";
 
@@ -34,11 +35,18 @@ export async function POST(req: NextRequest) {
   if (!personalNote) {
     return NextResponse.json({ error: "personal_note is required" }, { status: 400 });
   }
-  if (!process.env.RESEND_API_KEY) {
-    return NextResponse.json({ error: "RESEND_API_KEY is not configured" }, { status: 503 });
-  }
-
   const supabase = createServerSupabase();
+
+  // The sender is THIS org, never a default. An org that hasn't set up what
+  // a receipt legally needs is refused here, before anything is claimed.
+  const resolved = await resolveOrgEmailIdentity(supabase, ctx.orgId, "receipt");
+  if (!resolved.ok) {
+    return NextResponse.json({ error: resolved.reason }, { status: 422 });
+  }
+  const sender = await transportForIdentity(resolved.identity);
+  if ("blocked" in sender) {
+    return NextResponse.json({ error: sender.blocked }, { status: 503 });
+  }
   const { data: gift, error } = await supabase
     .from("gifts")
     .select(
@@ -75,8 +83,8 @@ export async function POST(req: NextRequest) {
     typeof body?.subject === "string" && body.subject.trim()
       ? body.subject.trim().slice(0, 150)
       : `Thank you for supporting ${ctx.orgName}`;
-  const text = receiptEmailText(personalNote, receiptGift);
-  const html = receiptEmailHtml(personalNote, receiptGift);
+  const email = buildReceiptEmail(resolved.identity, { to: toEmail, subject, personalNote, gift: receiptGift });
+  const text = email.text;
   const sentAt = new Date().toISOString();
 
   // Claim the gift BEFORE emailing: an atomic conditional update is the
@@ -100,41 +108,32 @@ export async function POST(req: NextRequest) {
 
   // Two failure shapes, two responses (exactly-once is impossible against
   // an external mail API, so choose the safe side of each):
-  // - Resend returns an error object → the email definitively did NOT go
-  //   out: release the claim, fully retryable.
-  // - The call throws (network/timeout) → the email MAY have gone out:
-  //   keep the claim so the queue can't double-email a donor, and tell the
-  //   operator to verify in Resend.
-  let sendResult: Awaited<ReturnType<Resend["emails"]["send"]>>;
+  // - The transport says the email definitively did NOT go out (rejected,
+  //   auth, paused): release the claim, fully retryable.
+  // - Unknown outcome (network/timeout): the email MAY have gone out. Keep
+  //   the claim so the queue can't double-email a donor, and tell the
+  //   operator to verify.
   try {
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    sendResult = await resend.emails.send({
-      // The from-address must stay on the Resend-verified sending domain;
-      // per-org sender identity arrives with org_comms_settings (later PR).
-      from: "Ambition Angels <careers@mail.ambitionangels.org>",
-      to: toEmail,
-      subject,
-      text,
-      html,
-    });
+    await sender.transport.send(email);
   } catch (e) {
-    console.error("Acknowledgment send outcome unknown:", e);
-    return NextResponse.json(
-      {
-        error:
-          "Send status unknown — the gift stays marked as acknowledged so the donor can't be double-emailed. Check the Resend dashboard; if it truly failed, re-thank from the donor's profile.",
-      },
-      { status: 502 }
-    );
-  }
-  if (sendResult.error) {
-    console.error("Acknowledgment send rejected:", sendResult.error);
-    // Definitive rejection — release the claim for retry.
+    const failure = e instanceof TransportError ? e.failure : "unknown";
+    if (failure === "unknown") {
+      console.error("Acknowledgment send outcome unknown:", e);
+      return NextResponse.json(
+        {
+          error:
+            "Send status unknown. The gift stays marked as acknowledged so the donor can't be emailed twice. Check the Resend dashboard or the Gmail Sent folder; if it truly failed, re-thank from the donor's profile.",
+        },
+        { status: 502 }
+      );
+    }
+    console.error("Acknowledgment send rejected:", e);
     await supabase
       .from("gifts")
       .update({ acknowledgment_status: "pending", acknowledged_at: null })
       .eq("id", giftId);
-    return NextResponse.json({ error: "Email send failed — try again" }, { status: 502 });
+    const detail = e instanceof Error && e.message ? ` ${e.message}` : "";
+    return NextResponse.json({ error: `Email send failed. Try again.${detail}` }, { status: 502 });
   }
 
   // The thank-you is done — close the linked ack task (if any) so the gift

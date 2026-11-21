@@ -1,16 +1,20 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import { getEntityHistory } from "@/lib/admin/history";
-import StatCard from "../../_components/StatCard";
+import PageHeader, { IdentityChip } from "../../_components/PageHeader";
+import NextStepBar from "../../_components/ui/NextStepBar";
+import Figure, { SummaryStrip } from "../../_components/ui/Figure";
+import { complianceNextStep } from "@/lib/admin/compliance/calendar";
 import { EntityTasks } from "../../_components/EntityTasks";
 import { EntityDocuments } from "../../_components/EntityDocuments";
 import { CommentThread } from "../../_components/CommentThread";
 import { EntityHistory } from "../../_components/EntityHistory";
 import { TYPE } from "@/lib/admin/typeScale";
 import { type ComplianceItem } from "../_components/ComplianceControls";
-import { KIND_LABELS } from "../_components/labels";
+import { KIND_LABELS, RECUR_OPTIONS } from "../_components/labels";
+
+const RECUR_LABEL: Record<string, string> = Object.fromEntries(RECUR_OPTIONS);
 import { handleLabel } from "@/lib/admin/assignees";
 import {
   ItemStatusActions,
@@ -68,59 +72,46 @@ export default async function ComplianceItemPage({ params }: { params: { id: str
   const today = new Date().toISOString().slice(0, 10);
   const openItem = item.status === "upcoming" || item.status === "in_progress";
   const overdue = openItem && item.due_date < today;
-  const checklist = item.checklist ?? [];
+  const checklist = Array.isArray(item.checklist) ? item.checklist : [];
+  const step = complianceNextStep(item, today);
   const checklistDone = checklist.filter((c) => c.done).length;
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
-      <div className="flex items-center gap-3 flex-wrap mb-6">
-        <Link href="/admin/compliance" className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors">
-          ← Compliance
-        </Link>
-        <h1 className={`${TYPE.pageTitle} !text-lg`}>{item.title}</h1>
-        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
-          {KIND_LABELS[item.kind] ?? item.kind}
-        </span>
-        <span
-          className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-            overdue
-              ? "bg-expense/10 text-expense"
-              : item.status === "in_progress"
-              ? "bg-status-watch-bg text-status-watch-text"
-              : "bg-tile text-ink-2"
-          }`}
-        >
-          {overdue ? "Overdue" : STATUS_LABELS[item.status] ?? item.status}
-        </span>
-        <div className="ml-auto">
-          <ItemStatusActions item={item} />
-        </div>
-      </div>
+      <PageHeader
+        breadcrumb={[{ label: "Compliance", href: "/admin/organization/compliance" }]}
+        title={item.title}
+        chips={
+          <>
+            <IdentityChip>{KIND_LABELS[item.kind] ?? item.kind}</IdentityChip>
+            <IdentityChip>{overdue ? "Overdue" : STATUS_LABELS[item.status] ?? item.status}</IdentityChip>
+            {item.assigned_to ? <IdentityChip>Owner: {handleLabel(item.assigned_to)}</IdentityChip> : null}
+          </>
+        }
+        primaryAction={<ItemStatusActions item={item} />}
+        moreActions={[{ label: "All deadlines", href: "/admin/organization/compliance" }]}
+      />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <StatCard
-          label="Due"
-          value={fmtDate(item.due_date)}
-          sub={overdue ? "overdue" : undefined}
-        />
-        <StatCard
+      <NextStepBar
+        title={step.text}
+        due={overdue ? { text: "Overdue.", late: true } : undefined}
+        meta={item.recur !== "none" ? "Marking it filed rolls the due date forward one period." : "A one-time deadline."}
+      />
+
+      <SummaryStrip label="Deadline summary">
+        <Figure label="Due" value={fmtDate(item.due_date)} source={overdue ? "Past due" : "Next due date for this deadline"} />
+        <Figure
           label="Repeats"
-          value={item.recur === "none" ? "One-time" : item.recur}
-          sub={item.recur !== "none" ? "rolls forward on filing" : undefined}
+          value={item.recur === "none" ? "One-time" : RECUR_LABEL[item.recur] ?? item.recur}
+          source={item.recur !== "none" ? "Rolls forward on filing" : "Does not repeat"}
         />
-        <StatCard
+        <Figure
           label="Last filed"
-          value={item.last_filed_at ? fmtDate(item.last_filed_at.slice(0, 10)) : "—"}
-          sub={`${filings.length} filing${filings.length === 1 ? "" : "s"} on record`}
-          muted={!item.last_filed_at}
+          value={item.last_filed_at ? fmtDate(item.last_filed_at.slice(0, 10)) : null}
+          source={`${filings.length} filing${filings.length === 1 ? "" : "s"} on record`}
         />
-        <StatCard
-          label="Checklist"
-          value={checklist.length > 0 ? `${checklistDone}/${checklist.length}` : "—"}
-          sub="prep items"
-          muted={checklist.length === 0}
-        />
-      </div>
+        <Figure label="Checklist" value={checklist.length > 0 ? `${checklistDone} of ${checklist.length}` : null} source="Prep items done" />
+      </SummaryStrip>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <section className="lg:col-span-5 bg-tile border-hairline rounded-panel-lg p-5 space-y-3 self-start">

@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
+import { isEnvIntegrationOwner, requireEnvIntegrationOwner } from "@/lib/integrations/env-owner";
 import { audit } from "@/lib/audit";
 
 // X7 — HubSpot connection management. `connections` is service-path only
 // (RLS deny-all), so all reads/writes here go through the service-role client
 // behind admin auth. "Connecting" enables the sync gates (an active row);
-// the access token itself still comes from env until X8.
+// the access token itself still comes from env until X8, so only the org that
+// owns that token (lib/integrations/env-owner.ts) may connect or change flags.
 
 const FLAGS = ["sync_out", "sync_in", "sync_gifts_as_deals"] as const;
 type Flag = (typeof FLAGS)[number];
@@ -27,9 +29,11 @@ async function readRow(orgId: string) {
 export async function GET() {
   const ctx = await getOrgContext();
   if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const row = await readRow(ctx.orgId);
+  const available = await isEnvIntegrationOwner("hubspot", ctx.orgId);
+  const row = available ? await readRow(ctx.orgId) : null;
   const meta = (row?.meta ?? {}) as Record<string, unknown>;
   return NextResponse.json({
+    available,
     connected: row?.status === "active",
     tokenPresent: !!process.env.HUBSPOT_ACCESS_TOKEN,
     secretPresent: !!process.env.HUBSPOT_CLIENT_SECRET,
@@ -42,8 +46,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const gate = await requireEnvIntegrationOwner("hubspot");
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
+  const ctx = gate.ctx;
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   const action = body.action;

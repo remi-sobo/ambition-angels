@@ -4,6 +4,7 @@ import { getOrgContext } from "@/lib/admin/auth";
 import PageHeader from "../../_components/PageHeader";
 import HubSpotSettings from "./_components/HubSpotSettings";
 import { TYPE } from "@/lib/admin/typeScale";
+import { isEnvIntegrationOwner, NOT_OWNER_MESSAGE } from "@/lib/integrations/env-owner";
 
 // X7 — fundraising integrations / settings. Reads the service-only connections
 // row directly (RLS deny-all → must use the service-role client server-side).
@@ -16,8 +17,11 @@ export default async function FundraisingSettingsPage() {
   // RLS, so scope to the active org (else another tenant's HubSpot connection
   // status/config would show). No session → render the disconnected default.
   const ctx = await getOrgContext();
+  // The HubSpot token is one env credential owned by one org; every other org
+  // sees a plain explanation instead of connect controls.
+  const hubspotAvailable = ctx ? await isEnvIntegrationOwner("hubspot", ctx.orgId) : false;
   try {
-    const { data } = ctx ? await getSupabaseAdmin()
+    const { data } = ctx && hubspotAvailable ? await getSupabaseAdmin()
       .from("connections")
       .select("status, meta")
       .eq("org_id", ctx.orgId)
@@ -41,12 +45,22 @@ export default async function FundraisingSettingsPage() {
     <div className="min-h-screen bg-ink">
       <div className="max-w-[900px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
         <PageHeader title="Fundraising settings" subtitle="Integrations & sync" />
-        <HubSpotSettings
-          connected={connected}
-          tokenPresent={!!process.env.HUBSPOT_ACCESS_TOKEN}
-          secretPresent={!!process.env.HUBSPOT_CLIENT_SECRET}
-          flags={flags}
-        />
+        {hubspotAvailable ? (
+          <HubSpotSettings
+            connected={connected}
+            tokenPresent={!!process.env.HUBSPOT_ACCESS_TOKEN}
+            secretPresent={!!process.env.HUBSPOT_CLIENT_SECRET}
+            flags={flags}
+          />
+        ) : (
+          <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
+            <div className="px-5 py-4 border-b border-hairline">
+              <h2 className={TYPE.cardTitle}>HubSpot</h2>
+              <p className="text-xs text-ink-3">Not available</p>
+            </div>
+            <p className="px-5 py-4 text-sm text-ink-2">{NOT_OWNER_MESSAGE.hubspot}</p>
+          </section>
+        )}
 
         <section className="bg-tile border-hairline rounded-panel-lg overflow-hidden">
           <div className="px-5 py-4 border-b border-hairline">

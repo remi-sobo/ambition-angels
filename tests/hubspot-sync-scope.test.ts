@@ -73,7 +73,7 @@ const engagementsJob = (): JobRow => ({
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(getSupabaseAdmin).mockReturnValue(stubAdmin(engagementsJob) as never);
-  vi.mocked(upsertEngagements).mockImplementation(async (_subtype, records) => ({
+  vi.mocked(upsertEngagements).mockImplementation(async (_orgId, _subtype, records) => ({
     inserted: records.length,
     failed: [],
   }));

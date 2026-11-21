@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { hubspotReadEnabled } from "@/lib/hubspot/connection";
+import { hubspotReadOrg } from "@/lib/hubspot/connection";
 import { applyContactFromHubSpot, applyCompanyFromHubSpot } from "@/lib/hubspot/sync-in";
 
 // HubSpot inbound webhooks (X6). Makes the CRM sync two-way: HubSpot pushes
@@ -46,7 +46,9 @@ export async function POST(req: NextRequest) {
   }
 
   // Standalone / outbound-only orgs ack-and-ignore (no retries from HubSpot).
-  if (!(await hubspotReadEnabled())) {
+  // The owner org is the only one these events can apply to.
+  const orgId = await hubspotReadOrg();
+  if (!orgId) {
     return NextResponse.json({ received: true, ignored: true });
   }
 
@@ -79,9 +81,9 @@ export async function POST(req: NextRequest) {
     let status = "processed";
     try {
       if (type.startsWith("contact.") && !type.endsWith("deletion")) {
-        await applyContactFromHubSpot(objectId);
+        await applyContactFromHubSpot(orgId, objectId);
       } else if (type.startsWith("company.") && !type.endsWith("deletion")) {
-        await applyCompanyFromHubSpot(objectId);
+        await applyCompanyFromHubSpot(orgId, objectId);
       }
       // deletions and deal/engagement events are intentionally not applied here
       // (BloomOS is the system of record for those) — logged + acknowledged.

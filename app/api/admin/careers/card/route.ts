@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { requireAaOnly } from "@/lib/admin/aaOnly";
 import { runGates } from "@/lib/ms/gates";
 
 // Inline edits during review (ms-career-library-v2.md step 5). Only drafts
@@ -19,9 +19,8 @@ const EDITABLE = [
 ] as const;
 
 export async function PATCH(req: NextRequest) {
-  if (!(await isAuthed())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const gate = await requireAaOnly("aa.career_library", { write: true });
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
   const body = await req.json().catch(() => ({}));
   const socCode = body.soc_code;
   if (typeof socCode !== "string" || !/^\d{2}-\d{4}$/.test(socCode)) {

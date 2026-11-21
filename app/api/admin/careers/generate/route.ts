@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { requireAaOnly } from "@/lib/admin/aaOnly";
 import { generateCard, type OccupationInput } from "@/lib/ms/generate";
 import { asRiasecProfile } from "@/lib/ms/riasec";
 
@@ -12,9 +12,8 @@ export const maxDuration = 120; // deep-tier call, possibly twice
 // review UI shows exactly why it is not ready. Approval is a human click in
 // /admin/careers, structurally (ms_cards_approved_requires_review).
 export async function POST(req: NextRequest) {
-  if (!(await isAuthed())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const gate = await requireAaOnly("aa.career_library", { write: true });
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
   const { soc_code } = await req.json().catch(() => ({}));
   if (typeof soc_code !== "string" || !/^\d{2}-\d{4}$/.test(soc_code)) {
     return NextResponse.json({ error: "Invalid soc_code" }, { status: 400 });

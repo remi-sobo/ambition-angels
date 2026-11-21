@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
@@ -10,12 +11,16 @@ import { NextResponse, type NextRequest } from "next/server";
 export async function updateSession(req: NextRequest): Promise<{
   response: NextResponse;
   hasUser: boolean;
+  /** The signed-in user's id and their SESSION client (RLS applies), for the
+   *  few gates cheap enough to check membership/entitlement at the edge. */
+  userId: string | null;
+  supabase: SupabaseClient | null;
 }> {
   let response = NextResponse.next({ request: req });
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return { response, hasUser: false };
+  if (!url || !key) return { response, hasUser: false, userId: null, supabase: null };
 
   const supabase = createServerClient(url, key, {
     cookies: {
@@ -36,5 +41,5 @@ export async function updateSession(req: NextRequest): Promise<{
     data: { user },
   } = await supabase.auth.getUser();
 
-  return { response, hasUser: !!user };
+  return { response, hasUser: !!user, userId: user?.id ?? null, supabase: supabase as unknown as SupabaseClient };
 }

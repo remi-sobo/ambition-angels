@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { isAuthed } from "@/lib/admin/auth";
+import { requireAaOnly } from "@/lib/admin/aaOnly";
 
 // GET /api/admin/fundraising/prospects/hubspot-search?q=&lifecycle=&offset=
 // HubSpot mirror contacts NOT already on the bench, for the import picker.
@@ -9,7 +9,8 @@ export const dynamic = "force-dynamic";
 const PAGE = 50;
 
 export async function GET(req: NextRequest) {
-  if (!(await isAuthed())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const gate = await requireAaOnly("aa.hubspot_mirror");
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 
   const { searchParams } = new URL(req.url);
   const q = (searchParams.get("q") ?? "").trim();

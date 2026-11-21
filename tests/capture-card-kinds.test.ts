@@ -116,11 +116,15 @@ describe("card kinds", () => {
 });
 
 describe("the consent hold", () => {
-  test("there is no consent storage on main, so an identifiable story is always held", () => {
-    expect(CONSENT_STORAGE_EXISTS).toBe(false);
+  // V4 Stage D changed this on purpose: the story bank (and story_consents)
+  // landed, so consent storage exists. A card itself never has consent on
+  // file, so an identifiable story on a card is still always held; only a
+  // consent recorded on the story in Comms lifts it (lib/comms/story-gate.ts).
+  test("consent storage exists since Stage D; a card is held until consent is on file", () => {
+    expect(CONSENT_STORAGE_EXISTS).toBe(true);
     expect(storyHold({ identifiable: true })).toBe("consent");
-    expect(storyHold({ identifiable: true }, true)).toBe("consent");
-    expect(storyUsable({ identifiable: true }, true)).toBe(false);
+    expect(storyUsable({ identifiable: true })).toBe(false);
+    expect(storyHold({ identifiable: true }, true)).toBeNull();
   });
 
   test("only an explicit false lifts the hold; anything else holds", () => {

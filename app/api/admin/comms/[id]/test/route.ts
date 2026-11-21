@@ -6,6 +6,7 @@ import { resolveRecipients } from "@/lib/fundraising/segments";
 import { personalize, buildCampaignEmail } from "@/lib/fundraising/comms-email";
 import { loadOrgCommsSettings, sendBlocker } from "@/lib/comms/settings";
 import { transportFor } from "@/lib/comms/transport";
+import { campaignStoryBlockForOrg } from "@/lib/comms/story-gate-server";
 
 const isUuid = (v: string) => /^[0-9a-f-]{36}$/i.test(v);
 
@@ -28,6 +29,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     .eq("id", params.id)
     .maybeSingle();
   if (!c) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // A test copy leaves BloomOS too: the consent gate applies (V4 Stage D).
+  const storyBlock = await campaignStoryBlockForOrg(ctx.orgId, params.id);
+  if (storyBlock) return NextResponse.json({ error: storyBlock }, { status: 409 });
 
   const settings = await loadOrgCommsSettings(supabase, ctx.orgId);
   const blocked = sendBlocker(settings);

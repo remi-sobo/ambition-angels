@@ -65,7 +65,9 @@ describe("the shell triggers (structural)", () => {
   test("the layout mounts V2QuickAdd; the V1 FAB retired with the V1 chrome", () => {
     const src = read("app", "admin", "layout.tsx");
     // V4 Stage C: Capture entry points also need ops.write (canCapture).
-    expect(src).toMatch(/<V2QuickAdd currentUser=\{user\} reedEnabled=\{reedEnabled\} captureEnabled=\{canCapture\} \/>/);
+    // V4 Stage D adds Capture a story behind modules.comms + comms.manage.
+    expect(src).toMatch(/<V2QuickAdd currentUser=\{user\} reedEnabled=\{reedEnabled\} captureEnabled=\{canCapture\} storyEnabled=\{canStory\} \/>/);
+    expect(src).toMatch(/canStory = !!features\?\.includes\("modules\.comms"\) && !!perms\?\.includes\("comms\.manage"\)/);
     // The V1 branch (and its FAB) were deleted with NAV_SECTIONS — Spec B's
     // named cleanup, discharged after Spec Inbox X2.
     expect(src).not.toMatch(/QuickAddButton/);

@@ -95,12 +95,15 @@ export default function V2MobileBar({
   currentUser,
   reedEnabled,
   captureEnabled = false,
+  storyEnabled = false,
 }: {
   nav: ShellNav;
   currentUser: AdminUser | null;
   reedEnabled: boolean;
   /** Record (Capture, C4) behind ai.capture. */
   captureEnabled?: boolean;
+  /** V4 Stage D: Capture a story (StoryPhone), in the More sheet. */
+  storyEnabled?: boolean;
 }) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
@@ -270,6 +273,21 @@ export default function V2MobileBar({
                   </Svg>
                   <span className="font-heading font-semibold text-sm">Add task</span>
                 </button>
+              )}
+              {storyEnabled && (
+                <Link
+                  href="/admin/comms/stories/new"
+                  onClick={() => setSheet(null)}
+                  className="flex min-h-[52px] items-center gap-3 rounded-panel px-3 py-2 text-left transition-colors hover:bg-white/[0.06] active:scale-[0.99]"
+                >
+                  <Svg className="w-5 h-5 shrink-0 opacity-80">
+                    <>
+                      <path d="M5 4h11l3 3v13H5z" />
+                      <path d="M8 10h8M8 14h6" />
+                    </>
+                  </Svg>
+                  <span className="font-heading font-semibold text-sm">Capture a story</span>
+                </Link>
               )}
               {/* Report an issue lives in the More sheet too (DoD 5: the
                   trigger works from Quick Add AND mobile More). */}

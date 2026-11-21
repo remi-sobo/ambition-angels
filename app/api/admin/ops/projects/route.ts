@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getAdminUser, getOrgContext } from "@/lib/admin/auth";
+import { getAdminUser } from "@/lib/admin/auth";
 import {
   isCategory,
   isProjectStatus,
   isAdminUserId,
 } from "@/app/admin/ops/_types/ops";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 function isISODate(v: unknown): v is string {
   return typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -14,10 +15,9 @@ function isISODate(v: unknown): v is string {
 // ── POST /api/admin/ops/projects ───────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("ops.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   const createdBy = await getAdminUser();
   if (!createdBy) {
     return NextResponse.json({ error: "Unknown admin user" }, { status: 401 });
@@ -73,10 +73,9 @@ export async function POST(req: NextRequest) {
 // ── GET /api/admin/ops/projects ────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("ops.read");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
 
   const url = new URL(req.url);
   const supabase = getSupabaseAdmin();

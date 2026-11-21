@@ -291,7 +291,7 @@ export default async function StrategicPlanPage({
                 the labeled section each belongs to. */}
             {isEmpty && (
               <Link
-                href="/admin/strategic-plan/setup"
+                href="/admin/settings/organization/strategy-setup"
                 className="text-xs font-semibold text-ink-1 bg-tile hover:bg-tile px-4 py-2 rounded-full transition-colors"
               >
                 Set up
@@ -328,7 +328,7 @@ export default async function StrategicPlanPage({
                     : `Still missing: ${completeness.gaps.join(", ")}.`}
                 </p>
                 <Link
-                  href="/admin/strategic-plan/setup"
+                  href="/admin/settings/organization/strategy-setup"
                   className="inline-block mt-4 text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-5 py-2.5 rounded-full transition-colors"
                 >
                   {completeness.empty ? "Start the guided setup" : "Continue the guided setup"}
@@ -379,7 +379,7 @@ export default async function StrategicPlanPage({
                 links={[
                   { href: "/admin/strategic-plan/review", label: "Monthly review" },
                   { href: "/admin/strategic-plan/people", label: "People" },
-                  { href: "/admin/strategic-plan/setup", label: "Set up" },
+                  { href: "/admin/settings/organization/strategy-setup", label: "Set up" },
                 ]}
               >
                 <UnassignedMetrics metrics={unassignedMetrics} goals={goalOptions} />

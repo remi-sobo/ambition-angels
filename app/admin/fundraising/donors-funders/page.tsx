@@ -161,7 +161,7 @@ export default async function DonorsFundersPage({
             label="constituents"
             hint="Every donor, funder, and contact lives on this one list. Record a gift and its donor appears automatically, or bring your history in at once."
             action={
-              <Link href="/admin/fundraising/import" className="text-xs font-semibold text-orange hover:text-orange-dark">
+              <Link href="/admin/settings/imports/donors" className="text-xs font-semibold text-orange hover:text-orange-dark">
                 Import donors and gifts (CSV) →
               </Link>
             }

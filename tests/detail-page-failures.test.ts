@@ -34,16 +34,20 @@ describe("patchTask", () => {
   });
 
   test("the list view checks every save and rolls back on failure", () => {
+    // TaskListView is the worked example of lib/admin/saveAction.ts (V4
+    // Stage A1): every write goes through saveAction, which checks res.ok
+    // and the error shape, rolls back, and toasts with userMessage().
     const view = readFileSync(join(__dirname, "..", "app/admin/ops/_components/TaskListView.tsx"), "utf8");
     // No raw, unchecked PATCH left in the view.
     expect(view).not.toMatch(/method:\s*"PATCH"/);
     const status = view.slice(view.indexOf("async function patchStatus"), view.indexOf("const onCompleteTask"));
-    expect(status).toMatch(/await patchTask\(/);
-    expect(status).toMatch(/cancel\(t\.id\)/);
-    expect(status).toMatch(/toast\.error\(failed\)/);
+    expect(status).toMatch(/await saveAction\(/);
+    expect(status).toMatch(/rollback: \(\) => cancel\(t\.id\)/);
+    expect(status).toMatch(/toast,/);
     const reorder = view.slice(view.indexOf("async function persist"), view.indexOf("function onDrop"));
-    expect(reorder).toMatch(/setLocal\(previous\)/);
-    expect(reorder).toMatch(/toast\.error\(failed\)/);
+    expect(reorder).toMatch(/await saveAction\(/);
+    expect(reorder).toMatch(/rollback: \(\) => setLocal\(previous\)/);
+    expect(reorder).toMatch(/toast,/);
   });
 });
 

@@ -1,29 +1,57 @@
 import type { ReactNode } from "react";
 import { Sparkline } from "../finance/_components/charts";
 import { TYPE } from "@/lib/admin/typeScale";
+import { FigureBody } from "./ui/Figure";
+import type { Freshness } from "@/lib/admin/figure";
 
 /**
- * The universal stat card — Visual System V3 §8.
+ * The stat card: a thin wrapper around <Figure> in its `card` layout (spec
+ * §6: "StatCard becomes a wrapper around it").
  *
- * "Money Health, Mission Health, My Day and similar cards should share one
- * consistent card architecture. Standardize: card heading, key number,
- * supporting metadata, status, optional action."
+ *   label → value (28px/600, tabular) → delta badge + compare → source line
+ *   → optional sparkline
  *
- * So this is the same five-slot skeleton as <Card>, specialised for a single
- * headline number:
- *
- *   label (12px, sentence case) → value (28px/600, tabular)
- *   → delta badge + supporting metadata → optional sparkline
- *
- * V3 changes from the old stat card: the label is no longer a 11px uppercase
- * letter-spaced micro-label (§2), the radius drops from 28px to 14px (§4), the
- * heavy 1.5px outline becomes a hairline and the shadow is gone (§4, §12) —
- * a stat card is a quiet surface, not an object demanding attention.
+ * New callers pass `source` (where the number comes from and how fresh it
+ * is) and, when it applies, `freshness`. A value of null/undefined renders
+ * "No data yet", never a zero. The old `sub` line and the no-source form
+ * still render for the existing callers, and are deprecated.
  *
  * Pure function of props; server-renderable.
  */
 
 export type Delta = { text: string; direction: "up" | "down" | "neutral" };
+
+type Base = {
+  label: string;
+  value: ReactNode;
+  delta?: Delta;
+  spark?: number[];
+  muted?: boolean;
+  /** Slot 5: an optional "View all" style control. */
+  action?: ReactNode;
+  href?: string;
+  freshness?: Freshness;
+  refreshHref?: string;
+};
+
+type WithSource = Base & {
+  /** Where the number comes from and how fresh it is ("From recorded gifts, Jan 1 to now"). */
+  source: string;
+  /** A comparison line ("vs $12,000 last year"). */
+  compare?: ReactNode;
+  /** @deprecated Use `compare` for comparisons and `source` for provenance. */
+  sub?: string;
+};
+
+type LegacyNoSource = Base & {
+  /** @deprecated Every figure needs a source line (spec §2). Pass `source`. */
+  source?: undefined;
+  compare?: ReactNode;
+  /** @deprecated Use `compare` for comparisons and `source` for provenance. */
+  sub?: string;
+};
+
+export type StatCardProps = WithSource | LegacyNoSource;
 
 export default function StatCard({
   label,
@@ -33,46 +61,56 @@ export default function StatCard({
   spark,
   muted,
   action,
-}: {
-  label: string;
-  value: ReactNode;
-  sub?: string;
-  delta?: Delta;
-  spark?: number[];
-  muted?: boolean;
-  /** Slot 5 — an optional "View all →" style control. */
-  action?: ReactNode;
-}) {
+  href,
+  source,
+  compare,
+  freshness,
+  refreshHref,
+}: StatCardProps) {
   const deltaTone =
     delta?.direction === "up"
       ? "text-revenue bg-revenue-bg"
       : delta?.direction === "down"
         ? "text-expense bg-expense-bg"
         : "text-ink-2 bg-tile";
+
+  const deltaBadge = delta ? (
+    <span className={`${TYPE.badge} px-2 py-0.5 rounded-full ${deltaTone}`}>
+      {/* §13: direction is carried by the arrow glyph, not by hue alone. */}
+      {delta.direction === "up" ? "↑ " : delta.direction === "down" ? "↓ " : ""}
+      {delta.text}
+    </span>
+  ) : null;
+
+  const compareLine =
+    deltaBadge || compare || sub ? (
+      <>
+        {deltaBadge}
+        {compare ? <span className="truncate">{compare}</span> : null}
+        {sub ? <span className={`${TYPE.metadata} truncate`}>{sub}</span> : null}
+      </>
+    ) : undefined;
+
+  // Legacy callers pass formatted ReactNode values ("$1,200", <span>…</span>).
+  // A string or number goes through the Figure state logic (so null is
+  // "No data yet"); any other node is shown as given.
+  const isPlain = value === null || value === undefined || typeof value === "string" || typeof value === "number";
+
   return (
-    <div className="bg-surface border border-hairline rounded-panel p-4 min-w-0">
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <div className={`${TYPE.cardLabel} truncate`}>{label}</div>
-        {action ? <div className="shrink-0">{action}</div> : null}
-      </div>
-      <div className={`${TYPE.cardMetric} ${muted ? "!text-ink-3" : ""}`}>{value}</div>
-      <div className="mt-2 flex items-center gap-2 min-h-[20px]">
-        {delta && (
-          <span
-            className={`${TYPE.badge} px-2 py-0.5 rounded-full ${deltaTone}`}
-          >
-            {/* §13: direction is carried by the arrow glyph, not by hue alone. */}
-            {delta.direction === "up" ? "↑ " : delta.direction === "down" ? "↓ " : ""}
-            {delta.text}
-          </span>
-        )}
-        {sub && <span className={`${TYPE.metadata} truncate`}>{sub}</span>}
-      </div>
-      {spark && spark.length > 1 && (
-        <div className="mt-3">
-          <Sparkline values={spark} width={150} height={28} />
-        </div>
-      )}
-    </div>
+    <FigureBody
+      layout="card"
+      label={label}
+      value={isPlain ? (value as string | number | null | undefined) : undefined}
+      source={source}
+      compare={compareLine}
+      compareTone="default"
+      freshness={freshness}
+      refreshHref={refreshHref}
+      href={href}
+      action={action}
+      muted={muted}
+      valueNode={isPlain ? undefined : value}
+      extra={spark && spark.length > 1 ? <Sparkline values={spark} width={150} height={28} /> : undefined}
+    />
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { saveAction } from "@/lib/admin/saveAction";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
@@ -30,21 +31,15 @@ export default function MondayCommit({
 
   async function commit() {
     setBusy(true);
-    try {
-      const r = await fetch("/api/admin/ops/rhythm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind: "monday_plan" }),
-      });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const { session } = await r.json();
-      setSavedAt(session?.completed_at ?? new Date().toISOString());
+    const r = await saveAction<{ session?: { completed_at?: string } }>({
+      request: { url: "/api/admin/ops/rhythm", method: "POST", body: { kind: "monday_plan" } },
+      failure: "Couldn't commit the week. Try again.",
+      toast,
+    });
+    setBusy(false);
+    if (r.ok) {
+      setSavedAt(r.data.session?.completed_at ?? new Date().toISOString());
       startTransition(() => router.refresh());
-    } catch (e) {
-      console.error("Commit failed:", e);
-      toast.error("Couldn't commit the week. Try again.");
-    } finally {
-      setBusy(false);
     }
   }
 

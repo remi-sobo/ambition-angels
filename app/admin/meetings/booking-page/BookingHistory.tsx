@@ -1,81 +1,69 @@
 import type { Booking, MeetingType } from "@/lib/database.types";
-import { TYPE } from "@/lib/admin/typeScale";
+import DataTable, { type DataTableColumn } from "@/app/admin/_components/ui/DataTable";
+import Badge, { type BadgeTone } from "@/app/admin/_components/ui/Badge";
 
 export type BookingWithType = Booking & { meeting_type: MeetingType | null };
 
 // Past + cancelled bookings, collapsed by default — the record of what came
 // through the booking page. Live upcoming bookings show (badged, cancellable)
 // in the Overview's Upcoming list, so this is history only: server-rendered,
-// no client state.
-export default function BookingHistory({
-  rows,
-  last30Count,
-}: {
-  rows: BookingWithType[];
-  last30Count: number;
-}) {
+// no client state. V4 Stage G: the kit DataTable (phone cards included).
+const TONE: Record<Booking["status"], BadgeTone> = {
+  confirmed: "success",
+  cancelled: "danger",
+  no_show: "warning",
+  completed: "neutral",
+};
+const LABEL: Record<Booking["status"], string> = {
+  confirmed: "Confirmed",
+  cancelled: "Cancelled",
+  no_show: "No show",
+  completed: "Completed",
+};
+
+export default function BookingHistory({ rows, last30Count }: { rows: BookingWithType[]; last30Count: number }) {
+  const columns: DataTableColumn<BookingWithType>[] = [
+    {
+      key: "attendee",
+      header: "Attendee",
+      card: "title",
+      render: (r) => (
+        <>
+          <span className="block text-ink-1 font-semibold">{r.attendee_name}</span>
+          <span className="block text-xs text-ink-3">{r.attendee_email}</span>
+        </>
+      ),
+    },
+    { key: "when", header: "When (PT)", className: "whitespace-nowrap tabular-nums", render: (r) => formatDateTime(new Date(r.start_time)) },
+    { key: "type", header: "Type", render: (r) => r.meeting_type?.name ?? <span className="text-ink-3">No type</span> },
+    { key: "role", header: "Role", className: "text-ink-2", render: (r) => r.attendee_role ?? <span className="text-ink-3">Not given</span> },
+    { key: "status", header: "Status", render: (r) => <Badge tone={TONE[r.status]}>{LABEL[r.status]}</Badge> },
+  ];
   return (
     <section>
       <details className="group">
         <summary className="cursor-pointer list-none inline-flex items-center gap-2 text-xs text-ink-3 hover:text-ink-1 transition-colors">
-          <svg viewBox="0 0 16 16" className="w-3 h-3 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg viewBox="0 0 16 16" className="w-3 h-3 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
             <path d="M6 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           Booking history ({rows.length}) · {last30Count} booked in the last 30 days
         </summary>
         <div className="mt-3">
-          {rows.length === 0 ? (
-            <p className="text-ink-3 text-sm">No past or cancelled bookings yet.</p>
-          ) : (
-            <div className="overflow-x-auto rounded-control border-hairline bg-surface">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className={`text-left ${TYPE.tableHeader} border-b border-hairline`}>
-                    <th className="px-4 py-3 font-medium">When (PT)</th>
-                    <th className="px-4 py-3 font-medium">Type</th>
-                    <th className="px-4 py-3 font-medium">Attendee</th>
-                    <th className="px-4 py-3 font-medium">Role</th>
-                    <th className="px-4 py-3 font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((r) => (
-                    <tr key={r.id} className="border-b border-hairline last:border-0">
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {formatDateTime(new Date(r.start_time))}
-                      </td>
-                      <td className="px-4 py-3">{r.meeting_type?.name ?? "—"}</td>
-                      <td className="px-4 py-3">
-                        <div className="text-ink-1">{r.attendee_name}</div>
-                        <div className="text-xs text-ink-3">{r.attendee_email}</div>
-                      </td>
-                      <td className="px-4 py-3 text-ink-2">{r.attendee_role ?? "—"}</td>
-                      <td className="px-4 py-3">
-                        <StatusPill status={r.status} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <DataTable
+            label="Booking history"
+            noun={{ one: "booking", many: "bookings" }}
+            columns={columns}
+            data={{ rows, total: rows.length, page: 0, pageSize: Math.max(rows.length, 1) }}
+            getRowId={(r) => r.id}
+            getRowLabel={(r) => r.attendee_name}
+            spec={{ sortable: [], defaultSort: null, pageSize: Math.max(rows.length, 1) }}
+            state={{ page: 0, sort: null }}
+            baseHref="/admin/settings/organization/booking-page"
+            emptyMessage="No past or cancelled bookings yet."
+          />
         </div>
       </details>
     </section>
-  );
-}
-
-function StatusPill({ status }: { status: Booking["status"] }) {
-  const styles: Record<Booking["status"], string> = {
-    confirmed: "bg-revenue-bg text-revenue border-revenue/30",
-    cancelled: "bg-expense-bg text-expense border-expense/30",
-    no_show: "bg-status-watch-bg text-status-watch-text border-status-watch/40",
-    completed: "bg-tile text-ink-2 border-hairline",
-  };
-  return (
-    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium border ${styles[status]}`}>
-      {status}
-    </span>
   );
 }
 

@@ -1,346 +1,241 @@
 import Link from "next/link";
 import EmptyState from "../../_components/EmptyState";
+import PageHeader from "../../_components/PageHeader";
+import DataTable, { type DataTableColumn } from "../../_components/ui/DataTable";
+import SavedViews from "../../_components/ui/SavedViews";
+import Figure, { SummaryStrip } from "../../_components/ui/Figure";
+import Badge, { type BadgeTone } from "../../_components/ui/Badge";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { resolveUserHandle } from "@/lib/admin/ops/identity";
-import ProjectListControls from "../_components/ProjectListControls";
+import { applyTableSort, parseTableState, rowRange } from "@/lib/admin/dataTable";
 import {
-  categoryBadgeClass,
-  categoryLabel,
-  formatDueLabel,
-  formatRelative,
-  isAdminUserId,
-  isCategory,
-  isProjectStatus,
-  projectStatusBadgeClass,
-  type Category,
-  type OpsProject,
-  type ProjectStatus,
-} from "../_types/ops";
-import PageHeader from "../../_components/PageHeader";
+  PROJECT_TABLE,
+  parseProjectFilters,
+  projectFilterParams,
+  projectNextStep,
+  projectViews,
+} from "@/lib/admin/ops/projectList";
+import ProjectListControls, { NewProjectButton } from "../_components/ProjectListControls";
+import { categoryLabel, formatDueLabel, formatRelative, isAdminUserId, isCategory, todayISO, type OpsProject } from "../_types/ops";
 import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 export const dynamic = "force-dynamic";
 
-const PAGE_SIZE = 25;
+// V4 Stage G — Projects on the List archetype (spec §5; Main.dc.html):
+// header with one primary action, saved views ("mine" first), one filter
+// row, a summary strip with sourced figures, DataTable v2 with a next-step
+// column (URL sort and paging, phone cards). Filters keep their V1 params.
+const BASE = "/admin/work/projects";
 
-type SearchParams = {
-  status?: string;
-  category?: string;
-  assignee?: string;
-  q?: string;
-  sort?: string;
-  dir?: string;
-  page?: string;
-  grants?: string;
-};
+const STATUS_TONE: Record<string, BadgeTone> = { active: "success", paused: "warning", done: "neutral", archived: "neutral" };
 
-const VALID_SORT = ["title", "due_date", "last_touched_at"] as const;
-type SortKey = (typeof VALID_SORT)[number];
-
-function parseParams(sp: SearchParams) {
-  const status = isProjectStatus(sp.status ?? "")
-    ? (sp.status as ProjectStatus)
-    : sp.status === ""
-    ? null // explicit "all"
-    : "active";
-  const category = sp.category && isCategory(sp.category) ? (sp.category as Category) : null;
-  // "me" resolves to the current user; the page reads the cookie below.
-  const assignee = sp.assignee ?? "";
-  const q = (sp.q ?? "").trim();
-  const sort: SortKey = VALID_SORT.includes(sp.sort as SortKey)
-    ? (sp.sort as SortKey)
-    : "last_touched_at";
-  const dir: "asc" | "desc" = sp.dir === "asc" ? "asc" : "desc";
-  const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
-  // Grant-backed projects are hidden by default so a pipeline full of
-  // prospect-stage grants doesn't bury the Projects view. "grants=show" reveals
-  // them.
-  const showGrants = sp.grants === "show";
-  return { status, category, assignee, q, sort, dir, page, showGrants };
-}
+type Row = OpsProject & { openTasks: number };
 
 export default async function ProjectsListPage({
   searchParams,
 }: {
-  searchParams: SearchParams;
+  searchParams?: Record<string, string | string[] | undefined>;
 }) {
   const roleGate = await requirePagePermission("ops.read", "Operations");
   if (!roleGate.ok) return roleGate.page;
-  const { status, category, assignee, q, sort, dir, page, showGrants } =
-    parseParams(searchParams);
+  const raw = searchParams ?? {};
+  const filters = parseProjectFilters(raw, isCategory);
+  const state = parseTableState(raw, PROJECT_TABLE);
   const me = await resolveUserHandle();
   const currentUser = me?.handle ?? null;
-  const resolvedAssignee = assignee === "me" ? currentUser : assignee;
-
-  const supabase = getSupabaseAdmin();
 
   // Org fence: service-role client bypasses RLS, so the list + its task-count
   // lookup MUST filter by the active org. No org → empty list.
   if (!me?.orgId) {
     return (
-      <div className="px-4 lg:px-8 py-6 lg:py-8">
+      <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
         <PageHeader title="Projects" subtitle="Sign in to view your organization's projects." />
       </div>
     );
   }
   const orgId = me.orgId;
+  const supabase = getSupabaseAdmin();
+  const today = todayISO();
+  const assignee = filters.assignee === "me" ? currentUser : filters.assignee;
 
-  let baseQuery = supabase.from("ops_projects").select("*", { count: "exact" }).eq("org_id", orgId);
-  if (!showGrants) baseQuery = baseQuery.is("grant_id", null);
-  if (status) baseQuery = baseQuery.eq("status", status);
-  if (category) baseQuery = baseQuery.eq("category", category);
-  if (resolvedAssignee === "unassigned") {
-    baseQuery = baseQuery.is("assigned_to", null);
-  } else if (resolvedAssignee && isAdminUserId(resolvedAssignee)) {
-    baseQuery = baseQuery.eq("assigned_to", resolvedAssignee);
+  let query = supabase.from("ops_projects").select("*", { count: "exact" }).eq("org_id", orgId);
+  if (!filters.showGrants) query = query.is("grant_id", null);
+  if (filters.status !== "all") query = query.eq("status", filters.status);
+  if (filters.category) query = query.eq("category", filters.category);
+  if (assignee === "unassigned") query = query.is("assigned_to", null);
+  else if (assignee && isAdminUserId(assignee)) query = query.eq("assigned_to", assignee);
+  if (filters.q) {
+    const safe = filters.q.replace(/[,()*%]/g, "").trim();
+    if (safe) query = query.ilike("title", `%${safe}%`);
   }
-  if (q) {
-    const safe = q.replace(/[,()*%]/g, "").trim();
-    if (safe) baseQuery = baseQuery.ilike("title", `%${safe}%`);
-  }
+  query = applyTableSort(query, state.sort, { title: "title", due_date: "due_date", last_touched_at: "last_touched_at" });
+  const { from, to } = rowRange(state.page, PROJECT_TABLE.pageSize);
 
-  const offset = (page - 1) * PAGE_SIZE;
-  baseQuery = baseQuery
-    .order(sort, { ascending: dir === "asc", nullsFirst: false })
-    .range(offset, offset + PAGE_SIZE - 1);
-
-  const [{ data: rows, error, count }, { count: orgProjectCount }] = await Promise.all([
-    baseQuery,
-    // Any project at all — the first-run signal for Q5's EmptyState (the
-    // default view filters to Active, which reads as zero on day one).
+  // The strip counts the org's open (active) projects, grant workspaces left
+  // out unless the list shows them, so the numbers match what the list holds.
+  const activeBase = () => {
+    let q = supabase.from("ops_projects").select("*", { count: "exact", head: true }).eq("org_id", orgId).eq("status", "active");
+    if (!filters.showGrants) q = q.is("grant_id", null);
+    return q;
+  };
+  const [{ data: rows, error, count }, { count: orgProjectCount }, activeRes, lateRes, unassignedRes] = await Promise.all([
+    query.range(from, to),
+    // Any project at all: the first-run signal (the default view filters to
+    // Active, which reads as zero on day one).
     supabase.from("ops_projects").select("*", { count: "exact", head: true }).eq("org_id", orgId),
+    activeBase(),
+    activeBase().lt("due_date", today),
+    activeBase().is("assigned_to", null),
   ]);
-  const total = orgProjectCount ?? 0;
-  if (error) {
-    console.error("[/admin/ops/projects] query failed:", {
-      code: error.code,
-      message: error.message,
-    });
-  }
-  const projects = (rows as OpsProject[] | null) ?? [];
-  const totalCount = count ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  if (error) console.error("[projects] query failed:", { code: error.code, message: error.message });
 
-  // Open task counts for the projects on this page.
+  const projects = (rows as OpsProject[] | null) ?? [];
   const openCounts = new Map<string, number>();
   if (projects.length > 0) {
-    const ids = projects.map((p) => p.id);
     const { data: taskRows } = await supabase
       .from("ops_tasks")
       .select("project_id, status")
       .eq("org_id", orgId)
-      .in("project_id", ids)
-      .neq("status", "done");
+      .in("project_id", projects.map((p) => p.id))
+      .neq("status", "done")
+      .is("archived_at", null);
     for (const r of (taskRows as Array<{ project_id: string }> | null) ?? []) {
       openCounts.set(r.project_id, (openCounts.get(r.project_id) ?? 0) + 1);
     }
   }
+  const data = {
+    rows: projects.map((p): Row => ({ ...p, openTasks: openCounts.get(p.id) ?? 0 })),
+    total: count ?? 0,
+    page: state.page,
+    pageSize: PROJECT_TABLE.pageSize,
+    error: error ? "The projects could not be read." : null,
+  };
+  const firstRun = (orgProjectCount ?? 0) === 0 && !error;
+  const countOf = (r: { count: number | null; error: unknown }) => (r.error ? null : r.count ?? 0);
+  const grantsNote = filters.showGrants ? "" : ", grant projects left out";
+  const { views, activeKey } = projectViews(BASE, filters);
+  const newProject = <NewProjectButton currentUser={currentUser} basePath={BASE} />;
 
-  function buildSortHref(nextSort: SortKey, nextDir: "asc" | "desc"): string {
-    const params = new URLSearchParams();
-    if (status) params.set("status", status);
-    if (category) params.set("category", category);
-    if (assignee) params.set("assignee", assignee);
-    if (q) params.set("q", q);
-    if (showGrants) params.set("grants", "show");
-    params.set("sort", nextSort);
-    params.set("dir", nextDir);
-    return `/admin/ops/projects?${params.toString()}`;
-  }
-
-  function buildPageHref(p: number): string {
-    const params = new URLSearchParams();
-    if (status) params.set("status", status);
-    if (category) params.set("category", category);
-    if (assignee) params.set("assignee", assignee);
-    if (q) params.set("q", q);
-    if (showGrants) params.set("grants", "show");
-    if (sort !== "last_touched_at") params.set("sort", sort);
-    if (dir !== "desc") params.set("dir", dir);
-    if (p > 1) params.set("page", String(p));
-    const s = params.toString();
-    return s ? `/admin/ops/projects?${s}` : "/admin/ops/projects";
-  }
-
-  const fromIdx = totalCount === 0 ? 0 : offset + 1;
-  const toIdx = Math.min(offset + PAGE_SIZE, totalCount);
+  const columns: DataTableColumn<Row>[] = [
+    {
+      key: "title",
+      header: "Project",
+      card: "title",
+      render: (p) => (
+        <>
+          <Link href={`${BASE}/${p.id}`} className="font-semibold text-ink-1 hover:text-orange transition-colors">
+            {p.title}
+          </Link>
+          <span className="block text-xs text-ink-2">{categoryLabel(p.category)}</span>
+        </>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (p) => <Badge tone={STATUS_TONE[p.status] ?? "neutral"}>{categoryLabel(p.status)}</Badge>,
+    },
+    {
+      key: "owner",
+      header: "Owner",
+      className: "text-ink-2",
+      render: (p) => (p.assigned_to ? <span className="capitalize">{p.assigned_to}</span> : <span className="text-ink-3">No owner</span>),
+    },
+    {
+      key: "due_date",
+      header: "Due",
+      className: "text-ink-2 tabular-nums",
+      render: (p) => (p.due_date ? formatDueLabel(p.due_date) : <span className="text-ink-3">No date</span>),
+    },
+    {
+      key: "open",
+      header: "Open tasks",
+      align: "right",
+      className: "tabular-nums",
+      render: (p) => p.openTasks,
+    },
+    {
+      key: "last_touched_at",
+      header: "Last touched",
+      className: "text-ink-2",
+      render: (p) => formatRelative(p.last_touched_at),
+    },
+  ];
 
   return (
-    <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
       <PageHeader
         title="Projects"
-        actions={
-          <div className="text-xs text-ink-2">
-            {totalCount > 0 ? (
-              <>
-                Showing <span className="text-ink-1">{fromIdx}–{toIdx}</span> of{" "}
-                <span className="text-ink-1">{totalCount}</span>
-              </>
-            ) : (
-              "No matching projects"
-            )}
-          </div>
-        }
+        subtitle="Work with a goal and an owner: grant deliverables, launches, board prep"
+        primaryAction={newProject}
+        moreActions={[
+          { label: "See all tasks", href: "/admin/work/tasks" },
+          { label: filters.showGrants ? "Hide grant projects" : "Show grant projects", href: `${BASE}?${new URLSearchParams({ ...projectFilterParams({ ...filters, showGrants: !filters.showGrants }) }).toString()}` },
+        ]}
       />
 
-      <ProjectListControls
-        status={status ?? ""}
-        category={category ?? ""}
-        assignee={assignee}
-        q={q}
-        currentUser={currentUser}
-        showGrants={showGrants}
-      />
-
-      {projects.length === 0 ? (
-        total === 0 ? (
-          <EmptyState
-            label="projects"
-            hint="A project groups tasks with a goal and an owner. Grant deliverables, program launches, board prep."
-            action={
-              <span className="text-xs font-semibold text-ink-2">
-                Use <span className="text-orange">+ New project</span> above to create the first one.
-              </span>
-            }
-          />
-        ) : (
-          <div className="rounded-panel border-hairline bg-surface p-8 text-center text-sm text-ink-2">
-            No projects match your filters. Try clearing them, or use{" "}
-            <span className="text-orange">+ New project</span> above.
-          </div>
-        )
+      {firstRun ? (
+        <EmptyState
+          label="projects"
+          title="No projects yet"
+          purpose="A project groups tasks with a goal and an owner, so a launch or a grant deliverable has one place to track it."
+          primaryAction={newProject}
+          next="Add tasks on the project page. Its open tasks and due date show up here with a next step."
+        />
       ) : (
-        <div className="rounded-panel border-hairline bg-surface overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="border-b border-hairline bg-tile">
-                <tr>
-                  <SortHeader label="Title"        col="title"           current={sort} dir={dir} buildHref={buildSortHref} />
-                  <ColHeader  label="Category" />
-                  <ColHeader  label="Status" />
-                  <ColHeader  label="Assignee" />
-                  <SortHeader label="Due"          col="due_date"        current={sort} dir={dir} buildHref={buildSortHref} />
-                  <ColHeader  label="Open tasks"   align="right" />
-                  <SortHeader label="Last touched" col="last_touched_at" current={sort} dir={dir} buildHref={buildSortHref} />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-hairline">
-                {projects.map((p) => (
-                  <tr key={p.id} className="hover:bg-tile transition-colors">
-                    <td className="py-2.5 pl-4 pr-4">
-                      <Link
-                        href={`/admin/ops/projects/${p.id}`}
-                        className="text-ink-1 font-medium hover:text-orange block max-w-[280px] truncate"
-                      >
-                        {p.title}
-                      </Link>
-                    </td>
-                    <td className="py-2.5 pr-4">
-                      <span className={`inline-block px-1.5 py-0.5 rounded text-xs uppercase tracking-wider font-semibold border ${categoryBadgeClass(p.category)}`}>
-                        {categoryLabel(p.category)}
-                      </span>
-                    </td>
-                    <td className="py-2.5 pr-4">
-                      <span className={`inline-block px-1.5 py-0.5 rounded text-xs uppercase tracking-wider font-semibold border ${projectStatusBadgeClass(p.status)}`}>
-                        {p.status}
-                      </span>
-                    </td>
-                    <td className="py-2.5 pr-4">
-                      {p.assigned_to ? (
-                        <span className="inline-flex items-center gap-1 text-ink-2">
-                          <span className="inline-flex w-4 h-4 rounded-full bg-tile items-center justify-center text-xs font-bold uppercase">
-                            {p.assigned_to.charAt(0)}
-                          </span>
-                          <span className="text-xs">{p.assigned_to}</span>
-                        </span>
-                      ) : (
-                        <span className="text-ink-2">—</span>
-                      )}
-                    </td>
-                    <td className="py-2.5 pr-4 text-ink-2 font-mono text-xs">
-                      {p.due_date ? formatDueLabel(p.due_date) : "—"}
-                    </td>
-                    <td className="py-2.5 pr-4 text-right font-mono">
-                      {openCounts.get(p.id) ?? 0}
-                    </td>
-                    <td className="py-2.5 pr-4 text-ink-2 text-xs">
-                      {formatRelative(p.last_touched_at)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {totalPages > 1 && (
-        <nav aria-label="Pagination" className="mt-6 flex items-center justify-between text-xs text-ink-2">
-          <div>
-            Page <span className="text-ink-1">{page}</span> of{" "}
-            <span className="text-ink-1">{totalPages}</span>
-          </div>
-          <div className="flex gap-2">
-            <PageLink disabled={page <= 1} href={buildPageHref(page - 1)} label="← Prev" />
-            <PageLink disabled={page >= totalPages} href={buildPageHref(page + 1)} label="Next →" />
-          </div>
-        </nav>
+        <>
+          <SavedViews views={views} activeKey={activeKey} label="Project views" />
+          <ProjectListControls
+            status={filters.status}
+            category={filters.category}
+            assignee={filters.assignee}
+            q={filters.q}
+            currentUser={currentUser}
+            showGrants={filters.showGrants}
+          />
+          <div className="mt-3" />
+          <SummaryStrip label="Project summary">
+            <Figure label="Active projects" value={countOf(activeRes)} source={`Status active, as of now${grantsNote}`} />
+            <Figure
+              label="Late"
+              value={countOf(lateRes)}
+              source="Active and past their due date"
+              compareTone="danger"
+              href={(countOf(lateRes) ?? 0) > 0 ? `${BASE}?sort=due_date` : undefined}
+            />
+            <Figure
+              label="No owner"
+              value={countOf(unassignedRes)}
+              source="Active with nobody assigned"
+              href={(countOf(unassignedRes) ?? 0) > 0 ? `${BASE}?assignee=unassigned` : undefined}
+            />
+          </SummaryStrip>
+          <DataTable
+            label="Projects"
+            noun={{ one: "project", many: "projects" }}
+            columns={columns}
+            nextStep={{
+              header: "Next step",
+              render: (p) => {
+                const n = projectNextStep(p, p.openTasks, today);
+                return (
+                  <span className={n.tone === "late" ? "text-status-critical-text font-semibold" : n.tone === "due" ? "text-ink-1" : "text-ink-2"}>
+                    {n.text}
+                  </span>
+                );
+              },
+            }}
+            data={data}
+            getRowId={(p) => p.id}
+            getRowLabel={(p) => p.title}
+            spec={PROJECT_TABLE}
+            state={state}
+            baseHref={BASE}
+            filters={projectFilterParams(filters)}
+            emptyMessage="No projects match these filters. Clear them, or start a new project."
+          />
+        </>
       )}
     </div>
-  );
-}
-
-function ColHeader({ label, align }: { label: string; align?: "left" | "right" }) {
-  return (
-    <th className={`text-${align ?? "left"} pb-2 pr-4 text-xs uppercase tracking-wider text-ink-2 font-medium`}>
-      {label}
-    </th>
-  );
-}
-
-function SortHeader({
-  label,
-  col,
-  current,
-  dir,
-  buildHref,
-}: {
-  label: string;
-  col: SortKey;
-  current: SortKey;
-  dir: "asc" | "desc";
-  buildHref: (s: SortKey, d: "asc" | "desc") => string;
-}) {
-  const isActive = current === col;
-  const nextDir: "asc" | "desc" = isActive ? (dir === "asc" ? "desc" : "asc") : col === "title" ? "asc" : "desc";
-  const arrow = isActive ? (dir === "asc" ? " ↑" : " ↓") : "";
-  return (
-    <th className="text-left pb-2 pr-4 text-xs uppercase tracking-wider font-medium">
-      <Link
-        href={buildHref(col, nextDir)}
-        className={`hover:text-ink-1 ${isActive ? "text-orange" : "text-ink-2"}`}
-      >
-        {label}
-        <span>{arrow}</span>
-      </Link>
-    </th>
-  );
-}
-
-function PageLink({ disabled, href, label }: { disabled: boolean; href: string; label: string }) {
-  if (disabled) {
-    return (
-      <span className="px-3 py-1.5 rounded-control border border-hairline text-ink-2/50 cursor-default">
-        {label}
-      </span>
-    );
-  }
-  return (
-    <Link
-      href={href}
-      className="px-3 py-1.5 rounded-control border-hairline text-ink-1 hover:text-ink-1 hover:bg-tile"
-    >
-      {label}
-    </Link>
   );
 }

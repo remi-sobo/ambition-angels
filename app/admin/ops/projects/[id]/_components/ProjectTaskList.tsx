@@ -1,7 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { userMessage } from "@/lib/admin/errors";
+import { saveAction } from "@/lib/admin/saveAction";
+import Input, { Select } from "@/app/admin/_components/ui/Input";
+import Button from "@/app/admin/_components/ui/Button";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import { useState, useTransition } from "react";
@@ -84,61 +86,62 @@ export default function ProjectTaskList({
       return;
     }
     setAdding(true);
-    try {
-      const r = await fetch("/api/admin/ops/tasks", {
+    // Not optimistic: the new row needs its server id. The error shows inline.
+    const r = await saveAction({
+      request: {
+        url: "/api/admin/ops/tasks",
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: {
           title,
           category,
           project_id: projectId,
           assigned_to: newAssignee || null,
           due_date: newDue || undefined,
           priority: newPriority,
-        }),
-      });
-      if (!r.ok) {
-        const body = await r.json().catch(() => ({}));
-        throw new Error(userMessage(r, body));
-      }
-      setNewTitle("");
-      setNewDue("");
-      // Keep assignee + priority selected — adding several tasks for the same
-      // person/urgency in a row is common.
-      startTransition(() => router.refresh());
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Add failed");
-    } finally {
-      setAdding(false);
+        },
+      },
+      failure: false,
+    });
+    setAdding(false);
+    if (!r.ok) {
+      setError(r.message);
+      return;
     }
+    setNewTitle("");
+    setNewDue("");
+    // Keep assignee + priority selected — adding several tasks for the same
+    // person/urgency in a row is common.
+    startTransition(() => router.refresh());
   }
 
   // ── Reorder ────────────────────────────────────────────────────────────
 
-  async function persistOrder(newTasks: OpsTask[]) {
+  async function persistOrder(newTasks: OpsTask[], before: OpsTask[]) {
     setBusy(true);
-    try {
-      // Renumber 1..N, PATCH each task whose display_order changed.
-      const updates = newTasks
-        .map((t, idx) => ({ id: t.id, newOrder: idx + 1, oldOrder: t.display_order }))
-        .filter((u) => u.newOrder !== u.oldOrder);
-      await Promise.all(
-        updates.map((u) =>
-          fetch(`/api/admin/ops/tasks/${u.id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ display_order: u.newOrder }),
-          })
-        )
-      );
-      startTransition(() => router.refresh());
-    } catch (e) {
-      console.error("Reorder failed:", e);
-      toast.error("Couldn't save the new order. Reloading.");
-      router.refresh();
-    } finally {
-      setBusy(false);
-    }
+    // The new order is already on screen (onDrop); a failed save puts the
+    // old order back and says so.
+    const updates = newTasks
+      .map((t, idx) => ({ id: t.id, newOrder: idx + 1, oldOrder: t.display_order }))
+      .filter((u) => u.newOrder !== u.oldOrder);
+    const r = await saveAction({
+      request: async () => {
+        const responses = await Promise.all(
+          updates.map((u) =>
+            fetch(`/api/admin/ops/tasks/${u.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ display_order: u.newOrder }),
+            }),
+          ),
+        );
+        return responses.find((x) => !x.ok) ?? responses[0] ?? new Response("{}", { status: 200 });
+      },
+      rollback: () => setTasks(before),
+      failure: "The new order did not save. It is back the way it was.",
+      toast,
+    });
+    setBusy(false);
+    if (r.ok) startTransition(() => router.refresh());
   }
 
   function onDragStart(idx: number) {
@@ -159,10 +162,11 @@ export default function ProjectTaskList({
     const [moved] = newOpen.splice(dragIndex, 1);
     newOpen.splice(idx, 0, moved);
     const next = [...newOpen, ...doneTasks];
+    const before = tasks;
     setTasks(next);
     setDragIndex(null);
     setHoverIndex(null);
-    persistOrder(next);
+    persistOrder(next, before);
   }
   function onDragEnd() {
     setDragIndex(null);
@@ -173,20 +177,13 @@ export default function ProjectTaskList({
 
   async function patchTask(id: string, body: Record<string, unknown>) {
     setBusy(true);
-    try {
-      const r = await fetch(`/api/admin/ops/tasks/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      startTransition(() => router.refresh());
-    } catch (e) {
-      console.error("Task patch failed:", e);
-      toast.error("Couldn't save the change.");
-    } finally {
-      setBusy(false);
-    }
+    const r = await saveAction({
+      request: { url: `/api/admin/ops/tasks/${id}`, method: "PATCH", body },
+      failure: "Couldn't save the change. Try again.",
+      toast,
+    });
+    setBusy(false);
+    if (r.ok) startTransition(() => router.refresh());
   }
 
   // Completing plays the strike → collapse animation, then commits; the task
@@ -204,16 +201,14 @@ export default function ProjectTaskList({
     });
     if (!ok) return;
     setBusy(true);
-    try {
-      const r = await fetch(`/api/admin/ops/tasks/${id}`, { method: "DELETE" });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      startTransition(() => router.refresh());
-    } catch (e) {
-      console.error("Task delete failed:", e);
-      toast.error("Couldn't delete the task.");
-    } finally {
-      setBusy(false);
-    }
+    const r = await saveAction({
+      request: { url: `/api/admin/ops/tasks/${id}`, method: "DELETE" },
+      failure: "Couldn't delete the task. Try again.",
+      success: "Task deleted",
+      toast,
+    });
+    setBusy(false);
+    if (r.ok) startTransition(() => router.refresh());
   }
 
   return (
@@ -367,56 +362,45 @@ export default function ProjectTaskList({
 
       <form onSubmit={addTask} className="space-y-2">
         <div className="flex items-center gap-2">
-          <input
+          <Input
+            id="new-task"
             type="text"
+            aria-label="New task title"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
-            placeholder="Add a task (Enter to create)…"
+            placeholder="Add a task (Enter to create)"
             disabled={adding}
-            className="flex-1 bg-tile border-hairline rounded-control px-3 py-2 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
+            className="flex-1"
           />
-          <button
-            type="submit"
-            disabled={adding || !newTitle.trim()}
-            className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-control"
-          >
-            {adding ? "Adding…" : "Add"}
-          </button>
+          <Button type="submit" variant="secondary" disabled={!newTitle.trim()} loading={adding}>
+            {adding ? "Adding" : "Add"}
+          </Button>
         </div>
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <select
+        <div className="grid grid-cols-3 gap-2">
+          <Select
             value={newAssignee}
             onChange={(e) => setNewAssignee(e.target.value as AdminUserId | "")}
             disabled={adding}
-            aria-label="Assignee"
-            className="bg-tile border-hairline rounded-control px-2 py-1.5 text-ink-1 focus:outline-none focus:border-orange/50"
+            aria-label="Owner"
           >
             <option value="">Unassigned</option>
             {assigneeOptions.map((a) => (
               <option key={a.value} value={a.value}>{a.label}</option>
             ))}
-          </select>
-          <input
-            type="date"
-            value={newDue}
-            onChange={(e) => setNewDue(e.target.value)}
-            disabled={adding}
-            aria-label="Due date"
-            className="bg-tile border-hairline rounded-control px-2 py-1.5 text-ink-1 focus:outline-none focus:border-orange/50"
-          />
-          <select
+          </Select>
+          <Input type="date" value={newDue} onChange={(e) => setNewDue(e.target.value)} disabled={adding} aria-label="Due date" />
+          <Select
             value={newPriority}
             onChange={(e) => setNewPriority(e.target.value as TaskPriority)}
             disabled={adding}
             aria-label="Priority"
-            className="bg-tile border-hairline rounded-control px-2 py-1.5 text-ink-1 focus:outline-none focus:border-orange/50"
           >
             {TASK_PRIORITIES.map((p) => (
               <option key={p} value={p}>
                 {priorityLabel(p)}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
       </form>
       {error && <p className="text-expense text-xs mt-2">{error}</p>}

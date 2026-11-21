@@ -28,15 +28,12 @@ const SCAN_ROOT = join(process.cwd(), "app", "admin");
 
 // (a) files still carrying the display-black voice, with why.
 const DISPLAY_BLACK_ALLOWLIST: { file: string; reason: string }[] = [
-  { file: "app/admin/ops/projects/[id]/_components/ProjectHeader.tsx", reason: "editable in-place project title; the input twin must match the h1 exactly" },
   { file: "app/admin/ops/_components/CategoryCounts.tsx", reason: "display metric (category count)" },
   { file: "app/admin/ops/_components/MondayCommit.tsx", reason: "display metric (commit count)" },
-  { file: "app/admin/work/my-week/page.tsx", reason: "the one ritual-door title (Spec Work W2) — same voice as the doors page it replaces" },
   { file: "app/admin/programs/overview/page.tsx", reason: "display metrics (headline band numerals, Spec Programs P2)" },
   { file: "app/admin/ops/friday/CloseSection.tsx", reason: "display metric (close count — the page body extracted at Spec Work W1, entry moved with it)" },
   { file: "app/admin/_components/LoginScreen.tsx", reason: "D5 exemption: marketing-style dark surface" },
   { file: "app/admin/finance/_components/charts.tsx", reason: "display metric (chart value + axis label)" },
-  { file: "app/admin/meetings/page.tsx", reason: "display metric (coverage-gap numeral)" },
   { file: "app/admin/meetings/_ui.tsx", reason: "display metric (section count numeral)" },
   { file: "app/admin/legacy/page.tsx", reason: "legacy dashboard, display-stat wall" },
 ];
@@ -46,7 +43,6 @@ const H1_ALLOWLIST: { file: string; reason: string }[] = [
   { file: "app/admin/_components/LoginScreen.tsx", reason: "D5 exemption: marketing-style dark surface" },
   { file: "app/admin/strategic-plan/narrative/_components/shared.tsx", reason: "D5 exemption: full-screen presentation deck" },
   { file: "app/admin/strategic-plan/narrative/_components/Presenter.tsx", reason: "D5 exemption: full-screen presentation deck" },
-  { file: "app/admin/ops/projects/[id]/_components/ProjectHeader.tsx", reason: "editable in-place title; twin input must match" },
   { file: "app/admin/ops/projects/[id]/_components/ProjectDescription.tsx", reason: "markdown renderer: h1 is rendered document content" },
   { file: "app/admin/fundraising/prospects/[id]/_components/BriefSections/RawResearchNotes.tsx", reason: "markdown renderer: h1 is rendered document content" },
 ];

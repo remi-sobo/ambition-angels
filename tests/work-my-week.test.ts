@@ -43,7 +43,10 @@ describe("W2 structural pins", () => {
     expect(s).not.toMatch(/router\.push\(`\/admin\/calendar/);
   });
 
-  test("My Week composes status → the one ritual door → the embedded grid, on its own basePath", () => {
+  // V4 Stage G (on purpose): the one ritual door is the header's primary
+  // action now (spec §5: one primary action in the page header), so it sits
+  // above the status line instead of under it.
+  test("My Week composes the one ritual door (header primary) → status → the embedded grid, on its own basePath", () => {
     const s = src("admin", "work", "my-week", "page.tsx");
     // No longer the B2 re-export of the doors page.
     expect(s).not.toMatch(/from "@\/app\/admin\/ops\/my-week\/page"/);
@@ -51,8 +54,10 @@ describe("W2 structural pins", () => {
     expect(s).toMatch(/href="\/admin\/work\/plan-close"/);
     expect(s).toMatch(/basePath="\/admin\/work\/my-week"/);
     expect(s).toMatch(/searchParams=\{searchParams\}/);
-    expect(s.indexOf("WeekStatusLine status")).toBeLessThan(s.indexOf('href="/admin/work/plan-close"'));
-    expect(s.indexOf('href="/admin/work/plan-close"')).toBeLessThan(s.indexOf("<WeekSection"));
+    expect(s).toMatch(/primaryAction=\{[\s\S]*?href="\/admin\/work\/plan-close"/);
+    expect(s.indexOf('href="/admin/work/plan-close"')).toBeLessThan(s.indexOf("WeekStatusLine status"));
+    expect(s.indexOf("WeekStatusLine status")).toBeLessThan(s.indexOf("<WeekSection"));
+    expect(s.match(/href="\/admin\/work\/plan-close"/g)?.length).toBe(1);
     // One door, not two: the ritual routes are never linked directly — Plan
     // & Close carries both flows since W1.
     expect(s).not.toMatch(/\/admin\/ops\/monday|\/admin\/ops\/friday/);

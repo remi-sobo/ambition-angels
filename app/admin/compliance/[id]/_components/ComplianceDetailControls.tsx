@@ -5,11 +5,12 @@
 // checklist panel, and the filings history panel — each past filing editable
 // with confirmation number, fee, and notes, plus a manual backfill form.
 
+import { saveAction } from "@/lib/admin/saveAction";
+import Button from "@/app/admin/_components/ui/Button";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
-import { userMessage } from "@/lib/admin/errors";
 import { TYPE } from "@/lib/admin/typeScale";
 import { type ComplianceItem, type ChecklistItem } from "../../_components/ComplianceControls";
 import { KIND_LABELS, RECUR_OPTIONS } from "../../_components/labels";
@@ -29,17 +30,11 @@ export type ComplianceFiling = {
 const inputCls =
   "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
+// Every write goes through saveAction (V4 Stage G); callers show the
+// sentence inline or in a toast.
 async function patchItem(id: string, fields: Record<string, unknown>): Promise<string | null> {
-  const res = await fetch(`/api/admin/compliance/${id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(fields),
-  });
-  if (!res.ok) {
-    const j = await res.json().catch(() => ({}));
-    return userMessage(res, j);
-  }
-  return null;
+  const r = await saveAction({ request: { url: `/api/admin/compliance/${id}`, method: "PATCH", body: fields }, failure: false });
+  return r.ok ? null : r.message;
 }
 
 export function ItemStatusActions({ item }: { item: ComplianceItem }) {
@@ -53,37 +48,29 @@ export function ItemStatusActions({ item }: { item: ComplianceItem }) {
     const err = await patchItem(item.id, fields);
     setBusy(false);
     if (err) toast.error(err);
-    router.refresh();
+    else router.refresh();
   };
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       {item.status === "upcoming" && (
-        <button onClick={() => void patch({ status: "in_progress" })} disabled={busy}
-          className="px-3 py-1.5 rounded-full text-xs bg-tile hover:bg-tile text-ink-2">
+        <Button type="button" variant="quiet" onClick={() => void patch({ status: "in_progress" })} disabled={busy}>
           Start
-        </button>
-      )}
-      {item.status === "in_progress" && (
-        <span className="px-2 py-1 text-xs text-status-watch-text">In progress</span>
+        </Button>
       )}
       {openItem && (
-        <button onClick={() => void patch({ status: "filed" })} disabled={busy}
-          className="px-3 py-1.5 rounded-full text-xs font-semibold bg-orange/15 text-orange hover:bg-orange/25">
-          Mark filed{item.recur !== "none" ? " → rolls forward" : ""}
-        </button>
-      )}
-      {openItem && (
-        <button onClick={() => void patch({ status: "waived" })} disabled={busy}
-          className="px-3 py-1.5 rounded-full text-xs text-ink-2 hover:text-ink-1">
+        <Button type="button" variant="quiet" onClick={() => void patch({ status: "waived" })} disabled={busy}>
           Waive
-        </button>
+        </Button>
       )}
-      {!openItem && (
-        <button onClick={() => void patch({ status: "upcoming" })} disabled={busy}
-          className="px-3 py-1.5 rounded-full text-xs bg-tile hover:bg-tile text-ink-2">
+      {openItem ? (
+        <Button type="button" onClick={() => void patch({ status: "filed" })} loading={busy}>
+          {item.recur !== "none" ? "Mark filed (rolls forward)" : "Mark filed"}
+        </Button>
+      ) : (
+        <Button type="button" variant="secondary" onClick={() => void patch({ status: "upcoming" })} loading={busy}>
           Reopen
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -199,20 +186,26 @@ export function NotesAndChecklist({ item }: { item: ComplianceItem }) {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [notesDraft, setNotesDraft] = useState(item.notes ?? "");
-  const [checklist, setChecklist] = useState<ChecklistItem[]>(item.checklist ?? []);
+  // jsonb: anything but an array reads as an empty checklist.
+  const [checklist, setChecklist] = useState<ChecklistItem[]>(Array.isArray(item.checklist) ? item.checklist : []);
   const [newText, setNewText] = useState("");
 
-  const patch = async (fields: Record<string, unknown>) => {
+  const patch = async (fields: Record<string, unknown>, rollback?: () => void) => {
     setBusy(true);
     const err = await patchItem(item.id, fields);
     setBusy(false);
-    if (err) toast.error(err);
+    if (err) {
+      rollback?.();
+      toast.error(err);
+      return;
+    }
     router.refresh();
   };
 
   const saveChecklist = (next: ChecklistItem[]) => {
+    const before = checklist;
     setChecklist(next);
-    void patch({ checklist: next });
+    void patch({ checklist: next }, () => setChecklist(before));
   };
 
   const newId = () =>
@@ -275,6 +268,7 @@ export function NotesAndChecklist({ item }: { item: ComplianceItem }) {
               <li key={c.id} className="flex items-center gap-2 group">
                 <input
                   type="checkbox"
+                  aria-label={c.text}
                   checked={c.done}
                   disabled={busy}
                   onChange={() =>
@@ -299,6 +293,7 @@ export function NotesAndChecklist({ item }: { item: ComplianceItem }) {
         )}
         <form onSubmit={addItem} className="flex gap-2">
           <input
+            aria-label="New checklist item"
             className={`${inputCls} flex-1 !py-1.5 text-xs`}
             value={newText}
             placeholder="Add checklist item"
@@ -333,22 +328,23 @@ function FilingRow({ itemId, filing }: { itemId: string; filing: ComplianceFilin
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    const res = await fetch(`/api/admin/compliance/${itemId}/filings/${filing.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        filed_date: filedDate,
-        confirmation: confirmation.trim() || null,
-        fee: fee.trim() === "" ? null : Number(fee),
-        notes: notes.trim() || null,
-      }),
+    // A fee is money: no optimistic change, wait for the server.
+    const r = await saveAction({
+      request: {
+        url: `/api/admin/compliance/${itemId}/filings/${filing.id}`,
+        method: "PATCH",
+        body: {
+          filed_date: filedDate,
+          confirmation: confirmation.trim() || null,
+          fee: fee.trim() === "" ? null : Number(fee),
+          notes: notes.trim() || null,
+        },
+      },
+      success: "Filing saved",
+      toast,
     });
     setBusy(false);
-    if (!res.ok) {
-      const j = await res.json().catch(() => ({}));
-      toast.error(userMessage(res, j));
-      return;
-    }
+    if (!r.ok) return;
     setEditing(false);
     router.refresh();
   };
@@ -361,9 +357,13 @@ function FilingRow({ itemId, filing }: { itemId: string; filing: ComplianceFilin
     });
     if (!ok) return;
     setBusy(true);
-    await fetch(`/api/admin/compliance/${itemId}/filings/${filing.id}`, { method: "DELETE" });
+    const r = await saveAction({
+      request: { url: `/api/admin/compliance/${itemId}/filings/${filing.id}`, method: "DELETE" },
+      success: "Filing record deleted",
+      toast,
+    });
     setBusy(false);
-    router.refresh();
+    if (r.ok) router.refresh();
   };
 
   if (editing) {
@@ -455,20 +455,22 @@ export function FilingsPanel({ itemId, filings }: { itemId: string; filings: Com
     if (!filedDate) return;
     setBusy(true);
     setError("");
-    const res = await fetch(`/api/admin/compliance/${itemId}/filings`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        filed_date: filedDate,
-        confirmation: confirmation.trim() || undefined,
-        fee: fee.trim() === "" ? undefined : Number(fee),
-        notes: notes.trim() || undefined,
-      }),
+    const r = await saveAction({
+      request: {
+        url: `/api/admin/compliance/${itemId}/filings`,
+        method: "POST",
+        body: {
+          filed_date: filedDate,
+          confirmation: confirmation.trim() || undefined,
+          fee: fee.trim() === "" ? undefined : Number(fee),
+          notes: notes.trim() || undefined,
+        },
+      },
+      failure: false,
     });
     setBusy(false);
-    if (!res.ok) {
-      const j = await res.json().catch(() => ({}));
-      setError(userMessage(res, j));
+    if (!r.ok) {
+      setError(r.message);
       return;
     }
     setFiledDate(""); setConfirmation(""); setFee(""); setNotes("");

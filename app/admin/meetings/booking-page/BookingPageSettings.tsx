@@ -5,10 +5,13 @@ import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import type { Blackout, MeetingType } from "@/lib/database.types";
 import { TYPE } from "@/lib/admin/typeScale";
+import { saveAction } from "@/lib/admin/saveAction";
+import Button from "@/app/admin/_components/ui/Button";
+import { Field } from "@/app/admin/_components/ui/Input";
+import { CheckboxField, DateField, TextField } from "@/app/admin/_components/ui/Field";
 
-// Shared light-workspace input treatment (matches NewConnectionForm).
-const inputCls =
-  "w-full text-sm bg-cream border-hairline rounded-control px-3 py-2 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50 disabled:opacity-60";
+// V4 Stage G: Settings archetype, kit fields with real labels and every
+// save through saveAction.
 
 // Meeting types + blackouts, stacked — the whole configuration of the public
 // booking page on one screen instead of separate tabs.
@@ -76,27 +79,22 @@ function TypeRow({
   async function save() {
     setSaving(true);
     setMsg(null);
-    try {
-      const r = await fetch(`/api/admin/meet/types/${type.id}`, {
+    const r = await saveAction<{ meetingType: MeetingType }>({
+      request: {
+        url: `/api/admin/meet/types/${type.id}`,
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...draft,
-          default_in_person_address:
-            draft.default_in_person_address.trim() || null,
-        }),
-      });
-      const data = await r.json();
-      if (!r.ok) {
-        setMsg(data.error ?? "Save failed");
-        return;
-      }
-      onSave(data.meetingType);
-      setMsg("Saved.");
-      setTimeout(() => setMsg(null), 2000);
-    } finally {
-      setSaving(false);
+        body: { ...draft, default_in_person_address: draft.default_in_person_address.trim() || null },
+      },
+      failure: false,
+    });
+    setSaving(false);
+    if (!r.ok) {
+      setMsg(r.message);
+      return;
     }
+    onSave(r.data.meetingType);
+    setMsg("Saved.");
+    setTimeout(() => setMsg(null), 2000);
   }
 
   return (
@@ -112,54 +110,48 @@ function TypeRow({
             <div className="text-xs text-ink-3">/{type.slug}</div>
           </div>
         </div>
-        <label className="flex items-center gap-2 text-sm text-ink-2">
-          <input
-            type="checkbox"
-            checked={draft.is_active}
-            onChange={(e) =>
-              setDraft({ ...draft, is_active: e.target.checked })
-            }
-          />
-          Active
-        </label>
+        <CheckboxField
+          label="Active"
+          checked={draft.is_active}
+          onChange={(e) => setDraft({ ...draft, is_active: e.target.checked })}
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Field label="Name">
-          <input
+        <TextField
+          label="Name"
+          controlSize="md"
             value={draft.name}
             onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-            className={inputCls}
-          />
-        </Field>
-        <Field label="Color">
+        />
+        <Field label="Color" htmlFor={`color-${type.id}`}>
           <input
+            id={`color-${type.id}`}
             type="color"
             value={draft.color}
             onChange={(e) => setDraft({ ...draft, color: e.target.value })}
-            className="h-10 w-20 bg-transparent border-hairline rounded cursor-pointer"
+            className="h-10 w-20 bg-transparent border border-hairline rounded-control cursor-pointer"
           />
         </Field>
-        <Field label="Description">
-          <input
+        <TextField
+          label="Description"
+          controlSize="md"
             value={draft.description}
             onChange={(e) =>
               setDraft({ ...draft, description: e.target.value })
             }
-            className={inputCls}
-          />
-        </Field>
-        <Field label="Prep notes">
-          <input
+        />
+        <TextField
+          label="Prep notes"
+          controlSize="md"
             value={draft.prep_notes}
             onChange={(e) =>
               setDraft({ ...draft, prep_notes: e.target.value })
             }
-            className={inputCls}
-          />
-        </Field>
-        <Field label="Duration (min)">
-          <input
+        />
+        <TextField
+          label="Duration (min)"
+          controlSize="md"
             type="number"
             value={draft.duration_minutes}
             onChange={(e) =>
@@ -168,21 +160,19 @@ function TypeRow({
                 duration_minutes: Number(e.target.value),
               })
             }
-            className={inputCls}
-          />
-        </Field>
-        <Field label="Buffer (min)">
-          <input
+        />
+        <TextField
+          label="Buffer (min)"
+          controlSize="md"
             type="number"
             value={draft.buffer_minutes}
             onChange={(e) =>
               setDraft({ ...draft, buffer_minutes: Number(e.target.value) })
             }
-            className={inputCls}
-          />
-        </Field>
-        <Field label="Min notice (hours)">
-          <input
+        />
+        <TextField
+          label="Min notice (hours)"
+          controlSize="md"
             type="number"
             value={draft.min_notice_hours}
             onChange={(e) =>
@@ -191,11 +181,10 @@ function TypeRow({
                 min_notice_hours: Number(e.target.value),
               })
             }
-            className={inputCls}
-          />
-        </Field>
-        <Field label="Max advance (days)">
-          <input
+        />
+        <TextField
+          label="Max advance (days)"
+          controlSize="md"
             type="number"
             value={draft.max_advance_days}
             onChange={(e) =>
@@ -204,9 +193,7 @@ function TypeRow({
                 max_advance_days: Number(e.target.value),
               })
             }
-            className={inputCls}
-          />
-        </Field>
+        />
       </div>
 
       <div className="mt-5 pt-5 border-t border-hairline">
@@ -220,6 +207,7 @@ function TypeRow({
               <button
                 key={opt}
                 type="button"
+                aria-pressed={selected}
                 onClick={() =>
                   setDraft({
                     ...draft,
@@ -231,7 +219,7 @@ function TypeRow({
                 className={[
                   "px-3 py-1.5 rounded text-xs border transition-colors",
                   selected
-                    ? "bg-orange/20 text-orange border-orange/40"
+                    ? "bg-accent-soft text-orange-dark border-orange/40"
                     : "bg-tile text-ink-2 border-hairline hover:bg-tile",
                 ].join(" ")}
               >
@@ -241,48 +229,25 @@ function TypeRow({
           })}
         </div>
         {draft.location_options.includes("in_person") ? (
-          <Field label="Default in-person address (blank = ask attendee)">
-            <input
+          <TextField
+            label="Default in-person address (blank = ask attendee)"
+            controlSize="md"
               value={draft.default_in_person_address}
               onChange={(e) =>
                 setDraft({ ...draft, default_in_person_address: e.target.value })
               }
               placeholder="e.g. 380 Portage Ave, Palo Alto, CA"
-              className={inputCls}
-            />
-          </Field>
+          />
         ) : null}
       </div>
 
       <div className="mt-5 flex items-center gap-3">
-        <button
-          type="button"
-          disabled={saving}
-          onClick={save}
-          className="bg-orange hover:bg-orange-dark text-white text-sm font-semibold px-4 py-2 rounded transition-colors disabled:opacity-50"
-        >
-          {saving ? "Saving…" : "Save"}
-        </button>
+        <Button type="button" onClick={save} loading={saving}>
+          {saving ? "Saving" : "Save"}
+        </Button>
         {msg && <span className="text-sm text-ink-2">{msg}</span>}
       </div>
     </div>
-  );
-}
-
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block">
-      <span className={`block ${TYPE.fieldLabel} mb-1`}>
-        {label}
-      </span>
-      {children}
-    </label>
   );
 }
 
@@ -312,34 +277,25 @@ function Blackouts({
   async function create() {
     setErr(null);
     setSaving(true);
-    try {
-      const r = await fetch("/api/admin/meet/blackouts", {
+    const r = await saveAction<{ blackout: Blackout }>({
+      request: {
+        url: "/api/admin/meet/blackouts",
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: {
           ...draft,
           reason: draft.reason || undefined,
-          meeting_type_ids:
-            draft.meeting_type_ids.length > 0
-              ? draft.meeting_type_ids
-              : undefined,
-        }),
-      });
-      const data = await r.json();
-      if (!r.ok) {
-        setErr(data.error ?? "Add failed");
-        return;
-      }
-      onChanged([...blackouts, data.blackout]);
-      setDraft({
-        start_date: "",
-        end_date: "",
-        reason: "",
-        meeting_type_ids: [],
-      });
-    } finally {
-      setSaving(false);
+          meeting_type_ids: draft.meeting_type_ids.length > 0 ? draft.meeting_type_ids : undefined,
+        },
+      },
+      failure: false,
+    });
+    setSaving(false);
+    if (!r.ok) {
+      setErr(r.message);
+      return;
     }
+    onChanged([...blackouts, r.data.blackout]);
+    setDraft({ start_date: "", end_date: "", reason: "", meeting_type_ids: [] });
   }
 
   async function remove(id: string) {
@@ -350,18 +306,13 @@ function Blackouts({
     });
     if (!ok) return;
     setBusy(id);
-    try {
-      const r = await fetch(`/api/admin/meet/blackouts/${id}`, {
-        method: "DELETE",
-      });
-      if (!r.ok) {
-        toast.error("Couldn't delete the blackout. Try again.");
-        return;
-      }
-      onChanged(blackouts.filter((b) => b.id !== id));
-    } finally {
-      setBusy(null);
-    }
+    const r = await saveAction({
+      request: { url: `/api/admin/meet/blackouts/${id}`, method: "DELETE" },
+      failure: "Couldn't delete the blackout. Try again.",
+      toast,
+    });
+    setBusy(null);
+    if (r.ok) onChanged(blackouts.filter((b) => b.id !== id));
   }
 
   return (
@@ -369,34 +320,31 @@ function Blackouts({
       <div className="rounded-control border-hairline bg-surface p-5">
         <h2 className={`${TYPE.sectionTitle} mb-4`}>Add a blackout</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Field label="Start date">
-            <input
-              type="date"
+          <DateField
+            label="Start date"
+            controlSize="md"
+              
               value={draft.start_date}
               onChange={(e) =>
                 setDraft({ ...draft, start_date: e.target.value })
               }
-              className={inputCls}
-            />
-          </Field>
-          <Field label="End date">
-            <input
-              type="date"
+          />
+          <DateField
+            label="End date"
+            controlSize="md"
+              
               value={draft.end_date}
               onChange={(e) =>
                 setDraft({ ...draft, end_date: e.target.value })
               }
-              className={inputCls}
-            />
-          </Field>
-          <Field label="Reason (optional)">
-            <input
+          />
+          <TextField
+            label="Reason (optional)"
+            controlSize="md"
               value={draft.reason}
               onChange={(e) => setDraft({ ...draft, reason: e.target.value })}
-              className={inputCls}
               placeholder="Out of office"
-            />
-          </Field>
+          />
         </div>
         <div className="mt-4">
           <span className={`block ${TYPE.fieldLabel} mb-2`}>
@@ -409,6 +357,7 @@ function Blackouts({
                 <button
                   key={t.id}
                   type="button"
+                  aria-pressed={selected}
                   onClick={() =>
                     setDraft({
                       ...draft,
@@ -420,7 +369,7 @@ function Blackouts({
                   className={[
                     "px-3 py-1 rounded-full text-xs border transition-colors",
                     selected
-                      ? "bg-orange/20 text-orange border-orange/40"
+                      ? "bg-accent-soft text-orange-dark border-orange/40"
                       : "bg-tile text-ink-2 border-hairline hover:bg-tile",
                   ].join(" ")}
                 >
@@ -431,14 +380,9 @@ function Blackouts({
           </div>
         </div>
         {err && <p className="mt-3 text-sm text-expense">{err}</p>}
-        <button
-          type="button"
-          disabled={saving || !draft.start_date || !draft.end_date}
-          onClick={create}
-          className="mt-5 bg-orange hover:bg-orange-dark text-white text-sm font-semibold px-4 py-2 rounded transition-colors disabled:opacity-50"
-        >
-          {saving ? "Adding…" : "Add blackout"}
-        </button>
+        <Button type="button" variant="secondary" className="mt-5" disabled={!draft.start_date || !draft.end_date} onClick={create} loading={saving}>
+          {saving ? "Adding" : "Add blackout"}
+        </Button>
       </div>
 
       <div>

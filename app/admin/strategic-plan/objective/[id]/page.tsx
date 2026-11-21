@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import { taskStatusToStatus } from "@/lib/admin/status";
-import StatCard from "../../../_components/StatCard";
+import PageHeader from "../../../_components/PageHeader";
+import Figure, { SummaryStrip } from "../../../_components/ui/Figure";
 import { StatusChip } from "@/app/admin/_components/StatusChip";
 import {
   ObjectiveCard,
@@ -126,20 +127,25 @@ export default async function ObjectiveDetailPage({ params }: { params: { id: st
   const initsWithWork = initiatives.filter((i) => (initiativesByGoal[i.goal_id] && (projsByInit[i.id]?.length ?? 0) > 0));
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1000px]">
-      <div className="mb-4">
-        <Link href="/admin/strategic-plan" className="text-xs font-semibold text-orange hover:underline">← Strategy</Link>
-        {objective.three_year_statement && (
-          <p className="text-xs text-ink-2 italic mt-1">3-year · {objective.three_year_statement}</p>
-        )}
-      </div>
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
+      {/* V4 Stage G: Detail archetype. The objective's own title and status
+          stay editable in the card below; the header carries the breadcrumb. */}
+      <PageHeader
+        breadcrumb={[{ label: "Strategic Plan", href: "/admin/organization/strategy" }]}
+        title={objective.title}
+        subtitle={objective.three_year_statement ? `Three-year statement: ${objective.three_year_statement}` : undefined}
+        moreActions={[
+          { label: "Whole plan", href: "/admin/organization/strategy" },
+          { label: "KPI scorecard", href: "/admin/strategic-plan/scorecard" },
+        ]}
+      />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <StatCard label="Goals" value={goals.length} />
-        <StatCard label="Measures" value={kpis.length} />
-        <StatCard label="Initiatives done" value={`${initsDone}/${initiatives.length}`} />
-        <StatCard label="Open tasks" value={openTasks} muted={openTasks === 0} />
-      </div>
+      <SummaryStrip label="Objective summary">
+        <Figure label="Goals" value={goals.length} source="Under this objective" />
+        <Figure label="Measures" value={kpis.length} source="On its goals" />
+        <Figure label="Initiatives done" value={initiatives.length === 0 ? null : `${initsDone} of ${initiatives.length}`} source="Marked done on the plan" />
+        <Figure label="Open tasks" value={openTasks} source="On projects attached to its initiatives" />
+      </SummaryStrip>
 
       {/* Editable tree: objective status/owner, goals, measures, initiatives + add forms. */}
       <ObjectiveCard

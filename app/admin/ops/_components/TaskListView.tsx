@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import EmptyState from "../../_components/EmptyState";
+import Input from "@/app/admin/_components/ui/Input";
+import Button from "@/app/admin/_components/ui/Button";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { saveAction } from "@/lib/admin/saveAction";
@@ -358,21 +360,18 @@ export default function TaskListView({
       )}
 
       <form onSubmit={addTask} className="flex items-center gap-2 pt-1">
-        <input
+        <Input
           type="text"
+          aria-label="New task title"
           value={newTitle}
           onChange={(e) => setNewTitle(e.target.value)}
-          placeholder="Add a task (Enter to create)…"
+          placeholder="Add a task (Enter to create)"
           disabled={adding}
-          className="flex-1 bg-tile border-hairline rounded-control px-3 py-2 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
+          className="flex-1"
         />
-        <button
-          type="submit"
-          disabled={adding || !newTitle.trim()}
-          className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-control"
-        >
-          {adding ? "Adding…" : "Add"}
-        </button>
+        <Button type="submit" variant="secondary" disabled={!newTitle.trim()} loading={adding}>
+          {adding ? "Adding" : "Add"}
+        </Button>
       </form>
       {addError && <p className="text-expense text-xs">{addError}</p>}
     </div>

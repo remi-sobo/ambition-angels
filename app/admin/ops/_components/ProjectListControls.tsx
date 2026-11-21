@@ -1,26 +1,23 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { userMessage } from "@/lib/admin/errors";
-import { useEffect, useRef, useState, useTransition } from "react";
-import {
-  CATEGORIES,
-  PROJECT_STATUSES,
-  categoryLabel,
-  type Category,
-} from "../_types/ops";
+import { useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import FilterRow from "@/app/admin/_components/ui/FilterRow";
+import Button from "@/app/admin/_components/ui/Button";
+import Drawer from "@/app/admin/_components/ui/Drawer";
+import { Select } from "@/app/admin/_components/ui/Input";
+import { DateField, SelectField, TextField, TextareaField } from "@/app/admin/_components/ui/Field";
+import { useSaveAction } from "@/app/admin/_lib/useSaveAction";
+import { CATEGORIES, PROJECT_STATUSES, categoryLabel, type Category } from "../_types/ops";
 import { useAssignees, withSelected } from "../../_lib/useAssignees";
-import { TYPE } from "@/lib/admin/typeScale";
 
 /**
- * Filter chips + search + "New project" button for the projects list.
+ * The projects list's filter row and its New project drawer (V4 Stage G).
  *
- * Filters live in the URL search params (so a filtered view is shareable
- * and survives reload). Local state mirrors the search input for typing
- * responsiveness; everything else is URL-immediate.
- *
- * "New project" opens a modal local to this component so we don't need an
- * extra file for that single piece of UI.
+ * The URL is the state (lib/admin/ops/projectList.ts): search, status,
+ * category, assignee and the grant-projects switch write their params and
+ * paging resets. "New project" is the page's one primary action and opens
+ * the kit Drawer (spec §5 Form: a drawer for anything under ten fields).
  */
 export default function ProjectListControls({
   status,
@@ -38,282 +35,207 @@ export default function ProjectListControls({
   showGrants: boolean;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const memberOptions = withSelected(useAssignees(), assignee === "me" || assignee === "unassigned" ? "" : assignee);
-  const [, startTransition] = useTransition();
-  const [localQ, setLocalQ] = useState(q);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [open, setOpen] = useState(false);
+  const [text, setText] = useState(q);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => setLocalQ(q), [q]);
+  useEffect(() => setText(q), [q]);
 
-  function pushParams(updates: Record<string, string | null>) {
-    const params = new URLSearchParams();
+  function go(updates: Record<string, string | null>) {
     const current: Record<string, string> = {};
-    if (status) current.status = status;
+    if (status && status !== "active") current.status = status;
     if (category) current.category = category;
     if (assignee) current.assignee = assignee;
-    if (q) current.q = q;
+    if (text.trim()) current.q = text.trim();
     if (showGrants) current.grants = "show";
     const merged = { ...current, ...updates };
-    for (const [k, v] of Object.entries(merged)) {
-      if (v !== null && v !== "") params.set(k, v);
-    }
-    startTransition(() => {
-      const qs = params.toString();
-      router.push(qs ? `/admin/ops/projects?${qs}` : "/admin/ops/projects");
-    });
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(merged)) if (v !== null && v !== "") params.set(k, v);
+    const s = params.toString();
+    router.replace(s ? `${pathname}?${s}` : pathname, { scroll: false });
   }
 
-  function onSearch(value: string) {
-    setLocalQ(value);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => pushParams({ q: value || null }), 250);
-  }
+  const onSearch = (v: string) => {
+    setText(v);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => go({ q: v.trim() || null }), 300);
+  };
+
+  const active = (status && status !== "active" ? 1 : 0) + (category ? 1 : 0) + (assignee ? 1 : 0) + (showGrants ? 1 : 0);
 
   return (
-    <>
-      <div className="mb-5 flex flex-wrap items-center gap-3 text-sm">
-        <input
-          type="search"
-          value={localQ}
-          onChange={(e) => onSearch(e.target.value)}
-          placeholder="Search projects…"
-          className="flex-1 min-w-[200px] bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
-        />
-        <select
-          value={status}
-          onChange={(e) => pushParams({ status: e.target.value || null, page: null })}
-          className="bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
-        >
-          <option value="active">Active</option>
-          {PROJECT_STATUSES.filter((s) => s !== "active").map((s) => (
-            <option key={s} value={s}>
-              {categoryLabel(s)}
-            </option>
-          ))}
-          <option value="">All statuses</option>
-        </select>
-        <select
-          value={category}
-          onChange={(e) => pushParams({ category: e.target.value || null, page: null })}
-          className="bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
-        >
-          <option value="">All categories</option>
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c}>
-              {categoryLabel(c)}
-            </option>
-          ))}
-        </select>
-        <select
-          value={assignee}
-          onChange={(e) => pushParams({ assignee: e.target.value || null, page: null })}
-          className="bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
-        >
-          <option value="">All assignees</option>
-          <option value="me">{currentUser ? `Me (${currentUser})` : "Me"}</option>
-          {memberOptions.map((m) => (
-            <option key={m.value} value={m.value}>{m.label}</option>
-          ))}
-          <option value="unassigned">Unassigned</option>
-        </select>
-        <label className="flex items-center gap-2 text-ink-2 cursor-pointer select-none whitespace-nowrap">
-          <input
-            type="checkbox"
-            checked={showGrants}
-            onChange={(e) =>
-              pushParams({ grants: e.target.checked ? "show" : null, page: null })
+    <FilterRow
+      search={{ value: text, onChange: onSearch, label: "Search projects", placeholder: "Search by title" }}
+      quickFilters={[
+        {
+          key: "grants",
+          label: "Grant projects",
+          active: showGrants,
+          onClick: () => go({ grants: showGrants ? null : "show" }),
+        },
+        ...(assignee === "unassigned"
+          ? [{ key: "unassigned", label: "Unassigned", active: true, onClick: () => go({ assignee: null }) }]
+          : [{ key: "unassigned", label: "Unassigned", onClick: () => go({ assignee: "unassigned" }) }]),
+      ]}
+      onClearAll={
+        active > 0 || q
+          ? () => {
+              setText("");
+              router.replace(pathname, { scroll: false });
             }
-            className="accent-orange w-4 h-4"
-          />
-          Show grant projects
-        </label>
-        <button
-          onClick={() => setOpen(true)}
-          className="ml-auto bg-orange hover:bg-orange-dark text-white text-sm font-semibold px-4 py-2 rounded-control whitespace-nowrap"
-        >
-          + New project
-        </button>
-      </div>
-
-      {open && <NewProjectModal onClose={() => setOpen(false)} currentUser={currentUser} />}
-    </>
+          : undefined
+      }
+      right={
+        <div className="flex flex-wrap items-center gap-2">
+          <Select
+            aria-label="Status"
+            value={status || "active"}
+            onChange={(e) => go({ status: e.target.value === "active" ? null : e.target.value })}
+            className="!w-auto"
+          >
+            {PROJECT_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {categoryLabel(s)}
+              </option>
+            ))}
+            <option value="all">Every status</option>
+          </Select>
+          <Select
+            aria-label="Category"
+            value={category}
+            onChange={(e) => go({ category: e.target.value || null })}
+            className="!w-auto"
+          >
+            <option value="">Any category</option>
+            {CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {categoryLabel(c)}
+              </option>
+            ))}
+          </Select>
+          <Select
+            aria-label="Owner"
+            value={assignee}
+            onChange={(e) => go({ assignee: e.target.value || null })}
+            className="!w-auto"
+          >
+            <option value="">Anyone</option>
+            <option value="me">{currentUser ? `Me (${currentUser})` : "Me"}</option>
+            {memberOptions.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label}
+              </option>
+            ))}
+            <option value="unassigned">Unassigned</option>
+          </Select>
+        </div>
+      }
+    />
   );
 }
 
-function NewProjectModal({
-  onClose,
-  currentUser,
-}: {
-  onClose: () => void;
-  currentUser: string | null;
-}) {
+/** The page's primary action: New project, in the kit Drawer. */
+export function NewProjectButton({ currentUser, basePath = "/admin/work/projects" }: { currentUser: string | null; basePath?: string }) {
   const router = useRouter();
+  const save = useSaveAction();
+  const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<Category>("other");
   const [assignee, setAssignee] = useState<string>(currentUser ?? "");
-  const modalOptions = withSelected(useAssignees(), assignee);
+  const options = withSelected(useAssignees(), assignee);
   const [dueDate, setDueDate] = useState("");
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Close on Escape
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
     if (!title.trim()) {
-      setError("Title is required.");
+      setError("Give the project a title.");
       return;
     }
+    setError(null);
     setSaving(true);
-    try {
-      const r = await fetch("/api/admin/ops/projects", {
+    const r = await save<{ project: { id: string } }>({
+      request: {
+        url: "/api/admin/ops/projects",
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: {
           title: title.trim(),
           category,
           assigned_to: assignee || null,
           due_date: dueDate || null,
           description: description || null,
-        }),
-      });
-      if (!r.ok) {
-        const body = await r.json().catch(() => ({}));
-        throw new Error(userMessage(r, body));
-      }
-      const data = (await r.json()) as { project: { id: string } };
-      onClose();
-      router.push(`/admin/ops/projects/${data.project.id}`);
-      router.refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Save failed");
-    } finally {
-      setSaving(false);
-    }
+        },
+      },
+      success: "Project created",
+    });
+    setSaving(false);
+    if (!r.ok) return;
+    setOpen(false);
+    setTitle("");
+    setDueDate("");
+    setDescription("");
+    router.push(`${basePath}/${r.data.project.id}`);
+    router.refresh();
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-panel border-hairline bg-ink shadow-2xl"
-      >
-        <form onSubmit={submit} className="p-6 space-y-4">
-          <h2 className={TYPE.modalTitle}>
-            New Project
-          </h2>
-
-          <Field label="Title" required>
-            <input
-              autoFocus
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-              className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
-            />
-          </Field>
-
-          <Field label="Category" required>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value as Category)}
-              className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
-            >
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {categoryLabel(c)}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Assigned to">
-              <select
-                value={assignee}
-                onChange={(e) =>
-                  setAssignee(e.target.value)
-                }
-                className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
-              >
-                <option value="">Unassigned</option>
-                {modalOptions.map((m) => (
-                  <option key={m.value} value={m.value}>{m.label}</option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Due date">
-              <input
-                type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
-              />
-            </Field>
-          </div>
-
-          <Field label="Description (markdown ok)">
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={4}
-              className="w-full bg-tile border-hairline rounded-control px-3 py-2 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/50"
-            />
-          </Field>
-
-          {error && <p className="text-expense text-xs">{error}</p>}
-
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-sm text-ink-2 hover:text-ink-1 px-4 py-2"
-            >
+    <>
+      <Button type="button" onClick={() => setOpen(true)}>
+        New project
+      </Button>
+      <Drawer
+        open={open}
+        onClose={() => setOpen(false)}
+        title="New project"
+        description="A project groups tasks with a goal and an owner. Only the title is required."
+        footer={
+          <>
+            <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="bg-orange hover:bg-orange-dark disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-control transition-colors"
-            >
-              {saving ? "Creating…" : "Create project"}
-            </button>
-          </div>
+            </Button>
+            <Button type="submit" form="new-project-form" loading={saving}>
+              {saving ? "Creating" : "Create project"}
+            </Button>
+          </>
+        }
+      >
+        <form id="new-project-form" onSubmit={submit} className="grid grid-cols-2 gap-4">
+          <TextField
+            className="col-span-2"
+            label="Title"
+            required
+            autoFocus
+            value={title}
+            error={error ?? undefined}
+            placeholder="Spring program launch"
+            onChange={(e) => setTitle(e.target.value)}
+          />
+          <SelectField
+            label="Category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value as Category)}
+            options={CATEGORIES.map((c) => ({ value: c, label: categoryLabel(c) }))}
+          />
+          <SelectField
+            label="Owner"
+            value={assignee}
+            onChange={(e) => setAssignee(e.target.value)}
+            placeholder="Unassigned"
+            options={options}
+          />
+          <DateField className="col-span-2" label="Due date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+          <TextareaField
+            className="col-span-2"
+            label="Description"
+            hint="Markdown is fine."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
         </form>
-      </div>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  required,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block">
-      <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">
-        {label} {required && <span className="text-orange">*</span>}
-      </div>
-      {children}
-    </label>
+      </Drawer>
+    </>
   );
 }

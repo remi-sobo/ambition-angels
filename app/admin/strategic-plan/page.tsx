@@ -14,6 +14,9 @@ import { getReadiness } from "@/lib/admin/strategy/readiness";
 import ReadinessPanel from "./_components/ReadinessPanel";
 import PageHeader from "../_components/PageHeader";
 import SectionHeading from "../_components/SectionHeading";
+import EmptyState from "../_components/EmptyState";
+import Figure, { SummaryStrip } from "../_components/ui/Figure";
+import { ButtonLink } from "../_components/ui/Button";
 import StrategyGlance from "./_components/StrategyGlance";
 import StrategyControls, { type LensKey } from "./_components/StrategyControls";
 import UnassignedMetrics from "./_components/UnassignedMetrics";
@@ -278,36 +281,48 @@ export default async function StrategicPlanPage({
   }));
 
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-[1000px]">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
+      {/* V4 Stage G: Dashboard archetype. One header with New objective as
+          the primary action, Review with Reed beside it, every sub-page in
+          More actions; a sourced summary strip; the org's own data or a
+          first-run empty state (never another organization's numbers). */}
       <PageHeader
         title="Strategic Plan"
         subtitle={
           <>
-            Foundation → objectives → goals → measures, wired to the work · the framing deck lives in the{" "}
+            Foundation, objectives, goals and measures, wired to the work. The framing deck lives in the{" "}
             <Link href="/strategy" className="text-orange hover:underline">Strategy Room</Link>
           </>
         }
-        actions={
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Only actions that change the plan live up here; links into the
-                sub-pages (scorecard, narrative, review, people, set up) sit in
-                the labeled section each belongs to. */}
-            {isEmpty && (
-              <Link
-                href="/admin/settings/organization/strategy-setup"
-                className="text-xs font-semibold text-ink-1 bg-tile hover:bg-tile px-4 py-2 rounded-full transition-colors"
-              >
-                Set up
-              </Link>
-            )}
-            {!isEmpty && <ReedReviewButton />}
-            {!isEmpty && <ReedDesignButton />}
-            {isEmpty && <ReedStartButton />}
-            {!isEmpty && <RefreshMetricsButton />}
-            <NewObjectiveForm />
-          </div>
-        }
+        secondaryActions={isEmpty ? <ReedStartButton /> : <ReedReviewButton />}
+        primaryAction={<NewObjectiveForm />}
+        moreActions={[
+          { label: "KPI scorecard", href: "/admin/strategic-plan/scorecard" },
+          { label: "Narrative", href: "/admin/strategic-plan/narrative" },
+          { label: "Monthly review", href: "/admin/organization/strategy/review" },
+          { label: "People", href: "/admin/strategic-plan/people" },
+          { label: "Guided setup", href: "/admin/settings/organization/strategy-setup" },
+        ]}
       />
+
+      {!isEmpty ? (
+        <SummaryStrip label="Plan summary">
+          <Figure label="Objectives" value={objectivesRes.error ? null : objectives.length} source="Standing pillars in this plan" />
+          <Figure label="Goals" value={goalsRes.error ? null : goals.length} source="Under the objectives" />
+          <Figure
+            label="Initiatives done"
+            value={initiatives.length === 0 ? null : `${doneInits} of ${initiatives.length}`}
+            source="Marked done on the plan"
+          />
+          <Figure
+            label="At risk or behind"
+            value={atRisk}
+            source="Objectives, goals and measures, by their rolled-up health"
+            compareTone="danger"
+            href={atRisk > 0 ? "/admin/organization/strategy?lens=area&status=off_track" : undefined}
+          />
+        </SummaryStrip>
+      ) : null}
 
       {isEmpty ? (
         (() => {
@@ -321,21 +336,22 @@ export default async function StrategicPlanPage({
           });
           return (
             <>
-              <div className="bg-surface border-hairline rounded-panel-lg p-6 mb-6">
-                <h2 className="font-heading font-semibold text-ink-1 text-lg">
-                  {completeness.empty ? "Build your strategy" : "Finish your strategy"}
-                </h2>
-                <p className="text-sm text-ink-2 mt-1 max-w-xl">
-                  {completeness.empty
-                    ? "Set your foundation, name 3–5 objectives, give each one measurable goals, and wire the measures to live data. The guided setup walks the whole shape."
-                    : `Still missing: ${completeness.gaps.join(", ")}.`}
-                </p>
-                <Link
-                  href="/admin/settings/organization/strategy-setup"
-                  className="inline-block mt-4 text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-5 py-2.5 rounded-full transition-colors"
-                >
-                  {completeness.empty ? "Start the guided setup" : "Continue the guided setup"}
-                </Link>
+              <div className="mb-6">
+                <EmptyState
+                  label="strategic plan"
+                  title={completeness.empty ? "Build your strategy" : "Finish your strategy"}
+                  purpose={
+                    completeness.empty
+                      ? "Set your foundation, name three to five objectives, give each one measurable goals, and wire the measures to live data."
+                      : `Still missing: ${completeness.gaps.join(", ")}.`
+                  }
+                  primaryAction={
+                    <ButtonLink variant="primary" href="/admin/settings/organization/strategy-setup">
+                      {completeness.empty ? "Start the guided setup" : "Continue the guided setup"}
+                    </ButtonLink>
+                  }
+                  next="Once objectives exist, this page shows how the plan is doing, what funders will see and what needs upkeep."
+                />
               </div>
               <FoundationPanel foundation={foundation} />
             </>
@@ -361,10 +377,6 @@ export default async function StrategicPlanPage({
                 description="The whole organization at a glance. Every objective, its health, and what needs attention first. Rolls up automatically from the measures underneath."
                 links={[{ href: "/admin/strategic-plan/scorecard", label: "KPI Scorecard" }]}
               >
-                <p className="text-xs text-ink-3 mb-4 tabular-nums">
-                  {objectives.length} objectives · {goals.length} goals · {doneInits} of {initiatives.length} initiatives done
-                  {atRisk > 0 && ` · ${atRisk} at risk or behind`}
-                </p>
                 <StrategyGlance />
               </PlanSection>
 
@@ -385,6 +397,10 @@ export default async function StrategicPlanPage({
                   { href: "/admin/settings/organization/strategy-setup", label: "Set up" },
                 ]}
               >
+                <div className="flex flex-wrap items-center gap-2 mb-4">
+                  <RefreshMetricsButton />
+                  <ReedDesignButton />
+                </div>
                 <UnassignedMetrics metrics={unassignedMetrics} goals={goalOptions} />
                 <FoundationPanel foundation={foundation} />
               </PlanSection>

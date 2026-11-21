@@ -4,22 +4,23 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import { useState, useTransition } from "react";
+import { saveAction } from "@/lib/admin/saveAction";
+import { DateField, SelectField, TextField } from "@/app/admin/_components/ui/Field";
+import MoreActionsMenu from "@/app/admin/_components/ui/MoreActionsMenu";
+import { TYPE } from "@/lib/admin/typeScale";
 import { useAssignees, withSelected } from "@/app/admin/_lib/useAssignees";
 import {
   CATEGORIES,
   PROJECT_STATUSES,
-  categoryBadgeClass,
   categoryLabel,
-  projectStatusBadgeClass,
   type OpsProject,
 } from "../../../_types/ops";
 
 /**
- * Project header with inline editing. Every field commits to a PATCH on
- * change (or on blur for the title). Created date is shown read-only.
- *
- * Delete button at the bottom keeps its interruption through the house
- * confirm dialog (Quality Floor Q3 replaced the v1 native dialog).
+ * The project's Details panel (V4 Stage G: Detail archetype, a compact
+ * context panel on the right). Every field is a labeled kit field and
+ * commits through saveAction on change (on blur for the title). Delete
+ * lives in ProjectMoreActions, the page header's More actions.
  */
 export type InitiativeOption = { id: string; label: string };
 
@@ -32,30 +33,124 @@ export default function ProjectHeader({
 }) {
   const router = useRouter();
   const toast = useToast();
-  const confirm = useConfirm();
   const [, startTransition] = useTransition();
-  const [titleEditing, setTitleEditing] = useState(false);
   const [titleDraft, setTitleDraft] = useState(project.title);
   const [busy, setBusy] = useState(false);
   const assigneeOptions = useAssignees();
 
   async function patch(body: Record<string, unknown>) {
     setBusy(true);
-    try {
-      const r = await fetch(`/api/admin/ops/projects/${project.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      startTransition(() => router.refresh());
-    } catch (e) {
-      console.error("Project patch failed:", e);
-      toast.error("Couldn't save the change. Try again.");
-    } finally {
-      setBusy(false);
-    }
+    const r = await saveAction({
+      request: { url: `/api/admin/ops/projects/${project.id}`, method: "PATCH", body },
+      failure: "Couldn't save the change. Try again.",
+      toast,
+    });
+    setBusy(false);
+    if (r.ok) startTransition(() => router.refresh());
+    else setTitleDraft(project.title);
   }
+
+  function commitTitle() {
+    const trimmed = titleDraft.trim();
+    if (trimmed && trimmed !== project.title) patch({ title: trimmed });
+    else setTitleDraft(project.title);
+  }
+
+  const fmtDate = (iso: string, withTime = false) =>
+    new Date(iso).toLocaleString("en-US", withTime ? { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" } : { year: "numeric", month: "short", day: "numeric" });
+
+  return (
+    <section aria-labelledby="project-details" className="rounded-panel border border-hairline bg-surface p-5">
+      <h2 id="project-details" className={`${TYPE.sectionHeader} mb-4`}>
+        Details
+      </h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
+        <TextField
+          label="Title"
+          controlSize="md"
+          value={titleDraft}
+          disabled={busy}
+          onChange={(e) => setTitleDraft(e.target.value)}
+          onBlur={commitTitle}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+            if (e.key === "Escape") setTitleDraft(project.title);
+          }}
+        />
+        <SelectField
+          label="Status"
+          controlSize="md"
+          value={project.status}
+          disabled={busy}
+          onChange={(e) => patch({ status: e.target.value })}
+          options={PROJECT_STATUSES.map((s) => ({ value: s, label: categoryLabel(s) }))}
+        />
+        <SelectField
+          label="Category"
+          controlSize="md"
+          value={project.category}
+          disabled={busy}
+          onChange={(e) => patch({ category: e.target.value })}
+          options={CATEGORIES.map((c) => ({ value: c, label: categoryLabel(c) }))}
+        />
+        <SelectField
+          label="Owner"
+          controlSize="md"
+          value={project.assigned_to ?? ""}
+          disabled={busy}
+          onChange={(e) => patch({ assigned_to: e.target.value || null })}
+          placeholder="Unassigned"
+          options={withSelected(assigneeOptions, project.assigned_to ?? "")}
+        />
+        <DateField
+          label="Due date"
+          controlSize="md"
+          value={project.due_date ?? ""}
+          disabled={busy}
+          onChange={(e) => patch({ due_date: e.target.value || null })}
+        />
+        {initiatives.length === 0 ? (
+          <div>
+            <div className={`${TYPE.bodyMuted} text-[13px] font-medium`}>Initiative</div>
+            <p className={`${TYPE.metadata} mt-1`}>No strategic initiatives yet. Add them on the Strategic Plan.</p>
+          </div>
+        ) : (
+          <SelectField
+            label="Initiative"
+            hint="Attach to a strategic initiative so task progress rolls up"
+            controlSize="md"
+            value={project.initiative_id ?? ""}
+            disabled={busy}
+            onChange={(e) => patch({ initiative_id: e.target.value || null })}
+            placeholder="Not linked"
+            options={initiatives.map((i) => ({ value: i.id, label: i.label }))}
+          />
+        )}
+      </div>
+      <dl className={`mt-4 pt-3 border-t border-hairline grid grid-cols-2 gap-2 ${TYPE.metadata}`}>
+        <div>
+          <dt>Created</dt>
+          <dd className="text-ink-1">
+            {fmtDate(project.created_at)} by <span className="capitalize">{project.created_by}</span>
+          </dd>
+        </div>
+        <div>
+          <dt>Last touched</dt>
+          <dd className="text-ink-1">{fmtDate(project.last_touched_at, true)}</dd>
+        </div>
+      </dl>
+    </section>
+  );
+}
+
+/**
+ * The project page's "More actions" (V4 Stage G: delete moves out of the
+ * header into the overflow menu, still behind the house confirm dialog).
+ */
+export function ProjectMoreActions({ project, listHref = "/admin/work/projects" }: { project: Pick<OpsProject, "id" | "title">; listHref?: string }) {
+  const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
 
   async function deleteProject() {
     const ok = await confirm({
@@ -65,179 +160,23 @@ export default function ProjectHeader({
       destructive: true,
     });
     if (!ok) return;
-    setBusy(true);
-    try {
-      const r = await fetch(`/api/admin/ops/projects/${project.id}`, {
-        method: "DELETE",
-      });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      router.push("/admin/ops/projects");
-      router.refresh();
-    } catch (e) {
-      console.error("Project delete failed:", e);
-      toast.error("Couldn't delete the project.");
-      setBusy(false);
-    }
-  }
-
-  function commitTitle() {
-    setTitleEditing(false);
-    const trimmed = titleDraft.trim();
-    if (trimmed && trimmed !== project.title) {
-      patch({ title: trimmed });
-    } else {
-      setTitleDraft(project.title);
-    }
+    const r = await saveAction({
+      request: { url: `/api/admin/ops/projects/${project.id}`, method: "DELETE" },
+      failure: "Couldn't delete the project. Try again.",
+      success: "Project deleted",
+      toast,
+    });
+    if (!r.ok) return;
+    router.push(listHref);
+    router.refresh();
   }
 
   return (
-    <section className="rounded-panel border-hairline bg-surface p-6">
-      <div className="flex items-start justify-between gap-3 mb-4">
-        {titleEditing ? (
-          <input
-            autoFocus
-            value={titleDraft}
-            onChange={(e) => setTitleDraft(e.target.value)}
-            onBlur={commitTitle}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-              if (e.key === "Escape") {
-                setTitleDraft(project.title);
-                setTitleEditing(false);
-              }
-            }}
-            className="font-display font-black uppercase tracking-tight text-ink-1 text-2xl sm:text-3xl bg-tile border border-orange/40 rounded-control px-3 py-1 focus:outline-none flex-1 min-w-0"
-          />
-        ) : (
-          <h1
-            onClick={() => {
-              setTitleDraft(project.title);
-              setTitleEditing(true);
-            }}
-            className="font-display font-black uppercase tracking-tight text-ink-1 text-2xl sm:text-3xl leading-tight cursor-pointer hover:text-orange transition-colors flex-1 min-w-0"
-            title="Click to edit"
-          >
-            {project.title}
-          </h1>
-        )}
-        <button
-          onClick={deleteProject}
-          disabled={busy}
-          className="shrink-0 text-xs text-expense hover:text-expense border border-expense/30 hover:border-expense/30 bg-expense-bg px-3 py-1.5 rounded-control"
-        >
-          Delete
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
-        <FieldGroup label="Category">
-          <select
-            value={project.category}
-            onChange={(e) => patch({ category: e.target.value })}
-            disabled={busy}
-            className={`w-full bg-tile border rounded-control px-2 py-1.5 text-sm focus:outline-none focus:border-orange/50 ${categoryBadgeClass(project.category)}`}
-          >
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c} className="bg-ink text-ink-1">
-                {categoryLabel(c)}
-              </option>
-            ))}
-          </select>
-        </FieldGroup>
-
-        <FieldGroup label="Status">
-          <select
-            value={project.status}
-            onChange={(e) => patch({ status: e.target.value })}
-            disabled={busy}
-            className={`w-full bg-tile border rounded-control px-2 py-1.5 text-sm focus:outline-none focus:border-orange/50 ${projectStatusBadgeClass(project.status)}`}
-          >
-            {PROJECT_STATUSES.map((s) => (
-              <option key={s} value={s} className="bg-ink text-ink-1">
-                {s}
-              </option>
-            ))}
-          </select>
-        </FieldGroup>
-
-        <FieldGroup label="Assigned to">
-          <select
-            value={project.assigned_to ?? ""}
-            onChange={(e) => patch({ assigned_to: e.target.value || null })}
-            disabled={busy}
-            className="w-full bg-tile border-hairline rounded-control px-2 py-1.5 text-sm text-ink-1 focus:outline-none focus:border-orange/50"
-          >
-            <option value="">Unassigned</option>
-            {withSelected(assigneeOptions, project.assigned_to ?? "").map((a) => (
-              <option key={a.value} value={a.value}>{a.label}</option>
-            ))}
-          </select>
-        </FieldGroup>
-
-        <FieldGroup label="Due date">
-          <input
-            type="date"
-            value={project.due_date ?? ""}
-            onChange={(e) => patch({ due_date: e.target.value || null })}
-            disabled={busy}
-            className="w-full bg-tile border-hairline rounded-control px-2 py-1.5 text-sm text-ink-1 focus:outline-none focus:border-orange/50"
-          />
-        </FieldGroup>
-
-        <FieldGroup label="Initiative">
-          {initiatives.length === 0 ? (
-            <div className="text-xs text-ink-2 py-1.5">No initiatives yet</div>
-          ) : (
-            <select
-              value={project.initiative_id ?? ""}
-              onChange={(e) => patch({ initiative_id: e.target.value || null })}
-              disabled={busy}
-              title="Attach this project to a strategic initiative so its task progress rolls up"
-              className="w-full bg-tile border-hairline rounded-control px-2 py-1.5 text-sm text-ink-1 focus:outline-none focus:border-orange/50"
-            >
-              <option value="">Not linked</option>
-              {initiatives.map((i) => (
-                <option key={i.id} value={i.id} className="bg-ink text-ink-1">
-                  {i.label}
-                </option>
-              ))}
-            </select>
-          )}
-        </FieldGroup>
-
-        <FieldGroup label="Created">
-          <div className="text-sm text-ink-1 py-1.5">
-            {new Date(project.created_at).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-            })}{" "}
-            by <span className="capitalize">{project.created_by}</span>
-          </div>
-        </FieldGroup>
-
-        <FieldGroup label="Last touched">
-          <div className="text-sm text-ink-1 py-1.5">
-            {new Date(project.last_touched_at).toLocaleString("en-US", {
-              month: "short",
-              day: "numeric",
-              hour: "numeric",
-              minute: "2-digit",
-            })}
-          </div>
-        </FieldGroup>
-      </div>
-    </section>
-  );
-}
-
-function FieldGroup({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">
-        {label}
-      </div>
-      {children}
-    </div>
+    <MoreActionsMenu
+      items={[
+        { label: "All projects", href: listHref },
+        { label: "Delete project", danger: true, onSelect: deleteProject },
+      ]}
+    />
   );
 }

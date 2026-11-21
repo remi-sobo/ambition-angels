@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import PageHeader from "../../_components/PageHeader";
+import PageHeader, { IdentityChip } from "../../_components/PageHeader";
+import Figure, { SummaryStrip } from "../../_components/ui/Figure";
 import EmptyState from "../../_components/EmptyState";
 import { StatusChip } from "../../_components/StatusChip";
 import PhotoControl from "./_components/PhotoControl";
@@ -50,12 +51,34 @@ export default async function StaffProfilePage({ params }: { params: { id: strin
   }));
 
   return (
-    <div className="p-6 lg:p-8 max-w-4xl">
+    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
+      {/* V4 Stage G: Detail archetype. Breadcrumb, identity chips, Edit
+          details (Drawer) as the one primary action, a sourced strip. */}
       <PageHeader
+        breadcrumb={[{ label: "Team", href: "/admin/organization/team" }]}
         title={member.full_name}
         subtitle={member.title ?? undefined}
-        eyebrow="Staff"
+        chips={
+          <>
+            <IdentityChip>{EMPLOYMENT_LABEL[member.employment_type] ?? member.employment_type}</IdentityChip>
+            {member.department ? <IdentityChip>{member.department}</IdentityChip> : null}
+            <IdentityChip>{member.status === "active" ? "Active" : "Inactive"}</IdentityChip>
+          </>
+        }
+        primaryAction={canManage ? <StaffEditForm member={member} managerOptions={managerOptions} /> : undefined}
+        moreActions={[
+          { label: "Whole team", href: "/admin/organization/team" },
+          { label: "Reviews", href: "/admin/staff/reviews" },
+        ]}
       />
+
+      {development ? (
+        <SummaryStrip label="Development summary">
+          <Figure label="Goals" value={development.goals.length} source="On this person's development plan" />
+          <Figure label="KPIs" value={development.kpis.length} source="Tracked for this person" />
+          <Figure label="Review cycles" value={reviews.length} source="Cycles this person is reviewed in" />
+        </SummaryStrip>
+      ) : null}
 
       <div className="grid gap-6 md:grid-cols-[220px_1fr] items-start">
         {/* Identity column: photo + facts */}
@@ -86,7 +109,6 @@ export default async function StaffProfilePage({ params }: { params: { id: strin
               <MetaRow label="Started" value={member.start_date} />
             ) : null}
           </div>
-          {canManage ? <StaffEditForm member={member} managerOptions={managerOptions} /> : null}
         </div>
 
         {/* Development column: Goals / KPIs (Phase 2), Reviews (Phase 3) */}

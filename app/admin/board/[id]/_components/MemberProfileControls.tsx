@@ -9,7 +9,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
-import { userMessage } from "@/lib/admin/errors";
+import { saveAction } from "@/lib/admin/saveAction";
+import Button from "@/app/admin/_components/ui/Button";
+import Drawer from "@/app/admin/_components/ui/Drawer";
+import Input from "@/app/admin/_components/ui/Input";
+import { DateField, SelectField, TextField, TextareaField } from "@/app/admin/_components/ui/Field";
 import { TYPE } from "@/lib/admin/typeScale";
 import { ROLE_LABELS } from "./labels";
 
@@ -33,8 +37,6 @@ export type BoardMemberFull = {
   checklist: ChecklistItem[] | null;
 };
 
-const inputCls =
-  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 const STATUS_OPTIONS: Array<[string, string]> = [
   ["active", "Active"],
@@ -42,17 +44,11 @@ const STATUS_OPTIONS: Array<[string, string]> = [
   ["past", "Past"],
 ];
 
+// Every write goes through saveAction (V4 Stage G); callers decide how to
+// show the sentence (inline on a form, a toast on a quick action).
 async function patchMember(id: string, fields: Record<string, unknown>): Promise<string | null> {
-  const res = await fetch(`/api/admin/board/members/${id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(fields),
-  });
-  if (!res.ok) {
-    const j = await res.json().catch(() => ({}));
-    return userMessage(res, j);
-  }
-  return null;
+  const r = await saveAction({ request: { url: `/api/admin/board/members/${id}`, method: "PATCH", body: fields }, failure: false });
+  return r.ok ? null : r.message;
 }
 
 export function EditMemberProfile({ member }: { member: BoardMemberFull }) {
@@ -102,94 +98,42 @@ export function EditMemberProfile({ member }: { member: BoardMemberFull }) {
     router.refresh();
   };
 
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="text-xs font-semibold text-ink-2 hover:text-orange transition-colors"
-      >
-        Edit
-      </button>
-    );
-  }
-
   return (
-    <form onSubmit={submit} className="col-span-full grid grid-cols-2 gap-3 text-left">
-      <label className="col-span-2 text-xs text-ink-2">
-        Name
-        <input className={`${inputCls} w-full mt-1`} value={name} required autoFocus
-          onChange={(e) => setName(e.target.value)} />
-      </label>
-      <label className="text-xs text-ink-2">
-        Email
-        <input className={`${inputCls} w-full mt-1`} type="email" value={email}
-          placeholder="links giving automatically" onChange={(e) => setEmail(e.target.value)} />
-      </label>
-      <label className="text-xs text-ink-2">
-        Phone
-        <input className={`${inputCls} w-full mt-1`} value={phone}
-          onChange={(e) => setPhone(e.target.value)} />
-      </label>
-      <label className="col-span-2 text-xs text-ink-2">
-        Affiliation
-        <input className={`${inputCls} w-full mt-1`} value={affiliation}
-          placeholder="Employer / organization" onChange={(e) => setAffiliation(e.target.value)} />
-      </label>
-      <label className="text-xs text-ink-2">
-        Officer role
-        <select className={`${inputCls} w-full mt-1`} value={role} onChange={(e) => setRole(e.target.value)}>
-          {Object.entries(ROLE_LABELS).map(([k, v]) => (
-            <option key={k} value={k}>{v}</option>
-          ))}
-        </select>
-      </label>
-      <label className="text-xs text-ink-2">
-        Status
-        <select className={`${inputCls} w-full mt-1`} value={status} onChange={(e) => setStatus(e.target.value)}>
-          {STATUS_OPTIONS.map(([v, l]) => (
-            <option key={v} value={v}>{l}</option>
-          ))}
-        </select>
-      </label>
-      <label className="text-xs text-ink-2">
-        Term starts
-        <input className={`${inputCls} w-full mt-1`} type="date" value={termStart}
-          onChange={(e) => setTermStart(e.target.value)} />
-      </label>
-      <label className="text-xs text-ink-2">
-        Term ends
-        <input className={`${inputCls} w-full mt-1`} type="date" value={termEnd}
-          onChange={(e) => setTermEnd(e.target.value)} />
-      </label>
-      <label className="text-xs text-ink-2">
-        Term #
-        <input className={`${inputCls} w-full mt-1`} type="number" min={1} value={termNumber}
-          onChange={(e) => setTermNumber(e.target.value)} />
-      </label>
-      <label className="col-span-2 text-xs text-ink-2">
-        Bio
-        <textarea className={`${inputCls} w-full mt-1 leading-relaxed`} rows={3} value={bio}
-          placeholder="Short bio for board books and the annual report"
-          onChange={(e) => setBio(e.target.value)} />
-      </label>
-      <label className="col-span-2 text-xs text-ink-2">
-        Notes
-        <textarea className={`${inputCls} w-full mt-1 leading-relaxed`} rows={3} value={notes}
-          placeholder="Internal notes: interests, intros, context"
-          onChange={(e) => setNotes(e.target.value)} />
-      </label>
-      <div className="col-span-2 flex gap-2 items-center">
-        <button type="submit" disabled={busy}
-          className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors disabled:opacity-50">
-          {busy ? "Saving…" : "Save"}
-        </button>
-        <button type="button" onClick={() => setOpen(false)}
-          className="text-xs text-ink-2 hover:text-ink-1 px-2">
-          Cancel
-        </button>
-        {error && <p className="text-expense text-xs">{error}</p>}
-      </div>
-    </form>
+    <>
+      <Button type="button" onClick={() => setOpen(true)}>
+        Edit profile
+      </Button>
+      <Drawer
+        open={open}
+        onClose={() => setOpen(false)}
+        title={`Edit ${member.name}`}
+        width={560}
+        footer={
+          <>
+            <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form={`edit-member-${member.id}`} loading={busy}>
+              {busy ? "Saving" : "Save"}
+            </Button>
+          </>
+        }
+      >
+        <form id={`edit-member-${member.id}`} onSubmit={submit} className="grid grid-cols-2 gap-4">
+          <TextField className="col-span-2" label="Name" required autoFocus value={name} onChange={(e) => setName(e.target.value)} error={error || undefined} />
+          <TextField label="Email" type="email" value={email} hint="Links giving automatically" onChange={(e) => setEmail(e.target.value)} />
+          <TextField label="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <TextField className="col-span-2" label="Affiliation" value={affiliation} placeholder="Employer or organization" onChange={(e) => setAffiliation(e.target.value)} />
+          <SelectField label="Officer role" value={role} onChange={(e) => setRole(e.target.value)} options={Object.entries(ROLE_LABELS).map(([value, label]) => ({ value, label }))} />
+          <SelectField label="Status" value={status} onChange={(e) => setStatus(e.target.value)} options={STATUS_OPTIONS.map(([value, label]) => ({ value, label }))} />
+          <DateField label="Term starts" value={termStart} onChange={(e) => setTermStart(e.target.value)} />
+          <DateField label="Term ends" value={termEnd} onChange={(e) => setTermEnd(e.target.value)} />
+          <TextField label="Term number" type="number" min={1} value={termNumber} onChange={(e) => setTermNumber(e.target.value)} />
+          <TextareaField className="col-span-2" label="Bio" rows={3} value={bio} placeholder="Short bio for board books and the annual report" onChange={(e) => setBio(e.target.value)} />
+          <TextareaField className="col-span-2" label="Notes" rows={3} value={notes} placeholder="Internal notes: interests, intros, context" onChange={(e) => setNotes(e.target.value)} />
+        </form>
+      </Drawer>
+    </>
   );
 }
 
@@ -205,45 +149,33 @@ export function MemberQuickActions({ member, coiYear }: { member: BoardMemberFul
     const err = await patchMember(member.id, fields);
     setBusy(false);
     if (err) toast.error(err);
-    router.refresh();
+    else router.refresh();
   };
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       {!coiCurrent && (
-        <>
-          <button
-            onClick={() => void patch({ coi_signed_at: coiDate || true })}
-            disabled={busy}
-            className="px-3 py-1.5 rounded-full text-xs font-semibold bg-orange/15 text-orange hover:bg-orange/25"
-          >
-            Record COI ({coiDate || `today, ${coiYear}`})
-          </button>
-          <input
+        <span className="inline-flex items-center gap-2">
+          <Input
             type="date"
             value={coiDate}
             onChange={(e) => setCoiDate(e.target.value)}
-            aria-label="COI signature date"
-            className={`${inputCls} !py-1 !text-xs`}
+            aria-label="COI signature date (blank is today)"
+            className="!w-auto"
           />
-        </>
+          <Button type="button" variant="secondary" onClick={() => void patch({ coi_signed_at: coiDate || true })} loading={busy}>
+            Record COI ({coiDate || `today, ${coiYear}`})
+          </Button>
+        </span>
       )}
       {member.status === "active" ? (
-        <button
-          onClick={() => void patch({ status: "past" })}
-          disabled={busy}
-          className="px-3 py-1.5 rounded-full text-xs bg-tile hover:bg-tile text-ink-2"
-        >
+        <Button type="button" variant="quiet" onClick={() => void patch({ status: "past" })} disabled={busy}>
           Mark past
-        </button>
+        </Button>
       ) : (
-        <button
-          onClick={() => void patch({ status: "active" })}
-          disabled={busy}
-          className="px-3 py-1.5 rounded-full text-xs bg-tile hover:bg-tile text-ink-2"
-        >
+        <Button type="button" variant="quiet" onClick={() => void patch({ status: "active" })} disabled={busy}>
           Reactivate
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -255,15 +187,21 @@ export function OnboardingChecklist({ member }: { member: BoardMemberFull }) {
   const router = useRouter();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
-  const [items, setItems] = useState<ChecklistItem[]>(member.checklist ?? []);
+  // jsonb: anything but an array (an older row's {} or null) reads as empty.
+  const [items, setItems] = useState<ChecklistItem[]>(Array.isArray(member.checklist) ? member.checklist : []);
   const [newText, setNewText] = useState("");
 
   const save = async (next: ChecklistItem[]) => {
+    const before = items;
     setItems(next);
     setBusy(true);
     const err = await patchMember(member.id, { checklist: next });
     setBusy(false);
-    if (err) toast.error(err);
+    if (err) {
+      setItems(before);
+      toast.error(err);
+      return;
+    }
     router.refresh();
   };
 
@@ -296,6 +234,7 @@ export function OnboardingChecklist({ member }: { member: BoardMemberFull }) {
             <li key={c.id} className="flex items-center gap-2 group">
               <input
                 type="checkbox"
+                aria-label={c.text}
                 checked={c.done}
                 disabled={busy}
                 onChange={() =>
@@ -319,19 +258,16 @@ export function OnboardingChecklist({ member }: { member: BoardMemberFull }) {
         </ul>
       )}
       <form onSubmit={add} className="flex gap-2">
-        <input
-          className={`${inputCls} flex-1 !py-1.5 text-xs`}
+        <Input
+          aria-label="New checklist item"
+          className="flex-1"
           value={newText}
           placeholder="e.g. Signed COI · gave orientation packet · intro to staff"
           onChange={(e) => setNewText(e.target.value)}
         />
-        <button
-          type="submit"
-          disabled={busy || !newText.trim()}
-          className="text-xs font-semibold px-3 rounded-control bg-tile hover:bg-tile text-ink-2 disabled:opacity-50"
-        >
+        <Button type="submit" variant="secondary" disabled={busy || !newText.trim()}>
           Add
-        </button>
+        </Button>
       </form>
     </div>
   );

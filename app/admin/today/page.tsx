@@ -37,6 +37,9 @@ import {
   loadTeamWeek,
 } from "@/lib/admin/todayRole";
 import { TYPE } from "@/lib/admin/typeScale";
+import SetupChecklist from "./_components/SetupChecklist";
+import { loadSetupFacts } from "@/lib/admin/setupChecklist-server";
+import { checklistView, showChecklist } from "@/lib/admin/setupChecklist";
 
 /**
  * Today by role (V4 Stage C, spec §7; Today.dc.html and TodayPhone.dc.html).
@@ -156,6 +159,11 @@ export default async function TodayPage() {
 
   const top = new Set(layout.top);
 
+  // V4 Stage F: the setup checklist, owners and admins only, until done or dismissed.
+  const canManageOrg = await ctxHasPermission(ctx, "org.manage");
+  const setup = canManageOrg ? await loadSetupFacts(ctx.orgId, ents) : null;
+  const setupView = setup && showChecklist(setup, canManageOrg) ? checklistView(setup) : null;
+
   return (
     <PageShell>
       {/* Header: greeting, date, the decision line, ONE primary action. */}
@@ -176,6 +184,8 @@ export default async function TodayPage() {
           </div>
         )}
       </header>
+
+      {setupView && <SetupChecklist view={setupView} supportEmail={setup?.supportEmail ?? null} />}
 
       {/* Phone: look someone up (spec §10), one tap from Today. */}
       <Link

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
+import { requireAaOnly } from "@/lib/admin/aaOnly";
 
 // The review step (ms-career-library-v2.md step 5): the one that cannot be
 // automated and will not be. Approve stamps reviewed_by/reviewed_at from
@@ -10,8 +10,9 @@ import { getOrgContext } from "@/lib/admin/auth";
 type Action = "approve" | "unapprove" | "retire" | "delete";
 
 export async function POST(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const gate = await requireAaOnly("aa.career_library", { write: true });
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
+  const ctx = gate.ctx;
 
   const { soc_code, action } = await req.json().catch(() => ({}));
   if (typeof soc_code !== "string" || !/^\d{2}-\d{4}$/.test(soc_code)) {

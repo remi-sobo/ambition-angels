@@ -11,6 +11,7 @@ import OrgSwitcher from "../OrgSwitcher";
 import SearchTrigger from "../search/SearchTrigger";
 import { useAdminBadges } from "../AdminBadges";
 import SidebarItem from "../ui/SidebarItem";
+import { openCapture } from "../../capture/_lib/openCapture";
 
 /**
  * Spec B, stage B3 — the V2 sidebar: the destinations (eight since V4 A2
@@ -36,6 +37,7 @@ export default function V2Sidebar({
   orgName,
   orgs,
   activeOrgId,
+  captureEnabled = false,
 }: {
   nav: ShellNav;
   displayName: string | null;
@@ -43,6 +45,8 @@ export default function V2Sidebar({
   orgName: string | null;
   orgs: { orgId: string; orgName: string }[];
   activeOrgId: string | null;
+  /** V4 §8: the one desktop Capture button ("Talk to log"), behind ai.capture. */
+  captureEnabled?: boolean;
 }) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
@@ -112,8 +116,21 @@ export default function V2Sidebar({
         </div>
       </div>
 
-      <div className="px-3 pt-3 -mb-1">
+      <div className="px-3 pt-3 -mb-1 space-y-2">
         <SearchTrigger />
+        {captureEnabled && (
+          <button
+            type="button"
+            onClick={() => openCapture()}
+            className="w-full flex items-center gap-2.5 min-h-[40px] px-3 rounded-control border border-white/10 bg-white/[0.03] text-sm font-semibold text-[color:var(--sidebar-text)] hover:bg-white/[0.06] hover:border-white/20 transition-colors"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0" aria-hidden>
+              <rect x="9" y="3" width="6" height="11" rx="3" />
+              <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+            </svg>
+            Talk to log
+          </button>
+        )}
       </div>
 
       <nav className="flex-1 px-3 py-4 overflow-y-auto">

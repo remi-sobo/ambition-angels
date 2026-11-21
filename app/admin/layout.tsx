@@ -13,6 +13,7 @@ import V2TabZone from "./_components/v2/V2TabZone";
 import V2ReedEdge from "./_components/v2/V2ReedEdge";
 import V2MobileBar from "./_components/v2/V2MobileBar";
 import V2QuickAdd from "./_components/v2/V2QuickAdd";
+import CaptureLauncher from "./capture/_components/CaptureLauncher";
 import { getAdminUser, getOrgContext, getUserOrgs } from "@/lib/admin/auth";
 import { getMyDisplayName } from "@/lib/admin/profile";
 import { getEntitlements, hasFeature } from "@/lib/admin/entitlements";
@@ -137,6 +138,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           orgName={ctx?.orgName ?? null}
           orgs={orgs}
           activeOrgId={orgId}
+          captureEnabled={captureEnabled}
         />
         <ReedLauncherProvider enabled={reedEnabled}>
           <RailEntityProvider>
@@ -169,6 +171,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           {/* B6: the shell-level Quick Add — capture, report-an-issue, and
               the search overlay, at every desktop width (V2 has no rail). */}
           <V2QuickAdd currentUser={user} reedEnabled={reedEnabled} captureEnabled={captureEnabled} />
+          {/* V4 §8: the one desktop Capture modal, opened by the sidebar's
+              Talk to log button, Today, and record pages. */}
+          <CaptureLauncher enabled={captureEnabled} />
         </ReedLauncherProvider>
         <GlobalSearch pages={searchPages} />
       </div>

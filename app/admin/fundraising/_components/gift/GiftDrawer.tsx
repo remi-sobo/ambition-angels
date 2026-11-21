@@ -86,6 +86,8 @@ export default function GiftDrawer({
   onClose,
   constituentId,
   giftId,
+  prefill,
+  onSaved,
 }: {
   open: boolean;
   onClose: () => void;
@@ -93,6 +95,11 @@ export default function GiftDrawer({
   constituentId?: string;
   /** Edit this gift instead of recording a new one. */
   giftId?: string;
+  /** V4 §8: a Talk to log gift card prefills a new gift. Nothing is saved
+   *  until the person presses the drawer's own button. */
+  prefill?: { amount?: number | null; date?: string | null; notes?: string | null; note?: string };
+  /** Called with the new gift's id after the server saved it. */
+  onSaved?: (giftId: string) => void;
 }) {
   const router = useRouter();
   const save = useSaveAction();
@@ -155,14 +162,14 @@ export default function GiftDrawer({
           setMoreOpen(false);
         } else {
           const defs = giftDefaults({ today: d.today, lastMethod: d.donor?.lastMethod });
-          setAmount("");
-          setDate(defs.gift_date);
+          setAmount(prefill?.amount ? String(prefill.amount) : "");
+          setDate(prefill?.date && prefill.date <= d.today ? prefill.date : defs.gift_date);
           setMethod(defs.method);
           setFundId("");
           setCampaignId("");
           setAppealId("");
           setFmv("");
-          setNotes("");
+          setNotes(prefill?.notes ?? "");
           setMoreOpen(false);
         }
         setDonor(d.donor ? { id: d.donor.id, name: d.donor.name } : { id: null, name: "" });
@@ -176,7 +183,9 @@ export default function GiftDrawer({
     return () => {
       cancelled = true;
     };
-  }, [open, giftId, constituentId]);
+    // prefill is read when the drawer opens; its fields are the dependency.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, giftId, constituentId, prefill?.amount, prefill?.date, prefill?.notes]);
 
   const locked = new Set(data?.lockedFields ?? []);
   const defaults = data ? giftDefaults({ today: data.today, lastMethod: data.donor?.lastMethod }) : null;
@@ -291,6 +300,7 @@ export default function GiftDrawer({
         }
         toast.success(`Gift of ${usd(parsedAmount)} recorded.${tail}`);
         if (r.data.warning) toast.info(r.data.warning);
+        onSaved?.(r.data.id);
       }
       onClose();
       router.refresh();
@@ -337,6 +347,11 @@ export default function GiftDrawer({
         </SkeletonGroup>
       ) : (
         <form id="gift-drawer-form" onSubmit={submit} className="grid gap-4" noValidate>
+          {prefill?.note && !editing ? (
+            <Notice tone="info" title="Drafted from your recording.">
+              {prefill.note}
+            </Notice>
+          ) : null}
           {error ? (
             <Notice tone="danger" title="Not saved.">
               {error}

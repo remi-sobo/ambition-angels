@@ -5,6 +5,7 @@
  */
 
 import { UNDO_WINDOW_MINUTES } from "@/lib/capture/constants";
+import { KIND_LABEL, cardKindOf, filedElsewhere, isHeldKind, storyHold, type CardKind } from "@/lib/capture/cardKind";
 
 export type CardDest = "interaction" | "task" | "thought" | "message_draft";
 export type CardStatus = "proposed" | "held" | "confirmed" | "discarded";
@@ -116,9 +117,11 @@ export function whatConfirmDoes(card: CardView): string {
   return `Saves a draft ${channel}${to ? ` to ${to}` : ""}. Nothing is sent.`;
 }
 
-/** Can this card be confirmed as it stands? */
+/** Can this card be confirmed as it stands? Gift and story cards never are:
+ *  they have their own actions (the gift drawer, Keep story). */
 export function canConfirm(card: CardView): boolean {
   if (card.status !== "proposed") return false;
+  if (isHeldKind(card)) return false;
   if (card.dest === "interaction" && !card.entity_id) return false;
   return true;
 }
@@ -129,10 +132,13 @@ export function heldTitle(card: CardView): string {
   return heard ? `Which ${heard}?` : "Who was this with?";
 }
 
-/** Held first, then proposed, then filed, then discarded; position order within each. */
+/** Held first, then proposed, then filed, then discarded; position order within each.
+ *  Gift and story cards are held by design, not waiting for a pick, so they
+ *  sort with the proposed cards. */
 export function orderCards(cards: CardView[]): CardView[] {
   const rank: Record<CardStatus, number> = { held: 0, proposed: 1, confirmed: 2, discarded: 3 };
-  return [...cards].sort((a, b) => rank[a.status] - rank[b.status] || a.position - b.position);
+  const r = (c: CardView) => (c.status === "held" && isHeldKind(c) ? 1 : rank[c.status]);
+  return [...cards].sort((a, b) => r(a) - r(b) || a.position - b.position);
 }
 
 /** Seconds left in the undo window for a confirmed card (0 when closed). */
@@ -144,6 +150,10 @@ export function undoSecondsLeft(card: CardView, now: number): number {
 
 /** Where a filed card's row lives, for the "Filed" link. Drafts have no page yet. */
 export function filedHref(card: CardView): string | null {
+  const elsewhere = filedElsewhere(card.payload);
+  if (elsewhere?.table === "gifts" || elsewhere?.table === "pledges") {
+    return card.entity_id ? `/admin/fundraising/donors-funders/${card.entity_id}` : null;
+  }
   switch (card.applied_table) {
     case "interactions":
       return card.entity_id ? `/admin/fundraising/donors/${card.entity_id}` : null;
@@ -157,6 +167,12 @@ export function filedHref(card: CardView): string | null {
 }
 
 export function filedLabel(card: CardView): string {
+  const elsewhere = filedElsewhere(card.payload);
+  if (elsewhere?.table === "gifts") return "Gift recorded";
+  if (elsewhere?.table === "pledges") return "Pledge added on the record";
+  if (elsewhere?.table === "capture_cards") {
+    return storyHold(card.payload) ? "Kept as a story draft, waiting on consent" : "Kept as a story draft";
+  }
   switch (card.applied_table) {
     case "interactions":
     case "partner_interactions":
@@ -200,4 +216,78 @@ export function stackCounts(cards: CardView[]) {
 /** The source sentence the card came from, if the parse kept it. */
 export function sourceSentence(card: CardView): string | null {
   return str(card.payload.source_sentence);
+}
+
+// -- V4 §8: kinds, where a card files, AI-drafted and uncertain fields -------
+
+export function kindOf(card: CardView): CardKind {
+  return cardKindOf(card);
+}
+
+/** The tag on the card: "Donor conversation", "To-do", "Gift or pledge", "Story". */
+export function kindLabel(card: CardView): string {
+  const k = cardKindOf(card);
+  if (k === "conversation" && card.entity_type === "partner") return "Partner conversation";
+  return KIND_LABEL[k];
+}
+
+/** Held cards that need a person to pick who it was with (not gift or story). */
+export function needsPick(card: CardView): boolean {
+  return card.status === "held" && !isHeldKind(card);
+}
+
+/** Drafted by AI until a person edits it. */
+export function aiDrafted(card: CardView): boolean {
+  return card.payload.ai_drafted === true && card.payload.edited !== true;
+}
+
+/** The fields the person should check. */
+export function uncertainList(card: CardView): string[] {
+  const u = card.payload.uncertain;
+  return Array.isArray(u) ? u.filter((x): x is string => typeof x === "string") : [];
+}
+
+export function isUncertain(card: CardView, field: string): boolean {
+  return uncertainList(card).includes(field);
+}
+
+const usd = (n: number) => `$${n.toLocaleString("en-US", { maximumFractionDigits: n % 1 ? 2 : 0 })}`;
+
+/** The gift card's main line: "Dana Whitfield · pledge, expected December". */
+export function giftLine(card: CardView): string {
+  const p = card.payload;
+  const who = entityName(card) ?? card.heard_name ?? "A donor to pick";
+  const expected = str(p.expected);
+  if (p.gift_type === "pledge") return `${who} · pledge${expected ? `, expected ${expected}` : ""}`;
+  const day = fmtDay(p.gift_date);
+  return `${who} · gift${day ? `, ${day}` : ""}`;
+}
+
+export function giftAmountText(card: CardView): string | null {
+  const a = card.payload.amount;
+  return typeof a === "number" && a > 0 ? usd(a) : null;
+}
+
+/** "Files to": where Confirm (or the card's own action) puts it. */
+export function filesTo(card: CardView): string {
+  const name = entityName(card);
+  const p = card.payload;
+  switch (cardKindOf(card)) {
+    case "conversation":
+      return name ? `${name}'s record` : "A record you pick";
+    case "todo": {
+      const a = p.assignee as { name?: unknown } | null | undefined;
+      const who = str(a?.name);
+      return who ? `${firstName(who)}'s Work list` : "The Work list, unassigned";
+    }
+    case "note":
+      return "The parking lot";
+    case "draft":
+      return "Drafts. Nothing is sent";
+    case "gift":
+      if (p.gift_type === "pledge") return name ? `${name}'s pledges, added on the record` : "A donor's pledges, added on the record";
+      return name ? `${name}'s gifts, through the gift form` : "Gifts, through the gift form";
+    case "story":
+      return "Held story drafts (the Comms story bank is not set up yet)";
+  }
 }

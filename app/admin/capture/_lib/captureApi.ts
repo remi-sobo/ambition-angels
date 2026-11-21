@@ -86,3 +86,32 @@ export function parseFailureMessage(status: number, body: Record<string, unknown
   if (status === 502) return "I couldn't sort that into cards. Your words are saved; try again.";
   return fallback;
 }
+
+/** V4 §8: the gift and story card actions (never an applier, never money). */
+export function giftRecorded(cardId: string, giftId: string) {
+  return call<{ card: CardView }>(`/api/admin/capture/cards/${cardId}`, {
+    method: "POST",
+    body: JSON.stringify({ action: "record_gift", gift_id: giftId }),
+  });
+}
+
+export function pledgeAdded(cardId: string) {
+  return call<{ card: CardView }>(`/api/admin/capture/cards/${cardId}`, {
+    method: "POST",
+    body: JSON.stringify({ action: "pledge_added" }),
+  });
+}
+
+export function keepStory(cardId: string) {
+  return call<{ card: CardView }>(`/api/admin/capture/cards/${cardId}`, {
+    method: "POST",
+    body: JSON.stringify({ action: "keep" }),
+  });
+}
+
+export function editStory(cardId: string, patch: { text?: string; title?: string | null; about?: string | null; identifiable?: boolean }) {
+  return call<{ card: CardView }>(`/api/admin/capture/cards/${cardId}`, {
+    method: "POST",
+    body: JSON.stringify({ action: "edit", patch }),
+  });
+}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import QuickAddModal from "../QuickAddModal";
-import CaptureModal from "../../capture/_components/CaptureModal";
+import { openCapture } from "../../capture/_lib/openCapture";
 import ReportModal from "../ReportModal";
 import { useReedLauncher } from "../reed/ReedLauncherProvider";
 import { ReedMark } from "../reed/ReedPanel";
@@ -29,7 +29,7 @@ export default function V2QuickAdd({
   captureEnabled?: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [modal, setModal] = useState<"task" | "report" | "record" | null>(null);
+  const [modal, setModal] = useState<"task" | "report" | null>(null);
   const { open: openReed } = useReedLauncher();
 
   useEffect(() => {
@@ -72,7 +72,7 @@ export default function V2QuickAdd({
             </Chip>
           )}
           {captureEnabled && (
-            <Chip label="Record" onClick={act(() => setModal("record"))}>
+            <Chip label="Talk to log" onClick={act(() => openCapture())}>
               <MicGlyph />
             </Chip>
           )}
@@ -110,7 +110,6 @@ export default function V2QuickAdd({
 
       {modal === "task" && <QuickAddModal currentUser={currentUser} onClose={() => setModal(null)} />}
       {modal === "report" && <ReportModal onClose={() => setModal(null)} />}
-      {modal === "record" && <CaptureModal surface="quick_add" onClose={() => setModal(null)} />}
     </>
   );
 }

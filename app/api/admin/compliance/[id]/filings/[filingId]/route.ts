@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 const isISODate = (v: unknown): v is string =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -11,10 +11,9 @@ type Params = { params: { id: string; filingId: string } };
 
 /** PATCH — filing detail fields: filed_date, period_due_date, confirmation, fee, notes. */
 export async function PATCH(req: NextRequest, { params }: Params) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("compliance.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   if (!isUuid(params.id) || !isUuid(params.filingId)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }
@@ -77,10 +76,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(req: NextRequest, { params }: Params) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("compliance.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   if (!isUuid(params.id) || !isUuid(params.filingId)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   }

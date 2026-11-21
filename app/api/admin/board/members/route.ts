@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { requirePermission } from "@/lib/admin/requirePermission";
 
 const ROLES = ["chair", "vice_chair", "secretary", "treasurer", "member"] as const;
 const isISODate = (v: unknown): v is string =>
@@ -12,10 +12,9 @@ const isISODate = (v: unknown): v is string =>
  * constituent record so giving status reads real gifts.
  */
 export async function POST(req: NextRequest) {
-  const ctx = await getOrgContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requirePermission("board.write");
+  if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+  const ctx = guard.ctx;
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const name = body && typeof body.name === "string" ? body.name.trim().slice(0, 120) : "";
   if (!name) return NextResponse.json({ error: "Name is required" }, { status: 400 });

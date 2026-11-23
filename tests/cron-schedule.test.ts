@@ -1,0 +1,67 @@
+import { describe, expect, test } from "vitest";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+
+/**
+ * Every cron route is either scheduled in vercel.json or listed here as
+ * intentionally unscheduled, with the reason (pre-SafeSpace item 10). A new
+ * route under app/api/cron/ that is neither fails CI, so a job can no longer
+ * sit unscheduled without anyone deciding that it should.
+ */
+const INTENTIONALLY_UNSCHEDULED: Record<string, string> = {
+  "hubspot-sync":
+    "Its last runs (July to September 2026) ended partial or failed. The operator runs it once by hand, supervised, before it gets a schedule (docs/cron-restoration-plan.md §10).",
+  journeys:
+    "No journey is active and its Comms home arrives in V4 Stage D. The code stays; it sends Resend email to constituents once scheduled.",
+};
+
+const ROOT = join(__dirname, "..");
+const CRON_DIR = join(ROOT, "app/api/cron");
+
+type Cron = { path: string; schedule: string };
+const crons: Cron[] = JSON.parse(readFileSync(join(ROOT, "vercel.json"), "utf8")).crons;
+const routes = readdirSync(CRON_DIR, { withFileTypes: true })
+  .filter((d) => d.isDirectory() && existsSync(join(CRON_DIR, d.name, "route.ts")))
+  .map((d) => d.name)
+  .sort();
+const scheduled = new Map(crons.map((c) => [c.path.replace(/^\/api\/cron\//, ""), c.schedule]));
+
+describe("cron routes are scheduled or deliberately not", () => {
+  test("every route under app/api/cron is in vercel.json or on the unscheduled list", () => {
+    const orphans = routes.filter((r) => !scheduled.has(r) && !(r in INTENTIONALLY_UNSCHEDULED));
+    expect(orphans).toEqual([]);
+  });
+
+  test("no route is both scheduled and on the unscheduled list", () => {
+    expect(routes.filter((r) => scheduled.has(r) && r in INTENTIONALLY_UNSCHEDULED)).toEqual([]);
+  });
+
+  test("every unscheduled entry names a real route and gives a reason", () => {
+    for (const [name, reason] of Object.entries(INTENTIONALLY_UNSCHEDULED)) {
+      expect(routes, name).toContain(name);
+      expect(reason.length).toBeGreaterThan(20);
+    }
+  });
+
+  test("every vercel.json entry points at an existing cron route", () => {
+    for (const c of crons) {
+      expect(c.path).toMatch(/^\/api\/cron\/[a-z0-9-]+$/);
+      expect(routes, c.path).toContain(c.path.replace("/api/cron/", ""));
+      expect(c.schedule.trim().split(/\s+/)).toHaveLength(5);
+    }
+  });
+
+  test("the four restored jobs run at the agreed UTC times (Remi is in Pacific)", () => {
+    expect(scheduled.get("daily-reminders")).toBe("7 15 * * *");
+    expect(scheduled.get("weekly-digest")).toBe("23 15 * * 1");
+    expect(scheduled.get("meet-reminders")).toBe("12 * * * *");
+    expect(scheduled.get("stewardship-milestones")).toBe("37 14 * * *");
+  });
+
+  test("every job that emails people checks the notify.operator_emails opt-in", () => {
+    for (const r of ["daily-reminders", "weekly-digest", "meet-reminders"]) {
+      const src = readFileSync(join(CRON_DIR, r, "route.ts"), "utf8");
+      expect(src, r).toContain("loadOperatorEmailOrgs");
+    }
+  });
+});

@@ -16,6 +16,9 @@ import type { OrgContext } from "./auth";
  *     demoted nor removed.
  *  5. Everything is scoped to the ACTIVE org. A user id that has no
  *     membership in the active org is "not found", never another org's row.
+ *  6. "Reset two-step login" (deletes the person's authenticators so they set
+ *     one up again at next sign-in) follows rules 1 to 3 and 5: owners and
+ *     admins only, only an owner resets an owner, never yourself.
  */
 
 export type MemberRole = OrgContext["role"];
@@ -80,6 +83,15 @@ export function checkRemove(actor: Actor, target: Target, ownerCount: number): R
   return { ok: true };
 }
 
+/** May `actor` reset `target`'s two-step login in the active org? */
+export function checkTwoStepReset(actor: Actor, target: Target): RuleResult {
+  if (!target) return no(404, "That person is not in this organization.");
+  if (target.userId === actor.userId)
+    return no(403, "You can't reset your own two-step login. Manage your authenticators in Your account, or ask another owner or admin.");
+  if (target.role === "owner" && actor.role !== "owner") return no(403, "Only an owner can reset an owner's two-step login.");
+  return { ok: true };
+}
+
 /** What the screen offers on one row (the server re-checks every write). */
 export function rowPermissions(actor: Actor, target: { userId: string; role: MemberRole }, ownerCount: number) {
   const isSelf = actor.userId === target.userId;
@@ -89,6 +101,9 @@ export function rowPermissions(actor: Actor, target: { userId: string; role: Mem
     isSelf,
     canChangeRole: canTouch && !lastOwner,
     canRemove: canTouch && !lastOwner,
+    /** Reset two-step login: same reach as a role change, last owner included
+     *  (resetting does not remove them). */
+    canResetTwoStep: canTouch,
     /** Roles this actor may pick for the row. */
     roleChoices: MEMBER_ROLES.filter((r) => r.value !== "owner" || actor.role === "owner").map((r) => r.value),
   };

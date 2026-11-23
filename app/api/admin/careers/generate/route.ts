@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { websiteDb } from "@/lib/site/websiteDb";
 import { requireAaOnly } from "@/lib/admin/aaOnly";
 import { generateCard, type OccupationInput } from "@/lib/ms/generate";
 import { asRiasecProfile } from "@/lib/ms/riasec";
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid soc_code" }, { status: 400 });
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = websiteDb();
   const { data: occ } = await supabase
     .from("ms_occupations")
     .select("*")

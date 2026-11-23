@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { websiteDb } from "@/lib/site/websiteDb";
 import { requireAaOnly } from "@/lib/admin/aaOnly";
 import { lowZoneViolation, LOW_ZONE_PER_WEEK, LOW_ZONE_MAX } from "@/lib/games/daily";
 
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid day" }, { status: 400 });
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = websiteDb();
 
   if (soc_code === null) {
     const { error } = await supabase.from("game_daily").delete().eq("game", "nhoi").eq("day", day);

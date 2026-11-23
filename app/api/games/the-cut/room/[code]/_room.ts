@@ -1,4 +1,4 @@
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { websiteDb } from "@/lib/site/websiteDb";
 import { normalizeClaimCode, ROOM_CODE_LENGTH } from "@/lib/ms/claim";
 import type { RoomState } from "@/lib/games/the-cut";
 
@@ -18,7 +18,7 @@ export async function loadRoom(
 ): Promise<{ room: CutRoomRow; expired: boolean } | null> {
   const normalized = normalizeClaimCode(code);
   if (normalized.length !== ROOM_CODE_LENGTH) return null;
-  const supabase = getSupabaseAdmin();
+  const supabase = websiteDb();
   const { data } = await supabase
     .from("cut_rooms")
     .select("id, room_code, host_token, state, expires_at")

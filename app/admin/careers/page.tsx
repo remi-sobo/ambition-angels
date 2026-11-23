@@ -1,6 +1,6 @@
 import Link from "next/link";
 import EmptyState from "../_components/EmptyState";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { websiteDb } from "@/lib/site/websiteDb";
 import PageHeader from "../_components/PageHeader";
 import StatCard from "../_components/StatCard";
 import { CareersControls, type CardView, type OccupationView } from "./_components/CareersControls";
@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 export default async function CareersPage() {
   const roleGate = await requirePagePermission("program.read", "Career library");
   if (!roleGate.ok) return roleGate.page;
-  const supabase = getSupabaseAdmin();
+  const supabase = websiteDb();
   const [{ data: occData }, { data: cardData }] = await Promise.all([
     supabase
       .from("ms_occupations")

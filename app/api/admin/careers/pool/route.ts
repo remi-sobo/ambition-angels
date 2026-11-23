@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { websiteDb } from "@/lib/site/websiteDb";
 import { requireAaOnly } from "@/lib/admin/aaOnly";
 import { eligibilityIssues, REVEAL_LINE_MAX } from "@/lib/games/pool";
 
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     if (typeof body[key] === "boolean") flags[key] = body[key];
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = websiteDb();
 
   switch (action as Action) {
     case "approve": {

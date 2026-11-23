@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { websiteDb } from "@/lib/site/websiteDb";
 import { requireAaOnly } from "@/lib/admin/aaOnly";
 import { requirePermission } from "@/lib/admin/requirePermission";
 
@@ -35,7 +35,7 @@ export async function GET() {
   const gate = await requireAaOnly("aa.site_analytics");
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
 
-  const supabase = getSupabaseAdmin();
+  const supabase = websiteDb();
 
   const [pvRes, evRes] = await Promise.all([
     supabase

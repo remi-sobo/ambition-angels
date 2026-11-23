@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { websiteDb } from "@/lib/site/websiteDb";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { answersToTraits } from "@/lib/ms/instrument";
 import { traitsToRiasec, asRiasecProfile } from "@/lib/ms/riasec";
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = websiteDb();
 
   // The catalog is the menu: approved cards only, joined to their imported
   // profiles. If nothing is approved yet there is nothing to rank — that is

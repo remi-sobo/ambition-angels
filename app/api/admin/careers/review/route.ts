@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { websiteDb } from "@/lib/site/websiteDb";
 import { requireAaOnly } from "@/lib/admin/aaOnly";
 
 // The review step (ms-career-library-v2.md step 5): the one that cannot be
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = websiteDb();
   const { data: card } = await supabase
     .from("ms_cards")
     .select("soc_code, status, day_vignette, clue_1, clue_2, clue_3, clue_4, clue_5, clue_6, clue_7, clue_8")

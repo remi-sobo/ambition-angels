@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { websiteDb } from "@/lib/site/websiteDb";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { resolveRound, toPublicState, quorumNeeded } from "@/lib/games/the-cut";
 import { loadRoom } from "../_room";
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest, { params }: { params: { code: strin
     return NextResponse.json({ error: "This board is finished" }, { status: 409 });
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = websiteDb();
   const [{ count: joined }, { data: votes, error: votesError }] = await Promise.all([
     supabase.from("cut_players").select("*", { count: "exact", head: true }).eq("room_id", room.id),
     supabase

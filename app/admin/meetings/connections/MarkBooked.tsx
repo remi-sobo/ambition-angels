@@ -1,8 +1,8 @@
 "use client";
 
+import { saveAction } from "@/lib/admin/saveAction";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { userMessage } from "@/lib/admin/errors";
 
 type BookingOption = {
   id: string;
@@ -54,21 +54,17 @@ export default function MarkBooked({ taskId }: { taskId: string }) {
   async function book(bookingId: string | null) {
     setBusy(true);
     setError(null);
-    try {
-      const r = await fetch(`/api/admin/meet/connections/${taskId}/book`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ booking_id: bookingId }),
-      });
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(userMessage(r, d));
-      setOpen(false);
-      router.refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Couldn't mark booked");
-    } finally {
-      setBusy(false);
+    const r = await saveAction({
+      request: { url: `/api/admin/meet/connections/${taskId}/book`, method: "POST", body: { booking_id: bookingId } },
+      failure: false,
+    });
+    setBusy(false);
+    if (!r.ok) {
+      setError(r.message);
+      return;
     }
+    setOpen(false);
+    router.refresh();
   }
 
   return (

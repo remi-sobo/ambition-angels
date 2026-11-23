@@ -1,6 +1,9 @@
 import SectionHeading from "@/app/admin/_components/SectionHeading";
 import PageHeader from "@/app/admin/_components/PageHeader";
-import StatCard from "@/app/admin/_components/StatCard";
+import Figure, { SummaryStrip } from "@/app/admin/_components/ui/Figure";
+import DataTable, { type DataTableColumn } from "@/app/admin/_components/ui/DataTable";
+import { todayInTZ } from "@/lib/admin/ops/week";
+import { coachMatchProgress, type CoachProgress } from "@/lib/admin/program/coachRoster";
 import EmptyState from "@/app/admin/_components/EmptyState";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
@@ -29,6 +32,10 @@ type MatchRecord = {
 };
 
 const OPEN_MATCH: MatchStatus[] = ["proposed", "intro_sent", "active"];
+
+type MatchRosterRow = { id: string; student: string; coach: string; field: string; status: string; progress: CoachProgress };
+
+const MATCH_TABLE = { sortable: [], defaultSort: null, pageSize: 100 } as const;
 
 export default async function CoachAdminPage() {
   const roleGate = await requirePagePermission("program.read", "Programs");
@@ -134,6 +141,53 @@ export default async function CoachAdminPage() {
   const sessionsDone = matchViews.reduce((n, m) => n + m.sessions.filter((s) => s.done_at).length, 0);
   const plansReady = matchViews.filter((m) => m.plan_shared_at).length;
   const newCount = people.filter((p) => p.status === "new").length;
+  const today = todayInTZ();
+  const matchRows: MatchRosterRow[] = openMatches.map((m) => ({
+    id: m.id,
+    student: m.student.name,
+    coach: m.coach.name,
+    field: m.field,
+    status: m.status,
+    progress: coachMatchProgress(
+      { id: m.id, status: m.status, intro_sent_at: m.intro_sent_at, plan_shared_at: m.plan_shared_at, coach_reaction: m.coach_reaction },
+      m.sessions,
+      today,
+    ),
+  }));
+  const sessionsDue = matchRows.reduce((n, r) => n + r.progress.done + r.progress.missed, 0);
+  const matchColumns: DataTableColumn<MatchRosterRow>[] = [
+    {
+      key: "student",
+      header: "Student",
+      card: "title",
+      render: (r) => (
+        <>
+          <span className="font-semibold text-ink-1">{r.student}</span>
+          <span className="block text-xs text-ink-2">{r.field}</span>
+        </>
+      ),
+    },
+    { key: "coach", header: "Coach", className: "text-ink-2", render: (r) => r.coach },
+    {
+      key: "sessions",
+      header: "Sessions met",
+      className: "[font-variant-numeric:tabular-nums]",
+      render: (r) => (
+        <>
+          <span className="font-semibold text-ink-1">{r.progress.done} of 4</span>
+          <span className={`block text-xs ${r.progress.missed > 0 ? "text-status-critical-text font-semibold" : "text-ink-2"}`}>
+            {r.progress.missed > 0 ? `${r.progress.missed} past date, not marked done` : r.progress.rate === null ? "None due yet" : "On track"}
+          </span>
+        </>
+      ),
+    },
+    {
+      key: "last",
+      header: "Last met",
+      className: "text-ink-2 [font-variant-numeric:tabular-nums]",
+      render: (r) => r.progress.lastMet ?? <span className="text-ink-3">Not yet</span>,
+    },
+  ];
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
@@ -151,12 +205,44 @@ export default async function CoachAdminPage() {
         }
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
-        <StatCard label="Coaches" value={coaches.length} sub={`${newCount} new sign-ups to call`} muted={coaches.length === 0} />
-        <StatCard label="Students" value={students.length} sub={`${studentOptions.length} waiting for a match`} muted={students.length === 0} />
-        <StatCard label="Sessions done" value={sessionsDone} sub={`across ${openMatches.length} open matches`} muted={sessionsDone === 0} />
-        <StatCard label="Plans ready" value={plansReady} sub="marked ready by the student" muted={plansReady === 0} />
-      </div>
+      {/* V4 Stage E: coaching on the same roster and attendance standard as
+          cohorts: figures that say where they come from, and one row per
+          match with sessions met, last met and the next step. */}
+      <SummaryStrip label="Ambition Coach summary">
+        <Figure label="Coaches" value={coaches.length} source={`${newCount} new sign-ups to call, from /coach`} />
+        <Figure label="Students waiting" value={studentOptions.length} source={`Of ${students.length} student sign-ups, not in an open match`} />
+        <Figure
+          label="Sessions met"
+          value={sessionsDue > 0 ? `${Math.round((sessionsDone / sessionsDue) * 100)}%` : null}
+          compare={sessionsDue > 0 ? `${sessionsDone} of ${sessionsDue}` : undefined}
+          source={sessionsDue > 0 ? "Done out of sessions due by today, from match session records" : "Shows once a session date has passed"}
+        />
+        <Figure label="Plans ready" value={plansReady} source="Marked ready by the student on their page" />
+      </SummaryStrip>
+
+      <section className="mb-8">
+        <SectionHeading className="mb-2">Match roster ({openMatches.length})</SectionHeading>
+        <DataTable
+          label="Open coach matches"
+          noun={{ one: "match", many: "matches" }}
+          columns={matchColumns}
+          nextStep={{
+            header: "Next step",
+            render: (r) => (
+              <span className={r.progress.next.tone === "late" ? "text-status-critical-text font-semibold" : r.progress.next.tone === "due" ? "text-ink-1" : "text-ink-2"}>
+                {r.progress.next.text}
+              </span>
+            ),
+          }}
+          data={{ rows: matchRows, total: matchRows.length, page: 0, pageSize: MATCH_TABLE.pageSize }}
+          getRowId={(r) => r.id}
+          getRowLabel={(r) => `${r.student} with ${r.coach}`}
+          spec={MATCH_TABLE}
+          state={{ page: 0, sort: null }}
+          baseHref="/admin/programs/coach"
+          emptyMessage="No open matches yet. Match a coach and a student below."
+        />
+      </section>
 
       <div className="space-y-8">
         <section>

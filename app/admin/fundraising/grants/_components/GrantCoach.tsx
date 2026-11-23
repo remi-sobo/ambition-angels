@@ -363,7 +363,7 @@ export default function GrantCoach({
                 }}
                 className="flex gap-2"
               >
-                <input
+                <input aria-label="Your answer to the reader"
                   value={defendInput}
                   onChange={(e) => setDefendInput(e.target.value)}
                   maxLength={4000}

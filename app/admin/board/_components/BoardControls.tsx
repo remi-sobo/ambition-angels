@@ -1,16 +1,22 @@
 "use client";
 
-// Client pieces of the Board module: member rows (terms, COI, giving),
-// meeting cards (agenda, attendance + quorum, minutes with approve-freeze).
-// Mutations go through the admin APIs, then router.refresh().
+// Client pieces of the Board module: the roster's row menu and add drawer
+// (terms, COI, giving), meeting cards (agenda, attendance + quorum, minutes
+// with approve-freeze). Mutations go through the admin APIs via saveAction,
+// then router.refresh(). (V4 Stage G.)
 
 import { useState } from "react";
-import Link from "next/link";
 import SectionHeading from "../../_components/SectionHeading";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
-import { userMessage } from "@/lib/admin/errors";
+import { saveAction } from "@/lib/admin/saveAction";
+import { ROLE_LABELS } from "@/lib/admin/board/roster";
+import Button from "@/app/admin/_components/ui/Button";
+import Drawer from "@/app/admin/_components/ui/Drawer";
+import MoreActionsMenu from "@/app/admin/_components/ui/MoreActionsMenu";
+import Input, { Textarea } from "@/app/admin/_components/ui/Input";
+import { DateField, SelectField, TextField } from "@/app/admin/_components/ui/Field";
 
 export type BoardMember = {
   id: string;
@@ -37,26 +43,15 @@ export type BoardMeeting = {
   approved_at: string | null;
 };
 
-const inputCls =
-  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
-const ROLE_LABELS: Record<string, string> = {
-  chair: "Chair",
-  vice_chair: "Vice Chair",
-  secretary: "Secretary",
-  treasurer: "Treasurer",
-  member: "Member",
-};
 
-export function MemberRow({
-  member,
-  gaveThisYear,
-  coiYear,
-}: {
-  member: BoardMember;
-  gaveThisYear: boolean;
-  coiYear: number;
-}) {
+
+/**
+ * A roster row's actions (V4 Stage G: one row menu instead of five inline
+ * buttons): record COI, edit role and term (kit Drawer), mark past or
+ * reactivate, remove. Every write goes through saveAction.
+ */
+export function MemberActions({ member, coiYear }: { member: BoardMember; coiYear: number }) {
   const router = useRouter();
   const toast = useToast();
   const confirm = useConfirm();
@@ -64,23 +59,18 @@ export function MemberRow({
   const [editing, setEditing] = useState(false);
   const [termEnd, setTermEnd] = useState(member.term_end ?? "");
   const [role, setRole] = useState(member.officer_role);
+  const coiCurrent = !!member.coi_signed_at && member.coi_signed_at >= `${coiYear}-01-01`;
 
-  const patch = async (fields: Record<string, unknown>) => {
+  const patch = async (fields: Record<string, unknown>, success?: string) => {
     setBusy(true);
-    try {
-      const res = await fetch(`/api/admin/board/members/${member.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(fields),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        toast.error(userMessage(res, j));
-      }
-      router.refresh();
-    } finally {
-      setBusy(false);
-    }
+    const r = await saveAction({
+      request: { url: `/api/admin/board/members/${member.id}`, method: "PATCH", body: fields },
+      success,
+      toast,
+    });
+    setBusy(false);
+    if (r.ok) router.refresh();
+    return r.ok;
   };
 
   const remove = async () => {
@@ -91,154 +81,70 @@ export function MemberRow({
     });
     if (!ok) return;
     setBusy(true);
-    try {
-      await fetch(`/api/admin/board/members/${member.id}`, { method: "DELETE" });
-      router.refresh();
-    } finally {
-      setBusy(false);
-    }
+    const r = await saveAction({
+      request: { url: `/api/admin/board/members/${member.id}`, method: "DELETE" },
+      success: `${member.name} removed`,
+      toast,
+    });
+    setBusy(false);
+    if (r.ok) router.refresh();
   };
 
-  const today = new Date().toISOString().slice(0, 10);
-  const coiCurrent = !!member.coi_signed_at && member.coi_signed_at >= `${coiYear}-01-01`;
-  const termPast = !!member.term_end && member.term_end < today;
-  const termSoon =
-    !!member.term_end &&
-    !termPast &&
-    member.term_end <= new Date(Date.now() + 180 * 86400_000).toISOString().slice(0, 10);
-
   return (
-    <article
-      className={`bg-surface border-hairline rounded-panel p-3 text-sm ${busy ? "opacity-60" : ""}`}
-    >
-      <div className="flex flex-wrap items-center gap-2">
-        <Link
-          href={`/admin/board/${member.id}`}
-          className="font-semibold text-ink-1 hover:text-orange transition-colors"
-        >
-          {member.name}
-        </Link>
-        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-tile text-ink-2 uppercase tracking-wider">
-          {ROLE_LABELS[member.officer_role] ?? member.officer_role}
-        </span>
-        {member.status !== "active" && (
-          <span className="text-xs px-2 py-0.5 rounded-full bg-tile text-ink-2">
-            {member.status}
-          </span>
-        )}
-        {member.term_end && (
-          <span
-            className={`text-xs tabular-nums ${
-              termPast ? "text-expense font-semibold" : termSoon ? "text-status-watch-text" : "text-ink-2"
-            }`}
-            title={`Term ${member.term_number}`}
-          >
-            term ends {member.term_end}
-            {termPast ? " · expired" : termSoon ? " · soon" : ""}
-          </span>
-        )}
-        <span className="ml-auto flex items-center gap-2 text-xs">
-          <span
-            className={coiCurrent ? "text-revenue" : "text-expense"}
-            title={member.coi_signed_at ? `COI signed ${member.coi_signed_at}` : "No COI on file"}
-          >
-            COI {coiCurrent ? "✓" : "✗"}
-          </span>
-          <span
-            className={gaveThisYear ? "text-revenue" : "text-ink-2"}
-            title={
-              member.constituent_id
-                ? gaveThisYear
-                  ? "Gave this year"
-                  : "No gift this year"
-                : "Not linked to a donor record"
-            }
-          >
-            Gave {gaveThisYear ? "✓" : member.constituent_id ? "—" : "?"}
-          </span>
-        </span>
-      </div>
-      <div className="flex flex-wrap items-center gap-1 mt-2">
-        {!coiCurrent && (
-          <button
-            onClick={() => patch({ coi_signed_at: true })}
-            disabled={busy}
-            className="px-2 py-1 rounded-control text-xs font-semibold bg-orange/15 text-orange hover:bg-orange/25"
-          >
-            Record COI ({coiYear})
-          </button>
-        )}
-        <button
-          onClick={() => setEditing((v) => !v)}
-          className="px-2 py-1 rounded-control text-xs bg-tile hover:bg-tile text-ink-2"
-        >
-          Edit
-        </button>
-        {member.status === "active" ? (
-          <button
-            onClick={() => patch({ status: "past" })}
-            disabled={busy}
-            className="px-2 py-1 rounded-control text-xs text-ink-2 hover:text-ink-1"
-          >
-            Mark past
-          </button>
-        ) : (
-          <button
-            onClick={() => patch({ status: "active" })}
-            disabled={busy}
-            className="px-2 py-1 rounded-control text-xs text-ink-2 hover:text-ink-1"
-          >
-            Reactivate
-          </button>
-        )}
-        <button
-          onClick={() => void remove()}
-          disabled={busy}
-          className="ml-auto px-2 py-1 rounded-control text-xs text-ink-2 hover:text-expense"
-        >
-          Remove
-        </button>
-      </div>
-      {editing && (
-        <div className="mt-3 pt-3 border-t border-hairline flex flex-wrap items-end gap-3">
-          <label className="text-xs text-ink-2">
-            Officer role
-            <select
-              className={`${inputCls} block mt-0.5 !py-1 !text-xs`}
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
+    <>
+      <MoreActionsMenu
+        label={`Actions for ${member.name}`}
+        size="sm"
+        disabled={busy}
+        items={[
+          ...(coiCurrent ? [] : [{ label: `Record COI (${coiYear})`, onSelect: () => void patch({ coi_signed_at: true }, "Conflict-of-interest form recorded") }]),
+          { label: "Edit role and term", onSelect: () => setEditing(true) },
+          member.status === "active"
+            ? { label: "Mark past", onSelect: () => void patch({ status: "past" }, "Marked past") }
+            : { label: "Reactivate", onSelect: () => void patch({ status: "active" }, "Reactivated") },
+          { label: "Open profile", href: `/admin/organization/board/${member.id}` },
+          { label: "Remove", danger: true, onSelect: () => void remove() },
+        ]}
+      />
+      <Drawer
+        open={editing}
+        onClose={() => setEditing(false)}
+        title={`Edit ${member.name}`}
+        footer={
+          <>
+            <Button type="button" variant="secondary" onClick={() => setEditing(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              loading={busy}
+              onClick={async () => {
+                if (await patch({ officer_role: role, term_end: termEnd || null }, "Saved")) setEditing(false);
+              }}
             >
-              {Object.entries(ROLE_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>{v}</option>
-              ))}
-            </select>
-          </label>
-          <label className="text-xs text-ink-2">
-            Term ends
-            <input
-              className={`${inputCls} block mt-0.5 !py-1 !text-xs`}
-              type="date"
-              value={termEnd}
-              onChange={(e) => setTermEnd(e.target.value)}
-            />
-          </label>
-          <button
-            onClick={() => {
-              void patch({ officer_role: role, term_end: termEnd || null });
-              setEditing(false);
-            }}
-            className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1 rounded-full"
-          >
-            Save
-          </button>
+              Save
+            </Button>
+          </>
+        }
+      >
+        <div className="grid gap-4">
+          <SelectField
+            label="Officer role"
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            options={Object.entries(ROLE_LABELS).map(([value, label]) => ({ value, label }))}
+          />
+          <DateField label="Term ends" value={termEnd} onChange={(e) => setTermEnd(e.target.value)} />
         </div>
-      )}
-    </article>
+      </Drawer>
+    </>
   );
 }
 
+/** The Board page's primary action: Add member, in the kit Drawer. */
 export function NewMemberForm() {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -251,82 +157,60 @@ export function NewMemberForm() {
     e.preventDefault();
     setBusy(true);
     setError("");
-    try {
-      const res = await fetch("/api/admin/board/members", {
+    const r = await saveAction({
+      request: {
+        url: "/api/admin/board/members",
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          email: email || undefined,
-          officer_role: role,
-          term_end: termEnd || undefined,
-        }),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        throw new Error(userMessage(res, j));
-      }
-      setName(""); setEmail(""); setTermEnd("");
-      setOpen(false);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to add member");
-    } finally {
-      setBusy(false);
+        body: { name, email: email || undefined, officer_role: role, term_end: termEnd || undefined },
+      },
+      failure: false,
+      success: `${name} added`,
+      toast,
+    });
+    setBusy(false);
+    if (!r.ok) {
+      setError(r.message);
+      return;
     }
+    setName(""); setEmail(""); setTermEnd("");
+    setOpen(false);
+    router.refresh();
   };
 
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors"
-      >
-        + Add member
-      </button>
-    );
-  }
-
   return (
-    <form
-      onSubmit={submit}
-      className="w-full bg-surface border-hairline rounded-panel p-4 grid grid-cols-2 lg:grid-cols-5 gap-3 items-end"
-    >
-      <label className="text-xs text-ink-2">
-        Name
-        <input className={`${inputCls} w-full mt-1`} value={name} required autoFocus
-          onChange={(e) => setName(e.target.value)} />
-      </label>
-      <label className="text-xs text-ink-2">
-        Email
-        <input className={`${inputCls} w-full mt-1`} type="email" value={email}
-          placeholder="links giving automatically" onChange={(e) => setEmail(e.target.value)} />
-      </label>
-      <label className="text-xs text-ink-2">
-        Role
-        <select className={`${inputCls} w-full mt-1`} value={role} onChange={(e) => setRole(e.target.value)}>
-          {Object.entries(ROLE_LABELS).map(([k, v]) => (
-            <option key={k} value={k}>{v}</option>
-          ))}
-        </select>
-      </label>
-      <label className="text-xs text-ink-2">
-        Term ends
-        <input className={`${inputCls} w-full mt-1`} type="date" value={termEnd}
-          onChange={(e) => setTermEnd(e.target.value)} />
-      </label>
-      <div className="flex gap-2">
-        <button type="submit" disabled={busy}
-          className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors disabled:opacity-50">
-          {busy ? "Saving…" : "Add"}
-        </button>
-        <button type="button" onClick={() => setOpen(false)}
-          className="text-xs text-ink-2 hover:text-ink-1 px-2">
-          Cancel
-        </button>
-      </div>
-      {error && <p className="col-span-full text-expense text-xs">{error}</p>}
-    </form>
+    <>
+      <Button type="button" onClick={() => setOpen(true)}>
+        Add member
+      </Button>
+      <Drawer
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Add a board member"
+        description="Only the name is required. An email that matches a donor record links giving automatically."
+        footer={
+          <>
+            <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="new-board-member" loading={busy}>
+              {busy ? "Saving" : "Add member"}
+            </Button>
+          </>
+        }
+      >
+        <form id="new-board-member" onSubmit={submit} className="grid grid-cols-2 gap-4">
+          <TextField className="col-span-2" label="Name" required autoFocus value={name} onChange={(e) => setName(e.target.value)} error={error || undefined} />
+          <TextField className="col-span-2" label="Email" type="email" value={email} hint="Links giving automatically" onChange={(e) => setEmail(e.target.value)} />
+          <SelectField
+            label="Role"
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            options={Object.entries(ROLE_LABELS).map(([value, label]) => ({ value, label }))}
+          />
+          <DateField label="Term ends" value={termEnd} onChange={(e) => setTermEnd(e.target.value)} />
+        </form>
+      </Drawer>
+    </>
   );
 }
 
@@ -341,46 +225,44 @@ export function NewMeetingForm() {
   const create = async () => {
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
     setBusy(true);
-    try {
-      const res = await fetch("/api/admin/board/meetings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ meeting_date: date }),
-      });
-      if (!res.ok) toast.error(userMessage(res, await res.json().catch(() => null)));
-      else setDate(null);
+    const r = await saveAction({
+      request: { url: "/api/admin/board/meetings", method: "POST", body: { meeting_date: date } },
+      success: "Meeting created",
+      toast,
+    });
+    setBusy(false);
+    if (r.ok) {
+      setDate(null);
       router.refresh();
-    } finally {
-      setBusy(false);
     }
   };
 
   if (date !== null) {
     return (
       <span className="inline-flex items-center gap-1.5">
-        <input
+        <Input
           autoFocus
           type="date"
+          aria-label="Meeting date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") void create(); if (e.key === "Escape") setDate(null); }}
-          className="bg-tile border-hairline rounded-control px-2 py-1 text-ink-1 text-xs focus:outline-none focus:border-orange/40"
+          className="!w-auto"
         />
-        <button onClick={() => void create()} disabled={busy || !date} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1 rounded-full disabled:opacity-50">
+        <Button type="button" size="sm" onClick={() => void create()} disabled={!date} loading={busy}>
           Create
-        </button>
-        <button onClick={() => setDate(null)} disabled={busy} className="text-xs text-ink-3 hover:text-ink-1">
+        </Button>
+        <Button type="button" size="sm" variant="quiet" onClick={() => setDate(null)} disabled={busy}>
           Cancel
-        </button>
+        </Button>
       </span>
     );
   }
 
   return (
-    <button onClick={() => setDate(new Date().toISOString().slice(0, 10))} disabled={busy}
-      className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors disabled:opacity-50">
-      + New meeting
-    </button>
+    <Button type="button" variant="secondary" size="sm" onClick={() => setDate(new Date().toISOString().slice(0, 10))} disabled={busy}>
+      New meeting
+    </Button>
   );
 }
 
@@ -408,20 +290,12 @@ export function MeetingCard({
 
   const patch = async (fields: Record<string, unknown>) => {
     setBusy(true);
-    try {
-      const res = await fetch(`/api/admin/board/meetings/${meeting.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(fields),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        toast.error(userMessage(res, j));
-      }
-      router.refresh();
-    } finally {
-      setBusy(false);
-    }
+    const r = await saveAction({
+      request: { url: `/api/admin/board/meetings/${meeting.id}`, method: "PATCH", body: fields },
+      toast,
+    });
+    setBusy(false);
+    if (r.ok) router.refresh();
   };
 
   const toggleAttendance = (memberId: string) => {
@@ -446,7 +320,7 @@ export function MeetingCard({
 
   return (
     <article className={`bg-surface border-hairline rounded-panel p-4 text-sm ${busy ? "opacity-60" : ""}`}>
-      <button className="w-full flex flex-wrap items-center gap-2 text-left" onClick={() => setOpen((v) => !v)}>
+      <button type="button" aria-expanded={open} className="w-full flex flex-wrap items-center gap-2 text-left" onClick={() => setOpen((v) => !v)}>
         <span className="font-semibold text-ink-1">{meeting.title}</span>
         <span className="text-xs text-ink-2 tabular-nums">{meeting.meeting_date}</span>
         <span
@@ -487,24 +361,22 @@ export function MeetingCard({
             </ol>
             {!approved && (
               <div className="flex gap-2 mt-2">
-                <input
-                  className={`${inputCls} flex-1 !py-1.5 !text-xs`}
-                  placeholder="Add agenda item…"
+                <Input
+                  aria-label="New agenda item"
+                  className="flex-1"
+                  placeholder="Add an agenda item"
                   value={newItem}
                   onChange={(e) => setNewItem(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") { e.preventDefault(); addAgendaItem("normal"); }
                   }}
                 />
-                <button onClick={() => addAgendaItem("normal")}
-                  className="text-xs bg-tile hover:bg-tile text-ink-2 px-3 rounded-control">
+                <Button type="button" variant="secondary" onClick={() => addAgendaItem("normal")}>
                   Add
-                </button>
-                <button onClick={() => addAgendaItem("consent")}
-                  title="Routine approvals bundled into one motion"
-                  className="text-xs bg-tile hover:bg-tile text-ink-2 px-3 rounded-control">
+                </Button>
+                <Button type="button" variant="quiet" onClick={() => addAgendaItem("consent")} title="Routine approvals bundled into one motion">
                   Add to consent
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -519,6 +391,8 @@ export function MeetingCard({
                 return (
                   <button
                     key={m.id}
+                    type="button"
+                    aria-pressed={present}
                     disabled={approved || busy}
                     onClick={() => toggleAttendance(m.id)}
                     className={`text-xs px-3 py-1 rounded-full border transition-colors ${
@@ -544,21 +418,20 @@ export function MeetingCard({
               </p>
             ) : (
               <>
-                <textarea
-                  className={`${inputCls} w-full min-h-[120px] text-sm`}
+                <Textarea
+                  aria-label={`Minutes for ${meeting.title}`}
+                  className="min-h-[120px]"
                   placeholder={"Attendance & quorum noted above.\nMotions: text, mover, seconder, vote tally (for/against/abstain).\nDecisions and follow-ups with owners."}
                   value={minutes}
                   onChange={(e) => setMinutes(e.target.value)}
                 />
                 <div className="flex gap-2 mt-2">
-                  <button
-                    onClick={() => void patch({ minutes })}
-                    disabled={busy}
-                    className="text-xs bg-tile hover:bg-tile text-ink-2 px-3 py-1.5 rounded-control"
-                  >
+                  <Button type="button" variant="secondary" size="sm" onClick={() => void patch({ minutes })} disabled={busy}>
                     Save draft
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
                     onClick={async () => {
                       const ok = await confirm({
                         title: "Approve minutes?",
@@ -568,10 +441,9 @@ export function MeetingCard({
                       if (ok) void patch({ approve: true });
                     }}
                     disabled={busy}
-                    className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-3 py-1.5 rounded-full"
                   >
-                    Approve & freeze
-                  </button>
+                    Approve and freeze
+                  </Button>
                 </div>
               </>
             )}

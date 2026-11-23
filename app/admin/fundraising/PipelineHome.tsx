@@ -1,5 +1,6 @@
 import { createServerSupabase } from "@/lib/supabase/server";
-import { getOrgContext } from "@/lib/admin/auth";
+import { getOrgContext, ctxHasPermission, getAdminUser } from "@/lib/admin/auth";
+import { getActiveOrgMembers } from "@/lib/admin/owners-server";
 import PageHeader from "../_components/PageHeader";
 import SectionSummary from "../_components/SectionSummary";
 import { NewOpportunityForm } from "./_components/PipelineBoard";
@@ -39,6 +40,7 @@ type DbOpportunity = {
   capacity_rating: number | null;
   affinity_rating: number | null;
   owner: string | null;
+  owner_id: string | null;
   next_step: string | null;
   next_step_due: string | null;
   notes: string | null;
@@ -81,7 +83,7 @@ export default async function PipelineHome({
     .from("opportunities")
     .select(
       `id, name, stage, pipeline, ask_amount, expected_close, probability,
-       capacity_rating, affinity_rating, owner, next_step, next_step_due, notes,
+       capacity_rating, affinity_rating, owner, owner_id, next_step, next_step_due, notes,
        constituent:constituents ( id, type, first_name, last_name, org_name, external_ids )`
     )
     .eq("org_id", ctx.orgId)
@@ -110,12 +112,18 @@ export default async function PipelineHome({
     capacityRating: o.capacity_rating,
     affinityRating: o.affinity_rating,
     owner: o.owner,
+    ownerId: o.owner_id ?? null,
     nextStep: o.next_step,
     nextStepDue: o.next_step_due,
     notes: o.notes,
   }));
 
-  const config = await configPromise;
+  const [config, members, handle, canAssign] = await Promise.all([
+    configPromise,
+    getActiveOrgMembers(),
+    getAdminUser(),
+    ctxHasPermission(ctx, "fundraising.write"),
+  ]);
 
   // Pipeline tabs come from config (minus the retired/archived partnership
   // pipelines, which live in /admin/partners). Boards render one pipeline at a
@@ -188,7 +196,7 @@ export default async function PipelineHome({
           { label: "Prospect research", href: "/admin/fundraising/prospects" },
           { label: "Ask log", href: "#ask-log" },
           ...(basePath === "/admin/fundraising/pipeline"
-            ? [{ label: "My asks", href: "/admin/fundraising/pipeline?asks=mine#ask-log" }]
+            ? [{ label: "My asks in the ask log", href: "/admin/fundraising/pipeline?asks=mine#ask-log" }]
             : []),
         ]}
         primaryAction={<NewOpportunityForm />}
@@ -213,7 +221,15 @@ export default async function PipelineHome({
         />
       </div>
 
-      <PipelineBoardV4 opps={boardOpps} stages={stages} today={today} initialView={searchParams?.view} />
+      <PipelineBoardV4
+        opps={boardOpps}
+        stages={stages}
+        today={today}
+        initialView={searchParams?.view}
+        me={{ userId: ctx.userId, handle }}
+        members={members}
+        canAssign={canAssign}
+      />
     </div>
   );
 }

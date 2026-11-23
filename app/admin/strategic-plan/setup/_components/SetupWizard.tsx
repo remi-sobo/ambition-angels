@@ -1,10 +1,10 @@
 "use client";
 
+import { saveAction } from "@/lib/admin/saveAction";
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
-import { userMessage } from "@/lib/admin/errors";
 import { AUTO_METRIC_CATALOG } from "@/lib/admin/plan/metricCatalog";
 import { STARTER_OBJECTIVES } from "@/lib/admin/plan/template";
 
@@ -17,17 +17,10 @@ const inputCls =
   "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 async function apiRequest(url: string, body: unknown, onError: (message: string) => void): Promise<boolean> {
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const j = await res.json().catch(() => ({}));
-    onError(userMessage(res, j));
-    return false;
-  }
-  return true;
+  // V4 Stage G: every setup write goes through saveAction.
+  const r = await saveAction({ request: { url, method: "POST", body }, failure: false });
+  if (!r.ok) onError(r.message);
+  return r.ok;
 }
 
 // Bind the helper to the component's toast (`const api = useApi();`) so call
@@ -87,7 +80,7 @@ function QuickAdd({ placeholder, onAdd }: { placeholder: string; onAdd: (title: 
   };
   return (
     <div className="flex gap-2">
-      <input
+      <input aria-label={placeholder}
         className={`${inputCls} flex-1 !py-1.5 !text-xs`}
         placeholder={placeholder}
         value={val}
@@ -155,9 +148,9 @@ function AddMeasure({ goalId, onDone }: { goalId: string; onDone: () => void }) 
       </div>
       {manual ? (
         <div className="flex flex-wrap items-center gap-2 pt-1">
-          <input className={`${inputCls} flex-1 min-w-[160px] !py-1 !text-xs`} placeholder="Manual measure (e.g. Processes documented)" value={title} autoFocus onChange={(e) => setTitle(e.target.value)} />
-          <input className={`${inputCls} w-14 !py-1 !text-xs`} placeholder="unit" value={unit} onChange={(e) => setUnit(e.target.value)} />
-          <input className={`${inputCls} w-16 !py-1 !text-xs`} placeholder="target" value={target} onChange={(e) => setTarget(e.target.value)} />
+          <input aria-label="Manual measure" className={`${inputCls} flex-1 min-w-[160px] !py-1 !text-xs`} placeholder="Manual measure (e.g. Processes documented)" value={title} autoFocus onChange={(e) => setTitle(e.target.value)} />
+          <input aria-label="Unit" className={`${inputCls} w-14 !py-1 !text-xs`} placeholder="unit" value={unit} onChange={(e) => setUnit(e.target.value)} />
+          <input aria-label="Target" className={`${inputCls} w-16 !py-1 !text-xs`} placeholder="target" value={target} onChange={(e) => setTarget(e.target.value)} />
           <button onClick={() => void addManual()} disabled={busy} className="text-xs bg-orange hover:bg-orange-dark text-white px-3 py-1 rounded-control">Add</button>
         </div>
       ) : (
@@ -181,26 +174,16 @@ function FoundationForm({ initial, onSaved }: { initial: WizFoundation; onSaved:
 
   const save = async () => {
     setBusy(true);
-    try {
-      const res = await fetch("/api/admin/plan/foundation", {
+    const r = await saveAction({
+      request: {
+        url: "/api/admin/plan/foundation",
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mission: mission.trim() || null,
-          vision: vision.trim() || null,
-          values,
-          behaviors,
-        }),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        toast.error(userMessage(res, j));
-        return;
-      }
-      onSaved();
-    } finally {
-      setBusy(false);
-    }
+        body: { mission: mission.trim() || null, vision: vision.trim() || null, values, behaviors },
+      },
+      toast,
+    });
+    setBusy(false);
+    if (r.ok) onSaved();
   };
 
   return (
@@ -267,12 +250,12 @@ function AddObjective({ onDone, autoOpen = false }: { onDone: () => void; autoOp
   };
   return (
     <div className={`space-y-2 ${busy ? "opacity-60" : ""}`}>
-      <input
+      <input aria-label="Objective"
         className={`${inputCls} w-full !py-1.5 !text-xs`}
         placeholder="Objective: a standing pillar (e.g. Execute an effective fundraising strategy)"
         value={title} autoFocus onChange={(e) => setTitle(e.target.value)}
       />
-      <textarea
+      <textarea aria-label="Three-year statement"
         className={`${inputCls} w-full !text-xs`} rows={2}
         placeholder="3-year statement (optional). What does success look like for this pillar?"
         value={statement} onChange={(e) => setStatement(e.target.value)}
@@ -376,7 +359,7 @@ export default function SetupWizard({
           <p className="text-xs text-ink-2 mt-1">
             {objectives.length} objectives · {goals.length} goals · {kpis.length} measures ({autoCount} wired to live data) ·{" "}
             {initiatives.length} initiatives. Run it from the{" "}
-            <Link href="/admin/strategic-plan" className="text-orange hover:underline">plan</Link> and review monthly.
+            <Link href="/admin/strategic-plan" className="text-orange underline underline-offset-2">plan</Link> and review monthly.
           </p>
         </div>
       )}
@@ -459,7 +442,7 @@ export default function SetupWizard({
         hint={reviewSet ? `Next review set for ${nextReviewAt}.` : "Set the date of your first monthly OGSM review so the cockpit can nudge you."}>
         {!reviewSet && (
           <div className="flex flex-wrap items-center gap-2">
-            <input type="date" className={`${inputCls} !py-1.5 !text-xs`} value={reviewDate} onChange={(e) => setReviewDate(e.target.value)} />
+            <input aria-label="Review date" type="date" className={`${inputCls} !py-1.5 !text-xs`} value={reviewDate} onChange={(e) => setReviewDate(e.target.value)} />
             <button onClick={() => void setReview()} disabled={reviewBusy || !reviewDate} className="text-xs font-semibold bg-orange hover:bg-orange-dark text-white px-4 py-1.5 rounded-full disabled:opacity-50">
               {reviewBusy ? "Saving…" : "Set review date"}
             </button>

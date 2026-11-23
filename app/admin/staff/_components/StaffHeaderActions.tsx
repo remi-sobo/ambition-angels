@@ -1,15 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
-import { userMessage } from "@/lib/admin/errors";
+import { saveAction } from "@/lib/admin/saveAction";
+import Button from "@/app/admin/_components/ui/Button";
+import Drawer from "@/app/admin/_components/ui/Drawer";
+import MoreActionsMenu from "@/app/admin/_components/ui/MoreActionsMenu";
+import { TextField } from "@/app/admin/_components/ui/Field";
 
 /**
- * Staff page header actions: a Reviews link, and (for admins) an inline rename so
- * a tenant can relabel the module ("Staff" → "Team" / "People") without a code
- * change — writes org_terminology via the terminology route.
+ * Team page "More actions" (V4 Stage G): Reviews, People and roles (where
+ * invites live), and for admins a rename so a tenant can relabel the module
+ * ("Staff" → "Team" / "People") without a code change; it writes
+ * org_terminology via the terminology route, in the kit Drawer.
  */
 export default function StaffHeaderActions({
   canManage,
@@ -24,64 +28,51 @@ export default function StaffHeaderActions({
   const [value, setValue] = useState(currentLabel);
   const [busy, setBusy] = useState(false);
 
-  async function save() {
+  async function save(e?: React.FormEvent) {
+    e?.preventDefault();
+    if (!value.trim()) return;
     setBusy(true);
-    try {
-      const res = await fetch("/api/admin/staff/terminology", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ term_key: "staff", label: value.trim() }),
-      });
-      if (res.ok) {
-        setEditing(false);
-        router.refresh();
-      } else toast.error(userMessage(res, (await res.json().catch(() => null)) as { error?: string } | null));
-    } finally {
-      setBusy(false);
+    const r = await saveAction({
+      request: { url: "/api/admin/staff/terminology", method: "PUT", body: { term_key: "staff", label: value.trim() } },
+      success: "Renamed",
+      toast,
+    });
+    setBusy(false);
+    if (r.ok) {
+      setEditing(false);
+      router.refresh();
     }
   }
 
   return (
-    <div className="flex items-center gap-2">
-      {canManage &&
-        (editing ? (
-          <div className="flex items-center gap-1">
-            <input
-              autoFocus
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              placeholder="Staff"
-              className="w-28 rounded-control border border-hairline bg-surface px-2 py-1 text-sm text-ink-1"
-              onKeyDown={(e) => e.key === "Enter" && save()}
-            />
-            <button
-              type="button"
-              disabled={busy}
-              onClick={save}
-              className="rounded-control bg-orange px-2 py-1 text-xs font-semibold text-white disabled:opacity-50"
-            >
-              Save
-            </button>
-            <button type="button" onClick={() => setEditing(false)} className="text-xs text-ink-3 hover:text-ink-1">
+    <>
+      <MoreActionsMenu
+        items={[
+          { label: "Reviews", href: "/admin/staff/reviews" },
+          { label: "People and roles", href: "/admin/settings/people" },
+          ...(canManage ? [{ label: "Rename this module", onSelect: () => setEditing(true) }] : []),
+        ]}
+      />
+      <Drawer
+        open={editing}
+        onClose={() => setEditing(false)}
+        title="Rename this module"
+        description="What your organization calls its team. Shown in the tab and the page title."
+        footer={
+          <>
+            <Button type="button" variant="secondary" onClick={() => setEditing(false)}>
               Cancel
-            </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setEditing(true)}
-            className="text-xs font-semibold text-ink-2 hover:text-orange"
-            title="Rename this module for your org"
-          >
-            Rename
-          </button>
-        ))}
-      <Link
-        href="/admin/staff/reviews"
-        className="rounded-control border border-hairline px-3 py-1.5 text-sm font-semibold text-ink-1 hover:border-orange/50"
+            </Button>
+            <Button type="submit" form="rename-staff" loading={busy} disabled={!value.trim()}>
+              Save
+            </Button>
+          </>
+        }
       >
-        Reviews
-      </Link>
-    </div>
+        <form id="rename-staff" onSubmit={save}>
+          <TextField label="Name" required autoFocus value={value} placeholder="Staff" onChange={(e) => setValue(e.target.value)} />
+        </form>
+      </Drawer>
+    </>
   );
 }

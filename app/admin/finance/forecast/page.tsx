@@ -2,6 +2,7 @@ import { getFinanceSnapshot } from "@/lib/admin/finance";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { loadRevenueSchedule } from "@/lib/finance/schedule";
 import PageHeader from "../../_components/PageHeader";
+import PageShell from "../../_components/ui/PageShell";
 import ForecastBoard, { type SeedLever } from "./_components/ForecastBoard";
 import ModelSection from "../model/ModelSection";
 import RevenueSection from "../revenue/RevenueSection";
@@ -53,23 +54,28 @@ export default async function FinanceForecastPage({
     .slice(0, 30);
 
   return (
-    <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8 space-y-8">
-      <div className="max-w-5xl space-y-6">
-        <PageHeader
-          eyebrow="Scenario planning"
-          title="Forecast"
-          subtitle="Project cash forward and stack what-ifs (a hire, a grant landing, a slip) to see when you run out under each scenario."
-        />
+    // Dashboard archetype (V4 Stage G2): header, figures, the one chart,
+    // the what-ifs; the revenue tiers and pledges due stay below.
+    <PageShell>
+      <PageHeader
+        title="Forecast"
+        subtitle="Project cash forward and stack what-ifs (a hire, a grant landing, a slip) to see when you run out under each scenario."
+        moreActions={[
+          { label: "Revenue this year", href: "/admin/finance/forecast#revenue" },
+          { label: "Pledges due", href: "/admin/finance/forecast#pledges" },
+          { label: "Finance snapshot", href: "/admin/finance/snapshot" },
+        ]}
+      />
+      <div className="space-y-8">
         <ModelSection embedded />
         <ForecastBoard cashOnHand={snap.cashOnHand} monthlyBurn={snap.burn3mo} seeds={seeds} />
+        <div id="revenue" className="scroll-mt-24">
+          <RevenueSection searchParams={searchParams ?? {}} embedded basePath="/admin/finance/forecast" />
+        </div>
+        <div id="pledges" className="scroll-mt-24">
+          <PledgesSection embedded />
+        </div>
       </div>
-
-      <RevenueSection
-        searchParams={searchParams ?? {}}
-        embedded
-        basePath="/admin/finance/forecast"
-      />
-      <PledgesSection embedded />
-    </div>
+    </PageShell>
   );
 }

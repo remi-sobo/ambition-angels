@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { userMessage } from "@/lib/admin/errors";
 import { SC_TYPES as TYPES } from "./softCreditTypes";
+import { TextField } from "@/app/admin/_components/ui/Field";
 
 const inputCls =
   "bg-tile border-hairline rounded-control px-2 py-1 text-ink-1 text-xs placeholder-ink-3 focus:outline-none focus:border-orange/40";
@@ -55,12 +56,9 @@ export function AddSoftCredit({ giftId }: { giftId: string }) {
     );
   }
   return (
-    <form onSubmit={submit} className="flex items-center gap-1.5">
-      <input
-        autoFocus value={name} onChange={(e) => setName(e.target.value)}
-        placeholder="Credit who?" className={inputCls + " w-32"}
-      />
-      <select value={type} onChange={(e) => setType(e.target.value)} className={inputCls}>
+    <form onSubmit={submit} className="flex items-end gap-1.5">
+      <TextField label="Credit who" controlSize="md" className="w-32" autoFocus value={name} onChange={(e) => setName(e.target.value)} />
+      <select aria-label="Credit type" value={type} onChange={(e) => setType(e.target.value)} className={inputCls}>
         {TYPES.map(([v, l]) => (
           <option key={v} value={v} className="bg-tile">{l}</option>
         ))}

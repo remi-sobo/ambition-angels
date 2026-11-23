@@ -1,8 +1,8 @@
 "use client";
 
+import { saveAction } from "@/lib/admin/saveAction";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { userMessage } from "@/lib/admin/errors";
 
 export type Candidate = {
   id: string;
@@ -38,20 +38,16 @@ export default function CandidatesQueue({
   async function dispose(id: string, action: "add" | "dismiss") {
     setBusy(id);
     setError(null);
-    try {
-      const r = await fetch(`/api/admin/meet/connection-candidates/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
-      });
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(userMessage(r, d));
-      router.refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Couldn't update candidate");
-    } finally {
-      setBusy(null);
+    const r = await saveAction({
+      request: { url: `/api/admin/meet/connection-candidates/${id}`, method: "PATCH", body: { action } },
+      failure: false,
+    });
+    setBusy(null);
+    if (!r.ok) {
+      setError(r.message);
+      return;
     }
+    router.refresh();
   }
 
   return (

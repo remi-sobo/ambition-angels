@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ResearchDrawerShell from "./ResearchDrawerShell";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import ProspectBench from "../../prospects/ProspectBench";
@@ -11,8 +12,8 @@ import { TYPE } from "@/lib/admin/typeScale";
 // width per tenant (the ruling's own words).
 //
 // URL-driven like everything else in this destination: ?drawer=research
-// opens it, the close link drops the param — no client state, so a shared
-// link opens the same drawer. Contents: the bench (ProspectBench, the V1
+// opens it, closing navigates to the URL without the param, so a shared link
+// opens the same drawer. The frame is the kit Drawer (ResearchDrawerShell). Contents: the bench (ProspectBench, the V1
 // prospects page's extracted body) and the R6 fold-in — the funder-angle
 // briefs listed compactly, each linking its live per-angle funnel. The
 // Strategy Room EDITOR stays at /admin/fundraising/strategy (NO_HOME row,
@@ -49,22 +50,8 @@ export default async function ResearchDrawer({
   }>).filter((a) => a.is_active);
 
   return (
-    <>
-      {/* Scrim — a link, so closing is a navigation like opening. */}
-      <Link href={closeHref} aria-label="Close research drawer" className="fixed inset-0 z-40 bg-black/50" />
-      <aside className="fixed inset-y-0 right-0 z-50 w-full max-w-3xl bg-ink border-l-[1.5px] border-hairline overflow-y-auto shadow-2xl">
-        <div className="sticky top-0 z-10 bg-tile border-b border-hairline px-5 py-3 flex items-center gap-3">
-          <span className={TYPE.cardTitle}>Prospect Research</span>
-          <span className="text-xs uppercase tracking-wider text-ink-3">ai.prospect_research</span>
-          <Link
-            href={closeHref}
-            className="ml-auto text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-3 py-1.5 rounded-full transition-colors"
-          >
-            Close ✕
-          </Link>
-        </div>
-
-        <div className="px-5 py-5 space-y-6">
+    <ResearchDrawerShell closeHref={closeHref}>
+        <div className="space-y-6">
           {/* ── R6: funder-angle briefs ── */}
           {angles.length > 0 && (
             <section>
@@ -99,7 +86,6 @@ export default async function ResearchDrawer({
             extraParams={{ drawer: "research" }}
           />
         </div>
-      </aside>
-    </>
+    </ResearchDrawerShell>
   );
 }

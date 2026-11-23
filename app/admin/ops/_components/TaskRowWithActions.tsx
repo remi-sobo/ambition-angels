@@ -1,5 +1,6 @@
 "use client";
 
+import { saveAction } from "@/lib/admin/saveAction";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
@@ -74,20 +75,13 @@ export default function TaskRowWithActions({
 
   async function applyPatch(patch: Record<string, unknown>) {
     setBusy(true);
-    try {
-      const r = await fetch(`/api/admin/ops/tasks/${task.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(patch),
-      });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      startTransition(() => router.refresh());
-    } catch (e) {
-      console.error("Task patch failed:", e);
-      toast.error("Couldn't save the change. Try again.");
-    } finally {
-      setBusy(false);
-    }
+    const r = await saveAction({
+      request: { url: `/api/admin/ops/tasks/${task.id}`, method: "PATCH", body: patch },
+      failure: "Couldn't save the change. Try again.",
+      toast,
+    });
+    setBusy(false);
+    if (r.ok) startTransition(() => router.refresh());
   }
 
   const isDone = task.status === "done";

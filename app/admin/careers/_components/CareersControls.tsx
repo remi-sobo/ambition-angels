@@ -171,6 +171,7 @@ function ReviewPanel({ occ, card }: { occ: OccupationView; card: CardView }) {
         </p>
         {isDraft ? (
           <textarea
+            aria-label="The Day"
             className="w-full border border-hairline rounded-control px-3 py-2 text-sm min-h-32 bg-surface"
             value={value("day_vignette")}
             onChange={(e) => setEdits((p) => ({ ...p, day_vignette: e.target.value }))}
@@ -190,6 +191,7 @@ function ReviewPanel({ occ, card }: { occ: OccupationView; card: CardView }) {
               </p>
               {isDraft && !rendered ? (
                 <textarea
+                  aria-label={`Clue ${i + 1}: ${CLUE_LABELS[i]}`}
                   className="w-full border border-hairline rounded-control px-3 py-1.5 text-sm min-h-10 bg-surface"
                   value={value(key)}
                   onChange={(e) => setEdits((p) => ({ ...p, [key]: e.target.value }))}
@@ -490,7 +492,8 @@ export function CareersControls({
         </p>
         <div className="flex flex-wrap gap-2 mb-3">
           <input
-            type="text"
+            type="search"
+            aria-label="Search imported occupations"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search title or SOC code…"

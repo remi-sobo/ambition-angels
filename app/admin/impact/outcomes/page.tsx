@@ -1,8 +1,12 @@
 import Link from "next/link";
 import EmptyState from "@/app/admin/_components/EmptyState";
 import { getMetricCatalog, staleAfter, type CatalogMetric } from "@/lib/admin/metrics/catalog";
-import Metric from "@/app/admin/_components/Metric";
+import MetricFigure from "@/app/admin/_components/MetricFigure";
 import PageHeader from "@/app/admin/_components/PageHeader";
+import PageShell from "@/app/admin/_components/ui/PageShell";
+import Button from "@/app/admin/_components/ui/Button";
+import Figure, { SummaryStrip } from "@/app/admin/_components/ui/Figure";
+import { confirmLabel, metricSource } from "@/lib/impact/metricDisplay";
 
 // Spec Impact I1 — Outcomes, the destination's landing. The recon's own
 // brief: "population-and-provenance framing over numbers that today arrive
@@ -39,72 +43,90 @@ export default async function OutcomesPage() {
     .filter((m) => m.department === "program" && m.active)
     .sort((a, b) => provenanceOrder(a) - provenanceOrder(b) || a.name.localeCompare(b.name));
 
+  const now = new Date();
+  const confirmed = outcomes.filter((m) => m.confirmed_state === "confirmed").length;
+  const flagged = outcomes.filter((m) => m.confirmed_state === "conflict" || m.confirmed_state === "stale").length;
+  const never = outcomes.filter((m) => !m.latest).length;
+
+  // V4 Stage G2: the Dashboard archetype for provenance. A summary strip of
+  // how trustworthy the set is, then one MetricFigure per outcome: the number
+  // through the catalog (missing reads "No data yet", never 0), its source
+  // line, and a plain word when it is not confirmed.
   return (
-    <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace space-y-6">
+    <PageShell>
       <PageHeader
         title="Outcomes"
-        subtitle="What the program changed, with each number's origin on its sleeve. Where it came from, when it was captured, and whether it can be stood behind."
+        subtitle="What the program changed, with each number's origin on its sleeve: where it came from, when it was captured, and whether it can be stood behind."
+        primaryAction={<Button href="/admin/impact/kpis">Update values</Button>}
+        moreActions={[
+          { label: "Build an impact report", href: "/admin/impact/reports" },
+          { label: "Metric Catalog", href: "/admin/impact/kpis" },
+        ]}
       />
+
+      {outcomes.length > 0 ? (
+        <SummaryStrip label="How far these numbers can be trusted">
+          <Figure label="Outcome metrics" value={outcomes.length} source="Program metrics in the catalog, as of now" />
+          <Figure label="Confirmed" value={confirmed} source="Checked and stood behind" />
+          <Figure
+            label="Not confirmed yet"
+            value={outcomes.length - confirmed}
+            compare={flagged > 0 ? `${flagged} would hold up an export` : undefined}
+            compareTone={flagged > 0 ? "danger" : "muted"}
+            source="Unconfirmed, in conflict, stale or not classified"
+          />
+          <Figure label="Never captured" value={never} source="Defined but no value recorded" />
+        </SummaryStrip>
+      ) : null}
 
       {outcomes.length === 0 ? (
         <EmptyState
           label="outcome metrics"
           hint={
             <>
-              A metric joins this screen by carrying the{" "}
-              <span className="font-mono text-xs">program</span> department in the Metric
-              Catalog.
+              A metric joins this screen by carrying the <span className="font-mono text-xs">program</span> department in the
+              Metric Catalog.
             </>
           }
           action={
-            <Link href="/admin/impact/kpis" className="text-xs font-semibold text-orange hover:text-orange-dark">
-              Open the Metric Catalog →
-            </Link>
+            <Button variant="secondary" size="sm" href="/admin/impact/kpis">
+              Open the Metric Catalog
+            </Button>
           }
         />
       ) : (
-        <div className="space-y-3">
-          {outcomes.map((m) => (
-            <section
-              key={m.metric_key}
-              className="rounded-panel border-hairline bg-surface px-5 py-4"
-            >
-              {/* The number itself — only ever through the primitive. */}
-              <Metric metricKey={m.metric_key} showName />
-              {m.description && (
-                <p className="mt-1 text-xs text-ink-2 max-w-2xl">{m.description}</p>
-              )}
-              {/* Provenance line: the point of the screen. */}
-              <p className="mt-2 text-xs text-ink-3">
-                {m.source_kind === "manual" ? "Entered by hand" : "Computed"}
-                {" · "}
-                {m.latest
-                  ? `captured ${fmtDate(m.latest.captured_on)}`
-                  : "never captured"}
-                {" · "}
-                {m.cadence} cadence
-                {m.latest && ` (due after ${staleAfter(m.cadence)} days)`}
-                {m.target != null && (
-                  <>
-                    {" · "}
-                    <span className="text-ink-2">target set</span>
-                  </>
-                )}
-              </p>
-            </section>
-          ))}
-        </div>
+        <SummaryStrip label="Outcome metrics" minCell={220}>
+          {outcomes.map((m) => {
+            const c = confirmLabel(m.confirmed_state);
+            return (
+              <MetricFigure
+                  key={m.metric_key}
+                  metricKey={m.metric_key}
+                  label={m.name}
+                  source={metricSource(m, now, fmtDate)}
+                  compare={m.confirmed_state === "confirmed" ? undefined : c.label}
+                  compareTone={m.confirmed_state === "conflict" || m.confirmed_state === "stale" ? "danger" : "default"}
+                  extra={
+                    <p className="text-xs text-ink-2">
+                      {m.description ? `${m.description.replace(/[.\s]+$/, "")}. ` : ""}
+                      {m.latest ? `Due again after ${staleAfter(m.cadence)} days.` : ""}
+                      {m.target != null ? " Target set." : ""}
+                    </p>
+                  }
+                />
+            );
+          })}
+        </SummaryStrip>
       )}
 
-      <p className="text-xs text-ink-3 max-w-2xl">
+      <p className="text-xs text-ink-2 max-w-reading mt-6">
         Values update on{" "}
-        <Link href="/admin/impact/kpis" className="text-orange hover:text-orange-dark font-medium">
+        <Link href="/admin/impact/kpis" className="font-semibold underline underline-offset-2">
           KPIs
         </Link>
-        , which owns the catalog&apos;s update flow. A metric flagged{" "}
-        <span className="font-semibold">blocks export</span> still renders here. Drafting is
-        never blocked, but no report ships it without a waiver (Contract 7).
+        , which owns the catalog&apos;s update flow. A metric in conflict or stale still shows here; drafting is never
+        blocked, but no report ships it without a waiver.
       </p>
-    </div>
+    </PageShell>
   );
 }

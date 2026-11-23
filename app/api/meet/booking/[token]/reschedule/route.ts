@@ -7,6 +7,7 @@ import { buildRescheduleConfirmationEmail } from "@/lib/email/templates/reschedu
 import { getBookingHost } from "@/lib/meet/host";
 import { rescheduleSchema } from "@/lib/meet/schemas";
 import type { Booking, MeetingType } from "@/lib/database.types";
+import { googleErrorSummary } from "@/lib/google/log-safe";
 
 export async function POST(
   req: NextRequest,
@@ -76,7 +77,7 @@ export async function POST(
   try {
     await updateEvent(booking.google_event_id, newStart, newEnd, HOST_TIMEZONE);
   } catch (err) {
-    console.error("updateEvent failed", err);
+    console.error("updateEvent failed", googleErrorSummary(err));
     return NextResponse.json(
       { error: "Could not update the calendar event. Try again." },
       { status: 502 }
@@ -114,7 +115,7 @@ export async function POST(
     subject: email.subject,
     html: email.html,
     text: email.text,
-  }).catch((e) => console.error("reschedule email failed", e));
+  }).catch((e) => console.error("reschedule email failed", googleErrorSummary(e)));
 
   return NextResponse.json({ success: true });
 }

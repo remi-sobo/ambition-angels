@@ -5,6 +5,7 @@ import {
   calendarClientFromRefreshToken,
 } from "@/lib/google/connection";
 import { dayStartInstant, laDateOf, mondayOf, ORG_TZ } from "@/lib/admin/ops/week";
+import { googleErrorSummary } from "@/lib/google/log-safe";
 
 /**
  * Work-block writes (Calendar & Time Blocking, Phase 3) — the block is the
@@ -205,7 +206,7 @@ export async function createWorkBlock(args: {
       }
     }
   } catch (e) {
-    console.error("[work-blocks] Google create failed (block kept local):", e);
+    console.error("[work-blocks] Google create failed (block kept local):", googleErrorSummary(e));
   }
 
   return { block, synced };
@@ -265,7 +266,7 @@ export async function moveWorkBlock(args: {
         }
       }
     } catch (e) {
-      console.error("[work-blocks] Google move failed (local move kept):", e);
+      console.error("[work-blocks] Google move failed (local move kept):", googleErrorSummary(e));
       synced = false;
     }
   }
@@ -312,7 +313,7 @@ export async function retitleWorkBlock(args: {
           .eq("id", block.calendar_event_id);
       }
     } catch (e) {
-      console.error("[work-blocks] Google retitle failed (local title kept):", e);
+      console.error("[work-blocks] Google retitle failed (local title kept):", googleErrorSummary(e));
     }
   }
 }
@@ -326,36 +327,57 @@ export async function deleteWorkBlock(args: {
   if (!block) throw new BlockNotFound();
   const sb = getSupabaseAdmin();
 
-  // Unschedule the tasks first (never delete them), then drop the block —
-  // the FK cascade clears the links.
-  await restampLinkedTasks(args.orgId, block.id, null);
-
+  // Google first. If BloomOS still holds a calendar connection and Google
+  // refuses the delete (revoked or expired permission, outage), keep the block
+  // and say so, rather than deleting only BloomOS's copy and leaving an orphan
+  // event on the person's calendar. No connection at all (they disconnected)
+  // means the event is theirs now; the local delete goes ahead.
   if (block.google_event_id) {
+    let conn: Awaited<ReturnType<typeof getActiveCalendarConnection>>;
     try {
-      const conn = await getActiveCalendarConnection(args.userId);
-      if (conn) {
-        const cal = calendarClientFromRefreshToken(conn.refreshToken);
-        try {
-          await cal.events.delete({
-            calendarId: conn.calendarId,
-            eventId: block.google_event_id,
-            sendUpdates: "none",
-          });
-        } catch (err: unknown) {
-          const status =
-            (err as { code?: number; status?: number }).code ??
-            (err as { code?: number; status?: number }).status;
-          if (status !== 404 && status !== 410) throw err; // already gone is fine
+      conn = await getActiveCalendarConnection(args.userId);
+    } catch (e) {
+      console.error("[work-blocks] loading calendar connection failed:", googleErrorSummary(e));
+      throw new GoogleCalendarWriteFailed();
+    }
+    if (conn) {
+      const cal = calendarClientFromRefreshToken(conn.refreshToken);
+      try {
+        await cal.events.delete({
+          calendarId: conn.calendarId,
+          eventId: block.google_event_id,
+          sendUpdates: "none",
+        });
+      } catch (err: unknown) {
+        const status =
+          (err as { code?: number; status?: number }).code ??
+          (err as { code?: number; status?: number }).status;
+        if (status !== 404 && status !== 410) {
+          // 404/410: already gone, which is fine.
+          console.error("[work-blocks] Google delete failed (block kept):", googleErrorSummary(err));
+          throw new GoogleCalendarWriteFailed();
         }
       }
-    } catch (e) {
-      console.error("[work-blocks] Google delete failed (local delete proceeds):", e);
     }
   }
+
+  // Unschedule the tasks (never delete them), then drop the block; the FK
+  // cascade clears the links.
+  await restampLinkedTasks(args.orgId, block.id, null);
+
   if (block.calendar_event_id) {
     await sb.from("calendar_events").delete().eq("id", block.calendar_event_id);
   }
   await sb.from("work_blocks").delete().eq("id", block.id);
+}
+
+/** Google Calendar refused a write BloomOS needed (usually a revoked or
+ *  expired permission). Nothing changed locally. */
+export class GoogleCalendarWriteFailed extends Error {
+  constructor() {
+    super("Couldn't update your Google Calendar. Reconnect it in Settings, then try again.");
+    this.name = "GoogleCalendarWriteFailed";
+  }
 }
 
 export class BlockNotFound extends Error {

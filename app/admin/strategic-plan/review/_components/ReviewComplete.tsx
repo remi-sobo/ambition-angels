@@ -1,9 +1,9 @@
 "use client";
 
+import { saveAction } from "@/lib/admin/saveAction";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
-import { userMessage } from "@/lib/admin/errors";
 
 // Closes out a monthly OGSM review: capture notes + the next review date, log
 // the session, and return to the plan. The KPI/status edits happen live in the
@@ -27,22 +27,15 @@ export default function ReviewComplete() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    try {
-      const res = await fetch("/api/admin/plan/reviews", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ notes: notes || undefined, next_review_at: nextReview || undefined }),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        toast.error(userMessage(res, j));
-        return;
-      }
-      router.push("/admin/strategic-plan");
-      router.refresh();
-    } finally {
-      setBusy(false);
-    }
+    const r = await saveAction({
+      request: { url: "/api/admin/plan/reviews", method: "POST", body: { notes: notes || undefined, next_review_at: nextReview || undefined } },
+      success: "Review closed out",
+      toast,
+    });
+    setBusy(false);
+    if (!r.ok) return;
+    router.push("/admin/organization/strategy");
+    router.refresh();
   };
 
   return (

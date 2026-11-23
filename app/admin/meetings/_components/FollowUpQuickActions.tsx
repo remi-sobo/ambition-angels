@@ -1,5 +1,6 @@
 "use client";
 
+import { saveAction } from "@/lib/admin/saveAction";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { useState, useTransition } from "react";
@@ -18,20 +19,13 @@ export default function FollowUpQuickActions({ recordId }: { recordId: string })
 
   async function set(status: "none_needed" | "dismissed") {
     setBusy(true);
-    try {
-      const r = await fetch(`/api/admin/meetings/${recordId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ follow_up_status: status }),
-      });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      startTransition(() => router.refresh());
-    } catch (e) {
-      console.error(e);
-      toast.error("Couldn't update. Try again.");
-    } finally {
-      setBusy(false);
-    }
+    const r = await saveAction({
+      request: { url: `/api/admin/meetings/${recordId}`, method: "PATCH", body: { follow_up_status: status } },
+      failure: "Couldn't update. Try again.",
+      toast,
+    });
+    setBusy(false);
+    if (r.ok) startTransition(() => router.refresh());
   }
 
   return (

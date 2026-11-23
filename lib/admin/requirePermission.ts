@@ -40,7 +40,7 @@ import { getEntitlements, hasFeature, type FeatureKey } from "@/lib/admin/entitl
 /** Every permission seeded into role_permissions by supabase/migrations
  *  (create_bloomos_core, notifications_spine, create_messaging,
  *  entity_comments, documents_schema, metrics_catalog_schema,
- *  bloomos_staff_phase1, comms_gmail_g2). A typo is a compile error, and an
+ *  bloomos_staff_phase1, comms_gmail_g2, comms_phase1_story_schema, capture_use_permission). A typo is a compile error, and an
  *  unknown string here would match no role and lock everyone out. */
 export const PERMISSIONS = [
   "org.manage",
@@ -76,6 +76,14 @@ export const PERMISSIONS = [
   "comments.read",
   "comments.write",
   "comms.send",
+  // The story bank (comms_phase1_story_schema): comms.manage gates stories,
+  // formats, editions and outputs; comms.subjects.read (owner/admin only)
+  // gates WHICH participant a story is about, and that participant's consents.
+  "comms.manage",
+  "comms.subjects.read",
+  // Talk to log for every role: record and keep your own captures. Filing a
+  // card still needs the destination's permission (lib/capture/cardKind.ts).
+  "capture.use",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];

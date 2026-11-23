@@ -2,15 +2,21 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { saveAction } from "@/lib/admin/saveAction";
+import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
+import Drawer from "@/app/admin/_components/ui/Drawer";
+import Button from "@/app/admin/_components/ui/Button";
+import { Field } from "@/app/admin/_components/ui/Input";
+import { CheckboxField, DateField, SelectField, TextField, TextareaField } from "@/app/admin/_components/ui/Field";
 import { DOC_TYPES, DOC_TYPE_LABEL, docTypeExpires, minExpirationISO } from "@/lib/documents/config";
-
-const inputCls =
-  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
 
 // Hub upload: same POST as the record-page attach control, minus the
 // auto-link context. Links can be added afterwards from any record page.
+// V4 Stage G: the page's one primary action, in the kit Drawer; the upload
+// goes through saveAction (multipart, so the request is a function).
 export default function UploadDocumentButton() {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,10 +29,25 @@ export default function UploadDocumentButton() {
   const fileRef = useRef<HTMLInputElement>(null);
   const expirable = docTypeExpires(docType);
 
+  const reset = () => {
+    setTitle("");
+    setNotes("");
+    setDocType("");
+    setIssued("");
+    setExpires("");
+    setRestricted(false);
+    setError(null);
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
   const upload = async (e: React.FormEvent) => {
     e.preventDefault();
     const file = fileRef.current?.files?.[0];
-    if (!file || busy) return;
+    if (busy) return;
+    if (!file) {
+      setError("Choose a file to upload.");
+      return;
+    }
     if (expirable && expires && expires < minExpirationISO()) {
       setError("Expiration date must be in the future.");
       return;
@@ -41,110 +62,95 @@ export default function UploadDocumentButton() {
     if (issued) form.set("issued_at", issued);
     if (expirable && expires) form.set("expires_at", expires);
     if (restricted) form.set("visibility", "restricted");
-    const res = await fetch("/api/admin/documents", { method: "POST", body: form });
-    const j = (await res.json().catch(() => ({}))) as { error?: string };
+    const r = await saveAction({
+      request: () => fetch("/api/admin/documents", { method: "POST", body: form }),
+      failure: false,
+      success: "Document uploaded",
+      toast,
+    });
     setBusy(false);
-    if (!res.ok) {
-      setError(j.error || "Upload failed");
+    if (!r.ok) {
+      setError(r.message);
       return;
     }
     setOpen(false);
-    setTitle("");
-    setNotes("");
-    setDocType("");
-    setIssued("");
-    setExpires("");
-    setRestricted(false);
-    if (fileRef.current) fileRef.current.value = "";
+    reset();
     router.refresh();
   };
 
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="text-sm font-semibold px-4 py-2 rounded-full bg-orange text-white hover:bg-orange-dark transition-colors"
-      >
-        Upload document
-      </button>
-    );
-  }
-
   return (
-    <form
-      onSubmit={upload}
-      className="flex flex-wrap items-center gap-2 bg-surface border-hairline rounded-panel p-3"
-    >
-      <input ref={fileRef} type="file" required className={inputCls} aria-label="File to upload" />
-      <input
-        type="text"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Title (optional)"
-        className={`${inputCls} w-40`}
-      />
-      <select value={docType} onChange={(e) => setDocType(e.target.value)} className={inputCls} aria-label="Document type">
-        <option value="">Type…</option>
-        {DOC_TYPES.map((t) => (
-          <option key={t} value={t}>
-            {DOC_TYPE_LABEL[t]}
-          </option>
-        ))}
-      </select>
-      <label className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-2">
-        Issue date
-        <input
-          type="date"
-          value={issued}
-          onChange={(e) => setIssued(e.target.value)}
-          className={inputCls}
-          aria-label="Issue date"
-          title="When the document was created or approved"
-        />
-      </label>
-      {expirable && (
-        <label className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-2">
-          Expiration date
-          <input
-            type="date"
-            value={expires}
-            onChange={(e) => setExpires(e.target.value)}
-            min={minExpirationISO()}
-            className={inputCls}
-            aria-label="Expiration date"
-            title="Must be a future date (feeds the renewal queue)"
+    <>
+      <Button type="button" onClick={() => setOpen(true)}>
+        Upload document
+      </Button>
+      <Drawer
+        open={open}
+        onClose={() => !busy && setOpen(false)}
+        title="Upload a document"
+        description="Only the file is required. Attach it to records from their pages afterwards."
+        footer={
+          <>
+            <Button type="button" variant="secondary" onClick={() => setOpen(false)} disabled={busy}>
+              Cancel
+            </Button>
+            <Button type="submit" form="upload-document-form" loading={busy}>
+              {busy ? "Uploading" : "Upload"}
+            </Button>
+          </>
+        }
+      >
+        <form id="upload-document-form" onSubmit={upload} className="grid grid-cols-2 gap-4">
+          <Field label="File" htmlFor="upload-document-file" required className="col-span-2">
+            <input
+              ref={fileRef}
+              id="upload-document-file"
+              type="file"
+              required
+              className="block w-full text-sm text-ink-1 file:mr-3 file:h-9 file:px-3 file:rounded-control file:border file:border-outline file:bg-surface file:text-ink-1"
+            />
+          </Field>
+          <TextField className="col-span-2" label="Title" hint="Defaults to the filename" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <SelectField
+            label="Type"
+            value={docType}
+            onChange={(e) => setDocType(e.target.value)}
+            placeholder="Choose a type"
+            options={DOC_TYPES.map((t) => ({ value: t, label: DOC_TYPE_LABEL[t] }))}
           />
-        </label>
-      )}
-      <label className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-2">
-        <input type="checkbox" checked={restricted} onChange={(e) => setRestricted(e.target.checked)} />
-        Restricted
-      </label>
-      <textarea
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-        placeholder="Notes (optional): provider, policy number, context…"
-        rows={2}
-        maxLength={4000}
-        className={`${inputCls} w-full resize-y`}
-        aria-label="Notes"
-      />
-      <button
-        type="submit"
-        disabled={busy}
-        className="text-sm font-semibold px-4 py-2 rounded-full bg-orange text-white hover:bg-orange-dark transition-colors disabled:opacity-50"
-      >
-        {busy ? "Uploading…" : "Upload"}
-      </button>
-      <button
-        type="button"
-        onClick={() => setOpen(false)}
-        className="text-sm font-semibold px-3 py-2 rounded-full border border-hairline text-ink-2 hover:text-ink-1 transition-colors"
-      >
-        Cancel
-      </button>
-      {error && <p className="w-full text-xs font-semibold text-expense">{error}</p>}
-    </form>
+          <DateField label="Issue date" hint="When it was created or approved" value={issued} onChange={(e) => setIssued(e.target.value)} />
+          {expirable ? (
+            <DateField
+              className="col-span-2"
+              label="Expiration date"
+              hint="A future date; feeds the renewal queue"
+              value={expires}
+              min={minExpirationISO()}
+              onChange={(e) => setExpires(e.target.value)}
+            />
+          ) : null}
+          <CheckboxField
+            className="col-span-2"
+            label="Restricted"
+            hint="Hide from the board and other limited-access roles"
+            checked={restricted}
+            onChange={(e) => setRestricted(e.target.checked)}
+          />
+          <TextareaField
+            className="col-span-2"
+            label="Notes"
+            rows={3}
+            maxLength={4000}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Provider, policy number, context"
+          />
+          {error ? (
+            <p role="alert" className="col-span-2 text-sm font-medium text-status-critical-text">
+              {error}
+            </p>
+          ) : null}
+        </form>
+      </Drawer>
+    </>
   );
 }

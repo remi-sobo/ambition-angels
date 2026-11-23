@@ -62,7 +62,7 @@ export function EnrollInJourney({
 
   return (
     <div className="flex flex-col items-end gap-1">
-      <select
+      <select aria-label="Enroll in a journey"
         value=""
         disabled={busy || options.length === 0}
         onChange={(e) => e.target.value && void enroll(e.target.value)}

@@ -1,9 +1,10 @@
 import Link from "next/link";
-import EmptyState from "../_components/EmptyState";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import StatCard from "../_components/StatCard";
 import SectionSummary from "../_components/SectionSummary";
 import { NewCohortForm } from "./_components/CohortControls";
+import PageHeader from "../_components/PageHeader";
+import { ProgramsFirstRun } from "../programs/_components/ProgramsFirstRun";
 import { COHORT_STATUS_LABELS } from "./_lib/constants";
 import { pct } from "./_lib/rollups";
 import { getSessionPrograms } from "@/lib/admin/program/programs";
@@ -129,17 +130,19 @@ export default async function CohortsPage() {
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <div>
-          <h1 className={TYPE.pageTitle}>{terms.cohorts}</h1>
-          <p className="text-ink-2 text-sm mt-0.5">
-            {terms.program} × term groups · {terms.sessions.toLowerCase()}, roster-tap attendance, dosage
-          </p>
-        </div>
-        <NewCohortForm programs={programs.map((p) => p.name)} />
-      </div>
+      <PageHeader
+        title={terms.cohorts}
+        subtitle={`${terms.program} × term groups · ${terms.sessions.toLowerCase()}, phone attendance, dosage`}
+        primaryAction={<NewCohortForm programs={programs.map((p) => p.name)} />}
+        moreActions={[
+          { label: `Add people to a ${terms.cohort.toLowerCase()}`, href: "/admin/programs/people?view=unenrolled" },
+          { label: "Import a roster file", href: "/admin/settings/imports/csv" },
+          { label: "Take attendance", href: "/admin/programs/attendance" },
+        ]}
+      />
 
-      <SectionSummary section="cohorts" />
+      {/* An empty org has nothing to summarize; "attendance is current" would be a false all-clear. */}
+      {cohorts.length > 0 ? <SectionSummary section="cohorts" /> : null}
 
       {(membersCapped || sessionsCapped || marksCapped) && (
         <Alert tone="warning" title="Partial data" className="mb-6">
@@ -148,6 +151,18 @@ export default async function CohortsPage() {
         </Alert>
       )}
 
+      {cohorts.length === 0 ? (
+        // V4 Stage E (SetupEmpty.dc.html): an org with no cohorts yet.
+        <ProgramsFirstRun
+          kind="cohorts"
+          terms={terms}
+          addOne={<NewCohortForm programs={programs.map((p) => p.name)} />}
+          orgName={ctx.orgName}
+          headers={[terms.cohort, "Enrolled", `${terms.sessions} held`, "Attendance"]}
+        />
+      ) : null}
+
+      {cohorts.length > 0 ? (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <StatCard label={`Active ${terms.cohorts.toLowerCase()}`} value={active.length} sub={`${cohorts.length} total`} />
         <StatCard label={`${terms.students} enrolled`} value={enrolledStudents.size} sub={`across ${terms.cohorts.toLowerCase()}`} />
@@ -159,6 +174,7 @@ export default async function CohortsPage() {
           muted={overallRate === null}
         />
       </div>
+      ) : null}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {cohorts.map((c) => {
@@ -167,7 +183,7 @@ export default async function CohortsPage() {
           return (
             <Link
               key={c.id}
-              href={`/admin/cohorts/${c.id}`}
+              href={`/admin/programs/cohorts/${c.id}`}
               className="block bg-surface border-hairline rounded-panel p-4 hover:border-orange/30 transition-colors"
             >
               <div className="flex flex-wrap items-center gap-2">
@@ -205,14 +221,6 @@ export default async function CohortsPage() {
             </Link>
           );
         })}
-        {cohorts.length === 0 && (
-          <div className="col-span-full">
-            <EmptyState
-              label={terms.cohorts.toLowerCase()}
-              hint={`A ${terms.cohort.toLowerCase()} is a ${terms.program.toLowerCase()} × term group with its own sessions, roster, and attendance. Create the first one with the button above.`}
-            />
-          </div>
-        )}
       </div>
     </div>
   );

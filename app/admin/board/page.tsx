@@ -5,9 +5,13 @@ import SectionHeading from "../_components/SectionHeading";
 import PageHeader from "../_components/PageHeader";
 import { fetchAll } from "@/lib/supabase/fetchAll";
 import { EntityDocuments } from "../_components/EntityDocuments";
-import StatCard from "../_components/StatCard";
+import Link from "next/link";
+import DataTable, { type DataTableColumn } from "../_components/ui/DataTable";
+import Figure, { SummaryStrip } from "../_components/ui/Figure";
+import Badge from "../_components/ui/Badge";
+import { ROLE_LABELS, memberNextStep } from "@/lib/admin/board/roster";
 import {
-  MemberRow,
+  MemberActions,
   NewMemberForm,
   MeetingCard,
   NewMeetingForm,
@@ -89,66 +93,136 @@ export default async function BoardPage() {
     (m) => m.term_end && m.term_end >= today && m.term_end <= in180
   ).length;
 
+  const columns: DataTableColumn<BoardMember>[] = [
+    {
+      key: "name",
+      header: "Member",
+      card: "title",
+      render: (m) => (
+        <>
+          <Link href={`/admin/organization/board/${m.id}`} className="font-semibold text-ink-1 hover:text-orange transition-colors">
+            {m.name}
+          </Link>
+          <span className="block text-xs text-ink-2">
+            {ROLE_LABELS[m.officer_role] ?? m.officer_role}
+            {m.status !== "active" ? ` · ${m.status}` : ""}
+          </span>
+        </>
+      ),
+    },
+    {
+      key: "term",
+      header: "Term ends",
+      className: "tabular-nums",
+      render: (m) => {
+        if (!m.term_end) return <span className="text-ink-3">No end date</span>;
+        const past = m.term_end < today;
+        const soon = !past && m.term_end <= in180;
+        return (
+          <span className={past ? "text-status-critical-text font-semibold" : soon ? "text-status-watch-text" : "text-ink-2"}>
+            {m.term_end}
+            {past ? " (ended)" : soon ? " (soon)" : ""}
+          </span>
+        );
+      },
+    },
+    {
+      key: "coi",
+      header: `COI ${year}`,
+      render: (m) =>
+        m.coi_signed_at && m.coi_signed_at >= `${year}-01-01` ? (
+          <Badge tone="success">Signed</Badge>
+        ) : (
+          <Badge tone="danger">Not on file</Badge>
+        ),
+    },
+    {
+      key: "gave",
+      header: `Gave in ${year}`,
+      render: (m) =>
+        !m.constituent_id ? (
+          <span className="text-ink-3">Not linked</span>
+        ) : gaveSet.has(m.constituent_id) ? (
+          <Badge tone="success">Gave</Badge>
+        ) : (
+          <span className="text-ink-2">Not yet</span>
+        ),
+    },
+    { key: "actions", header: "Actions", align: "right", render: (m) => <MemberActions member={m} coiYear={year} /> },
+  ];
+
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
       <PageHeader
         title="Board"
-        subtitle="Terms, conflict-of-interest, board giving, meetings & minutes"
-        actions={<NewMemberForm />}
+        subtitle="Terms, conflict of interest, board giving, meetings and minutes"
+        primaryAction={<NewMemberForm />}
+        moreActions={[
+          { label: "Compliance calendar", href: "/admin/organization/compliance" },
+          { label: "Board documents", href: "/admin/work/documents?type=board_packet" },
+        ]}
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
-        <StatCard label="Active members" value={active.length} />
-        <StatCard
+      <SummaryStrip label="Board summary">
+        <Figure label="Active members" value={membersRes.error ? null : active.length} source="Status active on the roster" />
+        <Figure
           label="Board giving"
-          value={`${gaveCount}/${active.length}`}
-          sub={
-            active.length > 0 && gaveCount === active.length
-              ? "100% participation ✓"
-              : `gave in ${year}`
+          value={linked.length === 0 ? null : `${gaveCount} of ${active.length}`}
+          source={
+            linked.length === 0
+              ? "No active member is linked to a donor record yet"
+              : `Linked donor records with a gift dated in ${year}${linked.length < active.length ? `; ${active.length - linked.length} not linked` : ""}`
           }
+          compare={active.length > 0 && gaveCount === active.length ? "Full participation" : undefined}
+          compareTone="default"
         />
-        <StatCard
-          label="COI current"
-          value={`${coiCurrent}/${active.length}`}
-          sub="990 Part VI Q12"
-          muted={coiCurrent === active.length}
+        <Figure
+          label="Conflict of interest current"
+          value={active.length === 0 ? null : `${coiCurrent} of ${active.length}`}
+          source={`Signed on or after Jan 1, ${year} (Form 990 Part VI Q12)`}
         />
-        <StatCard
-          label="Terms expiring"
-          value={expiring}
-          sub="next 180 days"
-          muted={expiring === 0}
-        />
-      </div>
+        <Figure label="Terms ending" value={membersRes.error ? null : expiring} source="Active members, in the next 180 days" />
+      </SummaryStrip>
 
       <section className="mb-10">
-        <SectionHeading className="mb-2">
-          Members
-        </SectionHeading>
-        <div className="space-y-2">
-          {members.map((m) => (
-            <MemberRow
-              key={m.id}
-              member={m}
-              gaveThisYear={!!m.constituent_id && gaveSet.has(m.constituent_id)}
-              coiYear={year}
-            />
-          ))}
-          {members.length === 0 && (
-            <EmptyState
-              label="board members"
-              hint="Add your directors with their terms and emails using the button above (an email that matches a donor record links giving status automatically)."
-            />
-          )}
-        </div>
+        <SectionHeading className="mb-2">Members</SectionHeading>
+        {members.length === 0 ? (
+          <EmptyState
+            label="board members"
+            title="No board members yet"
+            purpose="Your directors, with their terms, conflict-of-interest forms and board giving in one roster."
+            primaryAction={<NewMemberForm />}
+            next="An email that matches a donor record links their giving automatically."
+          />
+        ) : (
+          <DataTable
+            label="Board members"
+            noun={{ one: "member", many: "members" }}
+            columns={columns}
+            nextStep={{
+              header: "Next step",
+              render: (m) => {
+                const n = memberNextStep(m, year, today);
+                return (
+                  <span className={n.tone === "late" ? "text-status-critical-text font-semibold" : n.tone === "due" ? "text-ink-1" : "text-ink-2"}>
+                    {n.text}
+                  </span>
+                );
+              },
+            }}
+            data={{ rows: members, total: members.length, page: 0, pageSize: 100, error: membersRes.error ? "The roster could not be read." : null }}
+            getRowId={(m) => m.id}
+            getRowLabel={(m) => m.name}
+            spec={{ sortable: [], defaultSort: null, pageSize: 100 }}
+            state={{ page: 0, sort: null }}
+            baseHref="/admin/organization/board"
+          />
+        )}
       </section>
 
       <section>
         <div className="flex items-center justify-between mb-2">
-          <SectionHeading>
-            Meetings
-          </SectionHeading>
+          <SectionHeading>Meetings</SectionHeading>
           <NewMeetingForm />
         </div>
         <div className="space-y-3">
@@ -158,7 +232,7 @@ export default async function BoardPage() {
           {meetings.length === 0 && (
             <EmptyState
               label="meetings"
-              hint="Create one with the button above to build the agenda, take attendance with a quorum check, and keep minutes that freeze on approval."
+              hint="Create one with New meeting to build the agenda, take attendance with a quorum check, and keep minutes that freeze on approval."
             />
           )}
         </div>

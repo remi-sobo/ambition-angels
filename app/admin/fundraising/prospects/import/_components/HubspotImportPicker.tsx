@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { StaticTable } from "@/app/admin/_components/ui/DataTable";
 
 type Candidate = {
   hubspot_id: string;
@@ -31,7 +32,6 @@ export default function HubspotImportPicker({ lifecycles }: { lifecycles: string
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
   const [nextOffset, setNextOffset] = useState(0);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [adding, setAdding] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -61,7 +61,6 @@ export default function HubspotImportPicker({ lifecycles }: { lifecycles: string
   useEffect(() => {
     if (debounce.current) clearTimeout(debounce.current);
     debounce.current = setTimeout(() => {
-      setSelected(new Set());
       load(q, lifecycle, 0);
     }, 250);
     return () => {
@@ -69,31 +68,12 @@ export default function HubspotImportPicker({ lifecycles }: { lifecycles: string
     };
   }, [q, lifecycle, load]);
 
-  function toggle(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-  function toggleAllVisible() {
-    setSelected((prev) => {
-      const visible = rows.map((r) => r.hubspot_id);
-      const allOn = visible.every((id) => prev.has(id));
-      const next = new Set(prev);
-      if (allOn) visible.forEach((id) => next.delete(id));
-      else visible.forEach((id) => next.add(id));
-      return next;
-    });
-  }
-
-  async function addSelected() {
-    if (!selected.size) return;
+  // Selection lives in the kit table; "Add to bench" is its bulk action.
+  async function addSelected(ids: string[]) {
+    if (!ids.length) return;
     setAdding(true);
     setFlash(null);
     try {
-      const ids = Array.from(selected);
       const r = await fetch("/api/admin/fundraising/prospects/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -103,7 +83,6 @@ export default function HubspotImportPicker({ lifecycles }: { lifecycles: string
       if (!r.ok) throw new Error(d?.error ?? "Import failed");
       const addedSet = new Set(ids);
       setRows((prev) => prev.filter((row) => !addedSet.has(row.hubspot_id)));
-      setSelected(new Set());
       setTotal((t) => (t == null ? t : Math.max(0, t - (d.added ?? 0))));
       setFlash(`Added ${d.added} to the bench${d.skipped ? ` · ${d.skipped} already there` : ""}.`);
       router.refresh();
@@ -114,19 +93,20 @@ export default function HubspotImportPicker({ lifecycles }: { lifecycles: string
     }
   }
 
-  const allVisibleOn = rows.length > 0 && rows.every((r) => selected.has(r.hubspot_id));
-
   return (
     <div className="space-y-4">
       {/* Filters */}
       <div className="flex items-center gap-2 flex-wrap">
         <input
+          type="search"
+          aria-label="Search HubSpot contacts"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search name, email, or company…"
           className="flex-1 min-w-[220px] text-sm bg-cream border-hairline rounded-control px-3 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
         />
         <select
+          aria-label="Lifecycle stage"
           value={lifecycle}
           onChange={(e) => setLifecycle(e.target.value)}
           className="text-sm bg-cream border-hairline rounded-control px-2.5 py-2 text-ink-1 focus:outline-none focus:border-orange/50"
@@ -146,49 +126,26 @@ export default function HubspotImportPicker({ lifecycles }: { lifecycles: string
       )}
 
       {/* Results */}
-      <div className="rounded-panel border-hairline bg-surface overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-xs uppercase tracking-wider text-ink-3 border-b border-hairline">
-              <th className="w-10 px-3 py-2 text-left">
-                <input type="checkbox" checked={allVisibleOn} onChange={toggleAllVisible} aria-label="Select all" />
-              </th>
-              <th className="px-3 py-2 text-left font-semibold">Name</th>
-              <th className="px-3 py-2 text-left font-semibold">Email</th>
-              <th className="px-3 py-2 text-left font-semibold">Company</th>
-              <th className="px-3 py-2 text-left font-semibold">Lifecycle</th>
-              <th className="px-3 py-2 text-left font-semibold">Last activity</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-hairline">
-            {rows.map((c) => {
-              const on = selected.has(c.hubspot_id);
-              return (
-                <tr
-                  key={c.hubspot_id}
-                  onClick={() => toggle(c.hubspot_id)}
-                  className={`cursor-pointer ${on ? "bg-orange/5" : "hover:bg-tile/40"}`}
-                >
-                  <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
-                    <input type="checkbox" checked={on} onChange={() => toggle(c.hubspot_id)} />
-                  </td>
-                  <td className="px-3 py-2 text-ink-1 font-medium">{displayName(c)}</td>
-                  <td className="px-3 py-2 text-ink-2">{c.email ?? "—"}</td>
-                  <td className="px-3 py-2 text-ink-2">{c.company ?? "—"}</td>
-                  <td className="px-3 py-2 text-ink-3">{c.lifecycle_stage ?? "—"}</td>
-                  <td className="px-3 py-2 text-ink-3">{fmtDate(c.last_activity_at)}</td>
-                </tr>
-              );
-            })}
-            {!loading && rows.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-3 py-10 text-center text-ink-3 text-sm">
-                  No matching HubSpot contacts left to add.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      {/* The kit table (V4 P1): select rows, then "Add to bench" in its
+          footer; cards under 640px. Load more appends and keeps the
+          selection. */}
+      <div>
+        <StaticTable
+          label="HubSpot contacts not on the bench"
+          noun={{ one: "contact", many: "contacts" }}
+          rows={rows}
+          getRowId={(c) => c.hubspot_id}
+          getRowLabel={(c) => displayName(c)}
+          emptyMessage={loading ? "Loading…" : "No matching HubSpot contacts left to add."}
+          bulkActions={[{ kind: "run", key: "add", label: adding ? "Adding…" : "Add to bench", run: addSelected }]}
+          columns={[
+            { key: "name", header: "Name", card: "title", render: (c) => <span className="text-ink-1 font-medium">{displayName(c)}</span> },
+            { key: "email", header: "Email", render: (c) => <span className="text-ink-2">{c.email ?? "—"}</span> },
+            { key: "company", header: "Company", render: (c) => <span className="text-ink-2">{c.company ?? "—"}</span> },
+            { key: "lifecycle", header: "Lifecycle", render: (c) => <span className="text-ink-3">{c.lifecycle_stage ?? "—"}</span> },
+            { key: "activity", header: "Last activity", render: (c) => <span className="text-ink-3">{fmtDate(c.last_activity_at)}</span> },
+          ]}
+        />
         {loading && <div className="px-3 py-4 text-center text-ink-3 text-xs">Loading…</div>}
         {hasMore && !loading && (
           <button
@@ -200,19 +157,6 @@ export default function HubspotImportPicker({ lifecycles }: { lifecycles: string
         )}
       </div>
 
-      {/* Sticky action bar */}
-      {selected.size > 0 && (
-        <div className="sticky bottom-4 z-10 flex items-center justify-between gap-3 rounded-full border-hairline bg-ink text-cream px-5 py-2.5 shadow-lg">
-          <span className="text-sm font-medium">{selected.size} selected</span>
-          <button
-            onClick={addSelected}
-            disabled={adding}
-            className="text-xs font-semibold px-4 py-1.5 rounded-full bg-orange text-white hover:bg-orange-dark transition-colors disabled:opacity-60"
-          >
-            {adding ? "Adding…" : `Add ${selected.size} to bench`}
-          </button>
-        </div>
-      )}
     </div>
   );
 }

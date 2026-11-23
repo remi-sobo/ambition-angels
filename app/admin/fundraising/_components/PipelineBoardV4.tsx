@@ -31,13 +31,18 @@ import {
 } from "@/lib/fundraising/pipelineBoard";
 import { shortDay, usd } from "@/lib/fundraising/donorRecord";
 import OpportunityEditModal from "./OpportunityEditModal";
+import OwnerChip from "@/app/admin/_components/OwnerChip";
+import { ownerLabel, type OrgMember } from "@/lib/admin/owners";
+import type { Me } from "@/lib/admin/todayPanels";
 import { type OpportunityRow } from "./pipeline-stages";
 
 /**
  * Pipeline on the Board archetype (V4 B1, Pipeline.dc.html): saved views,
  * one filter row, a summary strip for what is in view, then columns with a
  * count and a total. Each card: the donor, the amount and expected close,
- * the next step with ONE urgency signal, and the ask's existing owner text.
+ * the next step with ONE urgency signal, and the owner chip (the member
+ * owner, falling back to the ask's older free-text owner). "My asks" is a
+ * saved view: owner_id = me, the text owner only where owner_id is null.
  *
  * Moving a card: drag it (the shared StageBoard, kept for mouse and touch),
  * or use the card's "Stage" menu, a native select, so the keyboard and
@@ -49,11 +54,17 @@ export default function PipelineBoardV4({
   stages,
   today,
   initialView,
+  me = null,
+  members = [],
+  canAssign = false,
 }: {
   opps: OpportunityRow[];
   stages: PipelineStage[];
   today: string;
   initialView?: string;
+  me?: Me | null;
+  members?: OrgMember[];
+  canAssign?: boolean;
 }) {
   const save = useSaveAction();
   const [view, setView] = useState<BoardViewKey>(
@@ -67,10 +78,16 @@ export default function PipelineBoardV4({
     return (stage: string) => m.get(stage) ?? "open";
   }, [stages]);
 
+  // The resolved owner name rides along so search finds "Kendra" whether the
+  // card is owned by id or only by its old text owner.
+  const withNames = useMemo(
+    () => opps.map((o) => ({ ...o, ownerName: ownerLabel(o.ownerId, members, o.owner) })),
+    [opps, members],
+  );
   const shown = useMemo(
     () =>
-      filterBoard(opps, { view, quick, q }, typeOf, today) as OpportunityRow[],
-    [opps, view, quick, q, typeOf, today],
+      filterBoard(withNames, { view, quick, q, me }, typeOf, today) as OpportunityRow[],
+    [withNames, view, quick, q, me, typeOf, today],
   );
   const columns = columnsForView(stages, view);
   const stats = columnStats(shown, columns);
@@ -187,7 +204,7 @@ export default function PipelineBoardV4({
         minColWidth={200}
         minBoardWidth={Math.max(900, columns.length * 212)}
         maxVisible={12}
-        emptyHint="No asks here."
+        emptyHint={view === "mine" ? "None of your asks here." : "No asks here."}
         renderCard={(o) => (
           <BoardCard
             opp={o}
@@ -195,6 +212,9 @@ export default function PipelineBoardV4({
             today={today}
             stageType={typeOf(o.stage)}
             onMove={move}
+            members={members}
+            meId={me?.userId ?? null}
+            canAssign={canAssign}
           />
         )}
       />
@@ -217,12 +237,18 @@ function BoardCard({
   stageType,
   today,
   onMove,
+  members,
+  meId,
+  canAssign,
 }: {
   opp: OpportunityRow;
   stages: PipelineStage[];
   stageType: string;
   today: string;
   onMove: (id: string, toStage: string) => Promise<void>;
+  members: OrgMember[];
+  meId: string | null;
+  canAssign: boolean;
 }) {
   const router = useRouter();
   const confirm = useConfirm();
@@ -245,15 +271,6 @@ function BoardCard({
       setBusy(false);
     }
   }
-
-  const ownerInitials = opp.owner
-    ? opp.owner
-        .split(/\s+/)
-        .map((w) => w[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase()
-    : null;
 
   return (
     <article
@@ -289,7 +306,7 @@ function BoardCard({
         </span>
       </div>
 
-      <div className="flex items-end justify-between gap-2 mt-2 pt-2 border-t border-hairline">
+      <div className="mt-2 pt-2 border-t border-hairline">
         <div className="min-w-0">
           {opp.nextStep ? (
             <div className="text-ink-1 leading-snug">{opp.nextStep}</div>
@@ -306,15 +323,27 @@ function BoardCard({
             </div>
           ) : null}
         </div>
-        {ownerInitials ? (
-          <span
-            title={`Owner: ${opp.owner}`}
-            className="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full bg-accent-soft text-orange-dark text-[11px] font-bold"
-          >
-            <span aria-hidden>{ownerInitials}</span>
-            <span className="sr-only">Owner: {opp.owner}</span>
-          </span>
-        ) : null}
+      </div>
+
+      {/* The owner: the member (owner_id), else the old free-text owner. Its
+          own row so the name and the Change menu never crowd the next step.
+          Clicks stay off the drag handle. */}
+      <div
+        className="mt-2 flex items-center gap-1.5 min-w-0"
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <span className="text-xs text-ink-3 shrink-0" aria-hidden>Owner</span>
+        <OwnerChip
+          entity="opportunities"
+          id={opp.id}
+          ownerId={opp.ownerId}
+          fallbackText={opp.owner}
+          members={members}
+          meId={meId}
+          canEdit={canAssign}
+          variant="compact"
+        />
       </div>
 
       <div className="grid gap-1.5 mt-2.5">

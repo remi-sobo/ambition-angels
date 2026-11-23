@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import QuickAddModal from "../QuickAddModal";
-import CaptureModal from "../../capture/_components/CaptureModal";
+import { openCapture } from "../../capture/_lib/openCapture";
 import ReportModal from "../ReportModal";
 import { useReedLauncher } from "../reed/ReedLauncherProvider";
 import { ReedMark } from "../reed/ReedPanel";
@@ -22,23 +22,36 @@ export default function V2QuickAdd({
   currentUser,
   reedEnabled,
   captureEnabled = false,
+  storyEnabled = false,
 }: {
   currentUser: AdminUser | null;
   reedEnabled: boolean;
   /** Record (Capture, C4) behind ai.capture. */
   captureEnabled?: boolean;
+  /** V4 Stage D: Capture a story (modules.comms + comms.manage). */
+  storyEnabled?: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [modal, setModal] = useState<"task" | "report" | "record" | null>(null);
+  const [modal, setModal] = useState<"task" | "report" | null>(null);
   const { open: openReed } = useReedLauncher();
 
+  // A popover menu, not a dialog: Escape or a press anywhere outside the
+  // menu and its button closes it (no full-screen click catcher).
+  const boxRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!menuOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setMenuOpen(false);
     };
+    const onDown = (e: PointerEvent) => {
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onDown);
+    };
   }, [menuOpen]);
 
   const offset = {
@@ -53,14 +66,7 @@ export default function V2QuickAdd({
 
   return (
     <>
-      {menuOpen && (
-        <button
-          aria-label="Close menu"
-          onClick={() => setMenuOpen(false)}
-          className="fixed inset-0 z-40 cursor-default hidden lg:block"
-        />
-      )}
-
+      <div ref={boxRef}>
       {menuOpen && (
         <div
           className="fixed z-40 hidden lg:flex flex-col items-end gap-2"
@@ -72,8 +78,16 @@ export default function V2QuickAdd({
             </Chip>
           )}
           {captureEnabled && (
-            <Chip label="Record" onClick={act(() => setModal("record"))}>
+            <Chip label="Talk to log" onClick={act(() => openCapture())}>
               <MicGlyph />
+            </Chip>
+          )}
+          {storyEnabled && (
+            <Chip label="Capture a story" onClick={act(() => window.location.assign("/admin/comms/stories/new"))}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4" aria-hidden>
+                <path d="M5 4h11l3 3v13H5z" />
+                <path d="M8 10h8M8 14h6" />
+              </svg>
             </Chip>
           )}
           <Chip label="Search" kbd="⌘K" onClick={act(() => window.dispatchEvent(new CustomEvent("bloomos:search:open")))}>
@@ -107,10 +121,10 @@ export default function V2QuickAdd({
       >
         +
       </button>
+      </div>
 
       {modal === "task" && <QuickAddModal currentUser={currentUser} onClose={() => setModal(null)} />}
       {modal === "report" && <ReportModal onClose={() => setModal(null)} />}
-      {modal === "record" && <CaptureModal surface="quick_add" onClose={() => setModal(null)} />}
     </>
   );
 }

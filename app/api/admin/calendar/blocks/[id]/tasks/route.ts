@@ -6,6 +6,7 @@ import {
   removeTaskFromBlock,
   TaskNotFound,
 } from "@/lib/agenda/work-blocks";
+import { googleErrorSummary } from "@/lib/google/log-safe";
 
 // Fill-the-block: put a task on a block (POST — an upsert, so a task already
 // on another block MOVES here) or take it off (DELETE — the task survives,
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (e instanceof TaskNotFound) {
       return NextResponse.json({ error: "Task not found" }, { status: 404 });
     }
-    console.error("[calendar/blocks/tasks POST] failed:", e);
+    console.error("[calendar/blocks/tasks POST] failed:", googleErrorSummary(e));
     return NextResponse.json({ error: "Couldn't add the task" }, { status: 502 });
   }
 }
@@ -54,7 +55,7 @@ export async function DELETE(req: NextRequest) {
     if (e instanceof BlockNotFound) {
       return NextResponse.json({ error: "Block not found" }, { status: 404 });
     }
-    console.error("[calendar/blocks/tasks DELETE] failed:", e);
+    console.error("[calendar/blocks/tasks DELETE] failed:", googleErrorSummary(e));
     return NextResponse.json({ error: "Couldn't remove the task" }, { status: 502 });
   }
 }

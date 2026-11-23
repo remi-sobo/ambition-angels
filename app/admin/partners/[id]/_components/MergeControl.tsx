@@ -68,7 +68,7 @@ export function MergeControl({ keepId, keepName, candidates }: {
 
   return (
     <div className="mt-2 space-y-2">
-      <input
+      <input aria-label="Search the org to merge in"
         value={picked ? picked.name : q}
         onChange={(e) => { setPicked(null); setQ(e.target.value); }}
         placeholder="Search the org to merge in…"

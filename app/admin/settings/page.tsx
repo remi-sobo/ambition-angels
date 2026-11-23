@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { REPORT_ACTION, supportEmail } from "@/lib/admin/support";
 import { getOrgContext } from "@/lib/admin/auth";
 import { getMyDisplayName } from "@/lib/admin/profile";
 import { getEntitlements, hasFeature } from "@/lib/admin/entitlements";
@@ -150,7 +151,7 @@ export default async function SettingsPage({
         <Card
           id="google-calendar"
           title="Google Calendar"
-          description="Connect your calendar so BloomOS can show your day. Read-only. BloomOS never changes your events."
+          description="Connect your calendar so BloomOS can show your week and put the work blocks you schedule on it. BloomOS only changes events it created. Disconnect any time."
         >
           {calendarStatus ? (
             <ConnectCalendarControls
@@ -229,13 +230,19 @@ export default async function SettingsPage({
                 <h3 className="text-sm font-semibold text-ink-1">Using a CRM?</h3>
                 <p className="text-xs text-ink-2 mt-0.5">
                   Live CRM sync isn&apos;t available yet. CSV import covers everything today.{" "}
-                  <a
-                    href="mailto:remi@ambitionangels.org?subject=Our%20CRM"
-                    className="text-orange font-semibold hover:underline"
-                  >
-                    Tell us what you run
-                  </a>{" "}
-                  and it shapes what gets built next.
+                  {supportEmail() ? (
+                    <>
+                      <a
+                        href={`mailto:${supportEmail()}?subject=Our%20CRM`}
+                        className="text-orange font-semibold hover:underline"
+                      >
+                        Tell us what you run
+                      </a>{" "}
+                      and it shapes what gets built next.
+                    </>
+                  ) : (
+                    <>Tell us what you run with {REPORT_ACTION} (choose Idea) and it shapes what gets built next.</>
+                  )}
                 </p>
               </div>
             )}

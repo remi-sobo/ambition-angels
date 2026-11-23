@@ -73,6 +73,7 @@ export function DailyControls({
                 {day === today && <span className="text-xs text-ink-2 block">today</span>}
               </p>
               <select
+                aria-label={`Card for ${WEEKDAY[date.getUTCDay()]} ${day.slice(5)}`}
                 value={soc}
                 disabled={busy === day}
                 onChange={(e) => save(day, e.target.value || null)}

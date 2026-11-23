@@ -108,7 +108,7 @@ export default function DiscoverPanel({ angleId, angleName }: { angleId: string;
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <select
+          <select aria-label="Discovery type"
             value={type}
             onChange={(e) => setType(e.target.value as DiscoveryType)}
             className="bg-cream border-hairline rounded-control px-2.5 py-1.5 text-xs text-ink-1 focus:outline-none focus:border-orange/50"

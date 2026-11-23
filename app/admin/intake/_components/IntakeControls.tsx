@@ -149,7 +149,7 @@ const confirm = useConfirm();
       <div className="flex flex-wrap items-center gap-1 mt-2">
         {!closed && (
           <>
-            <select
+            <select aria-label="Cohort"
               value={app.cohort_id ?? ""}
               disabled={busy}
               onChange={(e) => patch({ cohort_id: e.target.value || null })}
@@ -160,7 +160,7 @@ const confirm = useConfirm();
                 <option key={c.id} value={c.id} className="bg-surface">{c.name}</option>
               ))}
             </select>
-            <select
+            <select aria-label="Priority"
               value={app.priority}
               disabled={busy}
               onChange={(e) => patch({ priority: Number(e.target.value) })}

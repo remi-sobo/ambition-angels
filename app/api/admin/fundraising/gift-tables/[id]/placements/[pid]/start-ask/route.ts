@@ -92,6 +92,13 @@ export async function POST(
       typeof body.owner === "string" && body.owner.trim()
         ? body.owner.trim()
         : ((placement.owner as string | null) ?? (await getAdminUser()) ?? null),
+    // The creator owns it by default, but a named owner (the request's or
+    // the placement's free text) is someone else's call: leave owner_id unset
+    // so that name keeps showing until a member is assigned.
+    ownerId:
+      (typeof body.owner === "string" && body.owner.trim()) || (placement.owner as string | null)?.trim()
+        ? undefined
+        : ctx.userId,
     planStrategyId: (table.strategy_id as string | null) ?? null,
     pipeline: typeof body.pipeline === "string" ? body.pipeline : null,
   });

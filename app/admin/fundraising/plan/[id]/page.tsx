@@ -200,7 +200,7 @@ export default async function PlanStrategyPage({ params }: { params: { id: strin
           <p className="text-sm text-ink-2 mt-1">
             Gift tables moved to Campaigns, where a table carries its own window, its coverage
             basis, and the real names placed at each level.{" "}
-            <Link href="/admin/fundraising/campaigns" className="text-orange hover:underline">
+            <Link href="/admin/fundraising/campaigns" className="text-orange underline underline-offset-2">
               Open Campaigns
             </Link>
             .

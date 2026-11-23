@@ -59,6 +59,9 @@ const TENANT_TABLES = new Set([
   "staff", "staff_goals", "staff_kpi_snapshots", "staff_kpis", "stewardship_rules",
   "strategy_angles", "strategy_room_meta", "students", "user_org_state", "ygb_attendance",
   "ygb_registrations",
+  // V4 Stage D: the story bank (comms_phase1..6), org-scoped like the rest.
+  "stories", "story_subjects", "story_consents", "story_media",
+  "comms_formats", "comms_outputs", "comms_editions", "comms_edition_slots",
 ]);
 
 // Public-funnel / global-analytics tables: written by unauthenticated public

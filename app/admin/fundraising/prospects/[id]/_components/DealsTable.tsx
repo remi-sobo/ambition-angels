@@ -1,4 +1,5 @@
 import { TYPE } from "@/lib/admin/typeScale";
+import { StaticTable } from "@/app/admin/_components/ui/DataTable";
 export type HsDeal = {
   hubspot_id: string;
   name: string | null;
@@ -39,44 +40,31 @@ export default function DealsTable({ deals }: { deals: HsDeal[] }) {
       {deals.length === 0 ? (
         <p className="text-sm text-ink-2">No deals associated.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-xs uppercase tracking-wider text-ink-2 border-b border-hairline">
-                <th className="text-left font-medium pb-2 pr-4">Deal</th>
-                <th className="text-right font-medium pb-2 pr-4">Amount</th>
-                <th className="text-left font-medium pb-2 pr-4">Stage</th>
-                <th className="text-left font-medium pb-2 pr-4">Pipeline</th>
-                <th className="text-left font-medium pb-2 pr-4">Close</th>
-                <th className="text-left font-medium pb-2">Last Activity</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-hairline">
-              {deals.map((d) => (
-                <tr key={d.hubspot_id} className="text-ink-1">
-                  <td className="py-2.5 pr-4">{d.name ?? "—"}</td>
-                  <td className="py-2.5 pr-4 text-right font-mono">
-                    {fmtAmount(d.amount)}
-                  </td>
-                  <td className="py-2.5 pr-4">
-                    {d.stage ? (
-                      <span className="inline-block px-2 py-0.5 rounded text-xs bg-tile border-hairline">
-                        {d.stage}
-                      </span>
-                    ) : (
-                      <span className="text-ink-2">—</span>
-                    )}
-                  </td>
-                  <td className="py-2.5 pr-4 text-ink-2">
-                    {d.pipeline ?? "—"}
-                  </td>
-                  <td className="py-2.5 pr-4">{fmtDate(d.close_date)}</td>
-                  <td className="py-2.5">{fmtDate(d.last_activity_at)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        // The kit table (V4 P1): cards under 640px.
+        <StaticTable
+          label="Associated deals"
+          noun={{ one: "deal", many: "deals" }}
+          rows={deals}
+          getRowId={(d) => d.hubspot_id}
+          getRowLabel={(d) => d.name ?? "Deal"}
+          columns={[
+            { key: "deal", header: "Deal", card: "title", render: (d) => <span className="text-ink-1">{d.name ?? "—"}</span> },
+            { key: "amount", header: "Amount", align: "right", render: (d) => <span className="font-mono">{fmtAmount(d.amount)}</span> },
+            {
+              key: "stage",
+              header: "Stage",
+              render: (d) =>
+                d.stage ? (
+                  <span className="inline-block px-2 py-0.5 rounded text-xs bg-tile border-hairline">{d.stage}</span>
+                ) : (
+                  <span className="text-ink-2">—</span>
+                ),
+            },
+            { key: "pipeline", header: "Pipeline", render: (d) => <span className="text-ink-2">{d.pipeline ?? "—"}</span> },
+            { key: "close", header: "Close", render: (d) => fmtDate(d.close_date) },
+            { key: "activity", header: "Last activity", render: (d) => fmtDate(d.last_activity_at) },
+          ]}
+        />
       )}
     </section>
   );

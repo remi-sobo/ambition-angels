@@ -53,7 +53,10 @@ export default function SiteChrome({
       )}
       {!standalone && nav}
       {!standalone && <ScrollAnimations />}
-      <main>{children}</main>
+      {/* /admin renders its own <main> in its shell; a second one around it
+          made two nested main landmarks on every BloomOS page (V4 Stage P
+          axe pass). */}
+      {pathname?.startsWith("/admin") ? children : <main>{children}</main>}
       {!standalone && footer}
     </>
   );

@@ -9,6 +9,7 @@ import { bookSchema } from "@/lib/meet/schemas";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { getBookingHost } from "@/lib/meet/host";
 import type { Booking, LocationType, MeetingType } from "@/lib/database.types";
+import { googleErrorSummary } from "@/lib/google/log-safe";
 
 // 3 booking attempts per IP per 10 minutes. Per-instance in-memory; see
 // lib/rate-limit.ts for caveats. Generous on purpose — real users may
@@ -165,7 +166,7 @@ export async function POST(req: NextRequest) {
     });
     eventId = created.eventId;
   } catch (err) {
-    console.error("createEvent failed", err);
+    console.error("createEvent failed", googleErrorSummary(err));
     return NextResponse.json(
       { error: "Could not create the calendar event. Try again in a moment." },
       { status: 502 }
@@ -201,7 +202,7 @@ export async function POST(req: NextRequest) {
     try {
       await cancelEvent(eventId);
     } catch (cancelErr) {
-      console.error("compensating cancelEvent failed", cancelErr);
+      console.error("compensating cancelEvent failed", googleErrorSummary(cancelErr));
     }
     const isRace = insertErr?.code === "23505";
     return NextResponse.json(
@@ -226,14 +227,14 @@ export async function POST(req: NextRequest) {
       subject: confirmation.subject,
       html: confirmation.html,
       text: confirmation.text,
-    }).catch((e) => console.error("confirmation email failed", e)),
+    }).catch((e) => console.error("confirmation email failed", googleErrorSummary(e))),
     sendEmail({
       to: host.email,
       subject: internal.subject,
       html: internal.html,
       text: internal.text,
       replyTo: booking.attendee_email,
-    }).catch((e) => console.error("internal email failed", e)),
+    }).catch((e) => console.error("internal email failed", googleErrorSummary(e))),
   ]);
 
   return NextResponse.json({

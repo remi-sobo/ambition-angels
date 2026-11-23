@@ -11,6 +11,8 @@ import MeetingAgendaButton from "./_components/MeetingAgendaButton";
 import FollowUpQuickActions from "./_components/FollowUpQuickActions";
 import CancelBookingButton from "./_components/CancelBookingButton";
 import PageHeader from "../_components/PageHeader";
+import Figure, { SummaryStrip } from "../_components/ui/Figure";
+import Notice from "../_components/ui/Notice";
 import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 export const dynamic = "force-dynamic";
@@ -53,7 +55,7 @@ function PastRow({ item, emphasize = false }: { item: MeetingListItem; emphasize
           : "border-hairline bg-surface hover:bg-tile"
       }`}
     >
-      <Link href={`/admin/meetings/${record.id}`} className="flex-1 min-w-0">
+      <Link href={`/admin/work/meetings/${record.id}`} className="flex-1 min-w-0">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-[14px] text-ink-1 group-hover:text-orange font-medium truncate transition-colors">
             {record.title ?? "Untitled meeting"}
@@ -167,45 +169,44 @@ export default async function MeetingsPage() {
   });
   const days = Array.from(byDay.keys()).sort();
 
-  return (
-    <div className="max-w-5xl px-4 lg:px-8 py-6 lg:py-8 space-y-8">
-      <PageHeader
-        title="Meetings"
-        subtitle="Your meetings, matched to the donors and partners they concern."
-        actions={<SyncMeetingsButton />}
-      />
+  const coverageSource = `Of ${coverage.total} in the last ${coverage.windowDays} days, from your meeting records`;
+  const bookedCount = upcomingRows.filter((r) => (r.kind === "event" ? !!r.booking : true)).length;
 
-      {/* Coverage hero — the load-bearing signal, not a footnote. */}
-      {coverage.gapCount > 0 ? (
-        <section className="relative overflow-hidden rounded-panel-lg border border-orange/30 bg-orange-light">
-          <span className="absolute left-0 top-0 bottom-0 w-1.5 bg-orange" aria-hidden />
-          <div className="px-6 py-5 flex items-center gap-5">
-            <span className="font-display font-black text-orange text-5xl leading-none [font-variant-numeric:tabular-nums]">
-              {coverage.gapCount}
-            </span>
-            <div className="min-w-0">
-              <p className="text-[15px] font-semibold text-ink-1">
-                {coverage.gapCount === 1 ? "meeting needs a follow-up" : "meetings need a follow-up"}
-              </p>
-              <p className="text-sm text-ink-2 mt-0.5">
-                of {coverage.total} in the last {coverage.windowDays} days. Open one below to add a
-                follow-up or mark it as not needed.
-              </p>
-            </div>
-          </div>
-        </section>
-      ) : past.length > 0 ? (
-        <section className="rounded-panel-lg border border-status-healthy/30 bg-status-healthy-bg px-6 py-4 flex items-center gap-3">
-          <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-revenue-bg text-revenue">
-            <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.2">
-              <path d="M3 8l3 3 7-7" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </span>
-          <p className="text-[14px] text-ink-1 font-medium">
-            All caught up: every recent meeting has a follow-up or doesn&apos;t need one.
-          </p>
-        </section>
-      ) : null}
+  return (
+    <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8 space-y-8">
+      <div>
+        <PageHeader
+          title="Meetings"
+          subtitle="Your meetings, matched to the donors and partners they concern"
+          primaryAction={<SyncMeetingsButton />}
+          moreActions={[
+            { label: "My Week", href: "/admin/work/my-week" },
+            { label: "Booking page settings", href: "/admin/settings/organization/booking-page" },
+            { label: "Calendar connection", href: "/admin/settings/connections" },
+          ]}
+        />
+
+        {/* The summary strip replaces the old orange coverage hero: the
+            follow-up gap is still the first figure, sourced, and late reads
+            in the danger tone, not as decoration (V4 Stage G). */}
+        <SummaryStrip label="Meetings summary">
+          <Figure
+            label="Need a follow-up"
+            value={ctx ? coverage.gapCount : null}
+            source={coverageSource}
+            compareTone="danger"
+            compare={coverage.gapCount > 0 ? "Open one below to add a follow-up" : undefined}
+          />
+          <Figure label="Upcoming" value={upcomingRows.length} source="External meetings and bookings ahead, from your calendar" />
+          <Figure label="Booked through your page" value={bookedCount} source="Confirmed bookings from your booking page" />
+        </SummaryStrip>
+
+        {coverage.gapCount === 0 && past.length > 0 ? (
+          <Notice tone="success" title="All caught up.">
+            Every recent meeting has a follow-up or does not need one.
+          </Notice>
+        ) : null}
+      </div>
 
       {/* Needs follow-up — the action list, emphasized. */}
       {needs.length > 0 && (
@@ -254,7 +255,7 @@ export default async function MeetingsPage() {
           label="meeting records"
           hint={
             <>
-              Hit <span className="font-medium text-ink-1">Sync from calendar</span> above to pull
+              Choose <span className="font-medium text-ink-1">Sync from calendar</span> above to pull
               your past external meetings in and match them to donors and partners.
             </>
           }
@@ -287,7 +288,7 @@ export default async function MeetingsPage() {
                           key={r.meeting.eventId}
                           className="group flex items-center gap-3 px-4 py-2.5 rounded-panel border border-hairline bg-surface transition-colors hover:bg-tile"
                         >
-                          <Link href={`/admin/meetings/upcoming/${r.meeting.eventId}`} className="flex flex-1 min-w-0 items-center gap-3">
+                          <Link href={`/admin/work/meetings/upcoming/${r.meeting.eventId}`} className="flex flex-1 min-w-0 items-center gap-3">
                             <span className="text-xs text-ink-2 font-mono [font-variant-numeric:tabular-nums] w-20 shrink-0">
                               {laTime(r.meeting.start)}
                             </span>

@@ -5,11 +5,16 @@
  * run), and advances chunks until the job finishes or the function budget is
  * nearly spent — the next cron tick picks up any remainder.
  *
- * Requires the gmail.readonly scope on GOOGLE_REFRESH_TOKEN.
+ * Reads the mailbox connected through the Internal OAuth client
+ * (lib/google/gmail-sync-connection.ts), never the "bloom / meet" env token.
  *
  * The mailbox belongs to one org, resolved from data
  * (lib/integrations/env-owner.ts). If that can't be resolved unambiguously the
  * cron does nothing and says why.
+ *
+ * PAUSED: see lib/fundraising/gmail-sync-flag.ts. While GMAIL_SYNC_PAUSED is
+ * true this returns { status: "paused" } and never touches Gmail or the
+ * database. The vercel.json cron entry is removed too.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
@@ -20,6 +25,7 @@ import {
   type GmailJob,
 } from "@/lib/fundraising/gmail-sync";
 import { resolveEnvIntegrationOwner } from "@/lib/integrations/env-owner";
+import { GMAIL_SYNC_PAUSED, GMAIL_SYNC_PAUSED_MESSAGE } from "@/lib/fundraising/gmail-sync-flag";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -29,6 +35,9 @@ export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization");
   if (!secret || auth !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+  if (GMAIL_SYNC_PAUSED) {
+    return NextResponse.json({ status: "paused", reason: GMAIL_SYNC_PAUSED_MESSAGE });
   }
   const owner = await resolveEnvIntegrationOwner("gmail_sync");
   if (!owner.ok) {

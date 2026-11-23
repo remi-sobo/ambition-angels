@@ -25,6 +25,11 @@ export function focusableIn(root: HTMLElement): HTMLElement[] {
   );
 }
 
+// Open traps, innermost last. Only the innermost one answers keys, so a
+// confirm raised from inside a drawer takes Escape and Tab without closing
+// or stealing focus from the drawer underneath.
+const openTraps: symbol[] = [];
+
 export function useFocusTrap<T extends HTMLElement>(
   active: boolean,
   onClose: () => void,
@@ -37,6 +42,8 @@ export function useFocusTrap<T extends HTMLElement>(
 
   useEffect(() => {
     if (!active) return;
+    const token = Symbol("trap");
+    openTraps.push(token);
     const opener = document.activeElement as HTMLElement | null;
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -48,6 +55,7 @@ export function useFocusTrap<T extends HTMLElement>(
     }
 
     const onKey = (e: KeyboardEvent) => {
+      if (openTraps[openTraps.length - 1] !== token) return;
       if (e.key === "Escape") {
         e.stopPropagation();
         closeRef.current();
@@ -78,6 +86,8 @@ export function useFocusTrap<T extends HTMLElement>(
     document.addEventListener("keydown", onKey, true);
     return () => {
       document.removeEventListener("keydown", onKey, true);
+      const at = openTraps.indexOf(token);
+      if (at >= 0) openTraps.splice(at, 1);
       document.body.style.overflow = prevOverflow;
       opener?.focus?.();
     };

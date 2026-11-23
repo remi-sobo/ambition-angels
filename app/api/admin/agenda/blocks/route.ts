@@ -8,6 +8,7 @@ import {
   NoCalendarConnection,
 } from "@/lib/agenda/task-blocks";
 import { requirePermission } from "@/lib/admin/requirePermission";
+import { googleErrorSummary } from "@/lib/google/log-safe";
 
 // Task ↔ calendar block writes (Phase 4). A "block" is a time window on a day:
 // { day: YYYY-MM-DD, start_minute, duration_minute } in America/Los_Angeles,
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
     if (e instanceof NoCalendarConnection) {
       return NextResponse.json({ error: "Connect a Google Calendar first." }, { status: 409 });
     }
-    console.error("[agenda/blocks POST] failed:", e);
+    console.error("[agenda/blocks POST] failed:", googleErrorSummary(e));
     return NextResponse.json({ error: "Couldn't schedule the block" }, { status: 502 });
   }
 }
@@ -93,7 +94,7 @@ export async function PATCH(req: NextRequest) {
     if (e instanceof NoCalendarConnection) {
       return NextResponse.json({ error: "Connect a Google Calendar first." }, { status: 409 });
     }
-    console.error("[agenda/blocks PATCH] failed:", e);
+    console.error("[agenda/blocks PATCH] failed:", googleErrorSummary(e));
     return NextResponse.json({ error: "Couldn't move the block" }, { status: 502 });
   }
 }
@@ -110,7 +111,7 @@ export async function DELETE(req: NextRequest) {
     await unscheduleTaskBlock({ userId: ctx.userId, orgId: ctx.orgId, taskId });
     return NextResponse.json({ ok: true });
   } catch (e) {
-    console.error("[agenda/blocks DELETE] failed:", e);
+    console.error("[agenda/blocks DELETE] failed:", googleErrorSummary(e));
     return NextResponse.json({ error: "Couldn't unschedule the block" }, { status: 502 });
   }
 }

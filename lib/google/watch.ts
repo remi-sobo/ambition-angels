@@ -8,6 +8,7 @@ import {
   type GoogleCalendarConnection,
   type WatchState,
 } from "./connection";
+import { googleErrorSummary } from "@/lib/google/log-safe";
 
 /**
  * Google Calendar push channels (events.watch), Phase 5 — the latency upgrade.
@@ -96,7 +97,7 @@ export async function renewExpiringWatches(
       }
     } catch (e) {
       failed += 1;
-      console.error(`watch renew failed for user ${conn.userId}:`, e);
+      console.error(`watch renew failed for user ${conn.userId}:`, googleErrorSummary(e));
     }
   }
   return { started, renewed, skipped, failed };

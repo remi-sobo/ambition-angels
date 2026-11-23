@@ -1,4 +1,4 @@
-import { getGmailClient } from "./auth";
+import { getGmailSendClient, withSchedulerToken } from "./auth";
 
 export type SendEmailParams = {
   to: string;
@@ -9,20 +9,22 @@ export type SendEmailParams = {
 };
 
 /**
- * Sends an email via Gmail API as the authenticated user
- * (remi@ambitionangels.org). The from address is implicit — Gmail's
+ * Sends an email via Gmail API as the scheduler Google account (the stored
+ * connection from Settings → Connections, else the env token). The from address is implicit — Gmail's
  * users.messages.send with userId='me' always sends from the authenticated
  * account, so no From header is set explicitly.
  *
  * Replies from recipients land in Remi's inbox naturally.
  */
 export async function sendEmail(params: SendEmailParams): Promise<void> {
-  const gmail = getGmailClient();
+  const { client: gmail, token } = await getGmailSendClient();
   const raw = buildMime(params);
-  await gmail.users.messages.send({
-    userId: "me",
-    requestBody: { raw },
-  });
+  await withSchedulerToken(token, () =>
+    gmail.users.messages.send({
+      userId: "me",
+      requestBody: { raw },
+    })
+  );
 }
 
 /**

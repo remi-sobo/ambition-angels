@@ -24,7 +24,7 @@ export function mailHref(email: string | null | undefined): string | null {
 export type StepCandidate = { text: string; due: string | null; source: "ask" | "task"; context: string | null };
 
 /** The one next step to show: dated before undated, earliest due first. */
-export function pickNextStep(steps: readonly StepCandidate[]): StepCandidate | null {
+export function pickNextStep<T extends StepCandidate>(steps: readonly T[]): T | null {
   const real = steps.filter((s) => s.text.trim());
   if (real.length === 0) return null;
   return [...real].sort((a, b) => {

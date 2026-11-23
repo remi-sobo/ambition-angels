@@ -35,7 +35,7 @@ import {
 const ROLES: Role[] = ["owner", "staff", "board_viewer"];
 // Measured counts that are over target today, held so they cannot get worse.
 // Remove an entry when the flow meets its target.
-const KNOWN_GAP: Partial<Record<keyof typeof TARGET | "findDonorPhone", number>> = { findDonor: 4, findDonorPhone: 5 };
+const KNOWN_GAP: Partial<Record<keyof typeof TARGET | "findDonorPhone", number>> = { findDonorPhone: 4 };
 const TARGET = { giftAfterOpen: 3, findDonor: 3, findDonorSave: 1, rosterTaps: 2, perException: 1, enroll: 9, task: 1 };
 
 function people(org: Org) {
@@ -116,18 +116,23 @@ for (const org of ORGS) {
           await gotoAdmin(page, `/admin/fundraising/donors-funders/${donor.id}`);
           await expect(page.locator("body")).toContainText(NOT_AUTHORIZED);
           expect(await deniedApi(page, "PATCH", `/api/admin/opportunities/${donor.opp.id}`, { next_step: "x" })).toBe(403);
+          // the search preview never offers a board viewer Mark done or Change
+          const prof = await page.request.get(`/api/admin/search/profile?id=${donor.id}`, { failOnStatusCode: false });
+          if (prof.ok()) expect((await prof.json()).nextStep?.canEdit ?? false, "preview next step is read-only").toBe(false);
           record("smoke-results.jsonl", { flow: "find-donor", org, role, vp: info.project.name, result: "denied as expected" });
           return;
         }
         if (isPhone(info)) {
-          // phone: Today's "Look someone up" screen, then the record
+          // phone: Today's "Look someone up" screen; the donor card carries the next-step bar
           await c.on(page.getByRole("link", { name: "Look someone up" }).first(), "look someone up");
           await page.getByPlaceholder("Type a name").fill(donor.name);
           await c.on(page.getByRole("button", { name: "Search", exact: true }), "search");
           const row = page.getByRole("region", { name: "Donors and funders" }).getByRole("link", { name: new RegExp(donor.name.replace(/[.*+?^${}()|[\]\\&]/g, "\\$&")) }).first();
           await expectNoOtherOrg(page, org);
           await c.on(row, "open result");
-          await c.on(page.getByRole("link", { name: /^(Open the record to change it|Add one on the record)$/ }), "open record");
+          await page.waitForURL(/\/admin\/lookup\?donor=/, { waitUntil: "commit", timeout: 60_000 });
+          await page.waitForLoadState("networkidle").catch(() => {});
+          await expect(page.getByRole("heading", { level: 1 })).toContainText(donor.name);
         } else {
           await c.on(page.getByRole("button", { name: /Search.*BloomOS/ }).first(), "open search");
           const box = page.getByPlaceholder("Search people, deals, tasks, pages…");
@@ -136,18 +141,16 @@ for (const org of ORGS) {
           await expect(hit).toBeVisible();
           await expectNoOtherOrg(page, org);
           await c.on(hit, "open result");
-          // a person opens the 360 preview inside search first; the record is one more click
-          const full = page.getByRole("button", { name: /Open full page/ });
-          if (await full.waitFor({ state: "visible", timeout: 10_000 }).then(() => true, () => false)) await c.on(full, "open full page");
+          // a person opens the 360 preview inside search, which leads with the next-step bar
+          await expect(page.getByRole("button", { name: /Open full page/ })).toBeVisible({ timeout: 30_000 });
         }
-        await page.waitForURL(/fundraising\/donors(-funders)?\/[0-9a-f-]{36}/, { waitUntil: "commit", timeout: 60_000 });
-        await page.waitForLoadState("networkidle").catch(() => {});
-        await expect(page.getByRole("heading", { level: 1 })).toContainText(donor.name);
         await expectNoOtherOrg(page, org);
         const step = page.getByRole("button", { name: /^(Change|Add a next step)$/ }).first();
+        await expect(step).toBeVisible({ timeout: 30_000 });
         await c.on(step, "next-step bar");
         const toBar = c.n;
-        const dialog = page.getByRole("dialog");
+        // the step's dialog stacks on the search overlay on desktop: take the top one
+        const dialog = page.getByRole("dialog").last();
         const field = dialog.getByLabel("Next step");
         let wrote = false;
         if (await field.isVisible().catch(() => false)) {
@@ -157,12 +160,31 @@ for (const org of ORGS) {
           await expect.poll(() => writesSince(since, "opportunities").length, { timeout: 20_000 }).toBeGreaterThan(0);
           wrote = true;
         }
-        // Known gap (Stage P): the search preview adds a click, so the bar is
-        // 4 clicks away, not 3. Held at 4 so it cannot get worse; the
-        // scorecard lists it.
+        // Known gap (phone): Look someone up, Search, result, Change is 4
+        // taps, not 3. Held at 4 so it cannot get worse; the scorecard lists it.
         expect(toBar).toBeLessThanOrEqual((isPhone(info) ? KNOWN_GAP.findDonorPhone : KNOWN_GAP.findDonor) ?? TARGET.findDonor);
         expect(c.n - toBar).toBeLessThanOrEqual(TARGET.findDonorSave);
-        record("smoke-results.jsonl", { flow: "find-donor", org, role, vp: info.project.name, clicksToBar: toBar, clicksTotal: c.n, target: TARGET.findDonor, wrote, path: c.log });
+        // a refused save says so in a toast and leaves the bar as it was
+        let failureToast: string | null = null;
+        if (wrote) {
+          const bar = page.getByRole("region", { name: "Next step" }).last();
+          await expect(page.getByRole("textbox", { name: "Next step" })).toHaveCount(0, { timeout: 20_000 });
+          const before = await bar.innerText();
+          await page.getByRole("button", { name: /^(Change|Add a next step)$/ }).first().click();
+          const d2 = page.getByRole("dialog").last();
+          await d2.getByLabel("Next step").fill("This save is refused");
+          await patchMock({ failWrite: "opportunities" });
+          try {
+            await d2.getByRole("button", { name: "Save" }).click();
+            const refused = /couldn.t|could not|didn.t|failed|not saved|try again/i;
+            await expect.poll(() => toastText(page, 1000), { timeout: 15_000 }).toMatch(refused);
+            failureToast = await toastText(page);
+          } finally {
+            await patchMock({ failWrite: null });
+          }
+          expect(await bar.innerText()).toBe(before);
+        }
+        record("smoke-results.jsonl", { flow: "find-donor", org, role, vp: info.project.name, clicksToBar: toBar, clicksTotal: c.n, target: TARGET.findDonor, wrote, failureToast, path: c.log });
       });
 
       test("take attendance", async ({ page, context }, info) => {

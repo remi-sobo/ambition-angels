@@ -108,6 +108,21 @@ export default function GlobalSearch({ pages = [] }: { pages?: PageEntry[] }) {
       .catch(() => {});
   }, []);
 
+  // Re-read the open profile in place (after a save from its next-step bar),
+  // keeping the current one on screen until the new one arrives.
+  const refreshProfile = useCallback(() => {
+    if (!profileId) return;
+    const ctrl = new AbortController();
+    profileAbortRef.current?.abort();
+    profileAbortRef.current = ctrl;
+    fetch(`/api/admin/search/profile?id=${encodeURIComponent(profileId)}`, { signal: ctrl.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!ctrl.signal.aborted && data) setProfile(data as ProfilePayload);
+      })
+      .catch(() => {});
+  }, [profileId]);
+
   // ── Global open shortcuts ──────────────────────────────────────────────
   useEffect(() => {
     const openSearch = () => setOpen(true);
@@ -279,7 +294,7 @@ export default function GlobalSearch({ pages = [] }: { pages?: PageEntry[] }) {
       <div className="flex flex-col min-h-0 flex-1" onKeyDown={onKeyDown}>
         {profileId ? (
           profile ? (
-            <EntityProfile data={profile} onBack={closeProfile} onOpen={navigate} />
+            <EntityProfile data={profile} onBack={closeProfile} onOpen={navigate} onChanged={refreshProfile} />
           ) : (
             <div className="flex-1 flex flex-col">
               <div className="flex items-center gap-3 px-4 py-3 border-b border-hairline">

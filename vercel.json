@@ -35,6 +35,10 @@
     {
       "path": "/api/cron/meet-reminders",
       "schedule": "12 * * * *"
+    },
+    {
+      "path": "/api/cron/hubspot-sync",
+      "schedule": "*/10 22 * * *"
     }
   ]
 }

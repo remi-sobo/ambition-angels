@@ -38,7 +38,11 @@ vi.mock("@/lib/supabase/server", () => ({
       then: (resolve: (v: { data: unknown }) => void) => resolve({ data: state.rows }),
     };
     return {
-      auth: { getUser: async () => ({ data: { user: state.user } }) },
+      auth: {
+        getUser: async () => ({ data: { user: state.user && { ...state.user, factors: [{ status: "verified" }] } } }),
+        // A verified factor and an aal2 token: these sessions finished two-step login.
+        getSession: async () => ({ data: { session: { access_token: "x.eyJhYWwiOiJhYWwyIn0.s" } } }),
+      },
       from: () => chain,
     };
   },

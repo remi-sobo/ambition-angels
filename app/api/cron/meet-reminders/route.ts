@@ -5,6 +5,7 @@ import { getBookingHost, type BookingHost } from "@/lib/meet/host";
 import { buildReminder24hEmail } from "@/lib/email/templates/reminder-24h";
 import { buildReminder1hEmail } from "@/lib/email/templates/reminder-1h";
 import type { Booking, MeetingType } from "@/lib/database.types";
+import { loadOperatorEmailOrgs, NOT_OPTED_IN } from "@/lib/cron/emailOptIn";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,10 @@ type BookingWithType = Booking & { meeting_type: MeetingType };
  *
  * Each booking row carries a sent flag per type, so retries / overlapping
  * cron windows can't double-send.
+ *
+ * Opt-in: bookings are read per org, and an org without
+ * `notify.operator_emails` (lib/cron/emailOptIn.ts) is skipped before its
+ * bookings are read, so its bookers get no automated reminder.
  */
 export async function GET(req: NextRequest) {
   if (!isAuthed(req)) {
@@ -37,8 +42,18 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: `orgs: ${orgsError.message}` }, { status: 500 });
   }
 
+  const optIn = await loadOperatorEmailOrgs(supabase);
+  if (!optIn.ok) {
+    return NextResponse.json({ error: optIn.error }, { status: 500 });
+  }
+
   const perOrg: Record<string, { "24h": BatchResult; "1h": BatchResult }> = {};
+  const skipped: string[] = [];
   for (const o of (orgs ?? []) as { id: string }[]) {
+    if (!optIn.orgIds.has(o.id)) {
+      skipped.push(o.id);
+      continue;
+    }
     const r24 = await runReminderBatch({
       supabase,
       orgId: o.id,
@@ -65,7 +80,12 @@ export async function GET(req: NextRequest) {
       (acc, r) => ({ found: acc.found + r[k].found, sent: acc.sent + r[k].sent, errors: [...acc.errors, ...r[k].errors] }),
       { found: 0, sent: 0, errors: [] as string[] }
     );
-  return NextResponse.json({ "24h": sum("24h"), "1h": sum("1h"), orgs: Object.keys(perOrg).length });
+  return NextResponse.json({
+    "24h": sum("24h"),
+    "1h": sum("1h"),
+    orgs: Object.keys(perOrg).length,
+    skipped: { orgs: skipped, reason: NOT_OPTED_IN },
+  });
 }
 
 function isAuthed(req: NextRequest): boolean {

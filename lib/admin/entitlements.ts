@@ -72,6 +72,11 @@ export const FEATURE_KEYS = [
   "aa.career_library",
   // The /strategy Strategy Room (AA's funder framing, read by slug) — AA-only.
   "aa.strategy_room",
+  // Notification opt-in. The scheduled jobs that EMAIL people (daily
+  // deadline reminders, the Monday digest, meeting reminders to bookers) skip
+  // any org without it. Off by default, like every key: a new tenant gets no
+  // automated email until someone decides it should (pre-SafeSpace item 10).
+  "notify.operator_emails",
 ] as const;
 
 export type FeatureKey = (typeof FEATURE_KEYS)[number];

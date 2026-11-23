@@ -30,7 +30,11 @@ vi.mock("next/headers", () => ({
 /** Minimal chainable PostgREST stand-in: select/eq/order/maybeSingle/await. */
 function fakeClient() {
   return {
-    auth: { getUser: async () => ({ data: { user: state.user } }) },
+    auth: {
+        getUser: async () => ({ data: { user: state.user && { ...state.user, factors: [{ status: "verified" }] } } }),
+        // A verified factor and an aal2 token: these sessions finished two-step login.
+        getSession: async () => ({ data: { session: { access_token: "x.eyJhYWwiOiJhYWwyIn0.s" } } }),
+      },
     from(table: string) {
       let rows = [...(state.db[table] ?? [])];
       const q = {

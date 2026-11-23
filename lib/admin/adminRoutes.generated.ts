@@ -161,6 +161,8 @@ export const ADMIN_ROUTES: readonly string[] = [
   "/admin/students",
   "/admin/students/[id]",
   "/admin/today",
+  "/admin/two-step/enroll",
+  "/admin/two-step/verify",
   "/admin/work/documents",
   "/admin/work/meetings",
   "/admin/work/meetings/[id]",

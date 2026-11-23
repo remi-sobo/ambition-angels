@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
+import { hasVerifiedFactor, jwtAal, twoStepStatus, type TwoStepStatus } from "@/lib/auth/twoStep";
 
 /**
  * Refreshes the Supabase session in middleware and reports whether the
@@ -15,12 +16,14 @@ export async function updateSession(req: NextRequest): Promise<{
    *  few gates cheap enough to check membership/entitlement at the edge. */
   userId: string | null;
   supabase: SupabaseClient | null;
+  /** Two-step login state (lib/auth/twoStep.ts): "ok" only at aal2. */
+  twoStep: TwoStepStatus;
 }> {
   let response = NextResponse.next({ request: req });
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return { response, hasUser: false, userId: null, supabase: null };
+  if (!url || !key) return { response, hasUser: false, userId: null, supabase: null, twoStep: "anonymous" };
 
   const supabase = createServerClient(url, key, {
     cookies: {
@@ -41,5 +44,22 @@ export async function updateSession(req: NextRequest): Promise<{
     data: { user },
   } = await supabase.auth.getUser();
 
-  return { response, hasUser: !!user, userId: user?.id ?? null, supabase: supabase as unknown as SupabaseClient };
+  // The assurance level rides the access token getUser() just validated;
+  // only the token is read from the session, never its cached user.
+  let aal: ReturnType<typeof jwtAal> = null;
+  if (user) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    aal = jwtAal(session?.access_token);
+  }
+  const twoStep = twoStepStatus({ hasUser: !!user, aal, verifiedFactor: hasVerifiedFactor(user) });
+
+  return {
+    response,
+    hasUser: !!user,
+    userId: user?.id ?? null,
+    supabase: supabase as unknown as SupabaseClient,
+    twoStep,
+  };
 }

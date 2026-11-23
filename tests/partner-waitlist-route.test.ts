@@ -15,6 +15,7 @@ let db = mockSupabase([]);
 let sent: Sent[] = [];
 let sendThrows = false;
 
+vi.mock("server-only", () => ({}));
 vi.mock("@supabase/supabase-js", () => ({ createClient: () => db.client }));
 vi.mock("resend", () => ({
   Resend: class {

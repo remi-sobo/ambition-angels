@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getResidentOrgId } from "@/lib/admin/orgs";
 import { privateUrl } from "@/lib/coach/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { intakeMode, sendToBloomOS } from "@/lib/site/bloomos";
 
 // Ambition Coach sign-up (/coach). One form, two kinds: a professional
 // volunteering to coach, or a young adult asking for a coach. Rows land in
@@ -71,6 +72,23 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
+  }
+
+  // INTAKE_MODE=api: BloomOS stores the sign-up and sends BOTH emails, because
+  // the confirmation carries a private coach link only BloomOS can make.
+  if (intakeMode() === "api") {
+    const sent = await sendToBloomOS("coach_signup", {
+      kind, first_name, last_name, email, phone, field, role, company, linkedin,
+      age: ageRaw, school, program, goal, timing, referral, note,
+    });
+    if (sent.outcome === "rejected") return NextResponse.json({ error: sent.error }, { status: 400 });
+    if (sent.outcome === "failed") {
+      return NextResponse.json(
+        { error: "We couldn't save that. Please try again, or email hello@ambitionangels.org." },
+        { status: 500 },
+      );
+    }
+    return NextResponse.json({ success: true });
   }
 
   let token: string;

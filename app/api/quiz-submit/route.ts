@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { adminUrl } from "@/lib/origins";
+import { intakeMode, sendToBloomOS } from "@/lib/site/bloomos";
 
 const getSupabase = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -143,9 +144,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  // Save to Supabase
-  const supabase = getSupabase();
-  const { error: dbError } = await supabase.from("quiz_submissions").insert({
+  // INTAKE_MODE=api: BloomOS stores the result and alerts staff. The quiz
+  // taker's own email below is the website's either way.
+  const viaBloomOS = intakeMode() === "api";
+  if (viaBloomOS) {
+    const sent = await sendToBloomOS("quiz_submission", { answers, audienceMode, careers });
+    if (sent.outcome === "rejected" || sent.outcome === "failed") {
+      console.error("quiz_submission not saved:", sent.outcome);
+    }
+  }
+
+  // Save to Supabase (db mode only; in api mode BloomOS stored it above)
+  const { error: dbError } = viaBloomOS
+    ? { error: null }
+    : await getSupabase().from("quiz_submissions").insert({
     email: answers.email || null,
     teen_name: answers.teenname || null,
     audience: audienceMode,
@@ -184,8 +196,8 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Notification to Remi (non-blocking)
-  try {
+  // Notification to Remi (non-blocking). In api mode BloomOS sends it.
+  if (!viaBloomOS) try {
     const topThree = (Array.isArray(careers) ? careers : [])
       .slice(0, 3)
       .map((c: { title?: string }) => c.title || "—")

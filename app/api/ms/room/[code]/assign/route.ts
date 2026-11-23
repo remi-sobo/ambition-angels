@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { websiteDb } from "@/lib/site/websiteDb";
 import { normalizeClaimCode, ROOM_CODE_LENGTH } from "@/lib/ms/claim";
 import { assignTables, type RoomStudent } from "@/lib/ms/room";
 
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest, { params }: { params: { code: strin
   const body = await req.json().catch(() => ({}));
   const hostToken = typeof body.host_token === "string" ? body.host_token : "";
 
-  const supabase = getSupabaseAdmin();
+  const supabase = websiteDb();
   const { data: room } = await supabase
     .from("ms_rooms")
     .select("id, host_token, expires_at")

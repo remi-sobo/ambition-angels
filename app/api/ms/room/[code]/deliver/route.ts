@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { websiteDb } from "@/lib/site/websiteDb";
 import { normalizeClaimCode, ROOM_CODE_LENGTH } from "@/lib/ms/claim";
 import { generateText } from "@/lib/ai/gateway";
 
@@ -152,7 +152,7 @@ export async function POST(req: NextRequest, { params }: { params: { code: strin
   const body = await req.json().catch(() => ({}));
   const hostToken = typeof body.host_token === "string" ? body.host_token : "";
 
-  const supabase = getSupabaseAdmin();
+  const supabase = websiteDb();
   const { data: room } = await supabase
     .from("ms_rooms")
     .select("id, room_code, host_email, host_token")

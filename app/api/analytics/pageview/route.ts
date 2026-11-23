@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { websiteDb } from "@/lib/site/websiteDb";
 
-const getSupabase = () =>
-  createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
 
 // Page views are written from two places per visit:
 //   1. on mount   → no duration_seconds yet
@@ -36,7 +31,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    const supabase = getSupabase();
+    const supabase = websiteDb();
     await supabase.from("page_views").insert({
       page,
       referrer: typeof referrer === "string" ? referrer : null,

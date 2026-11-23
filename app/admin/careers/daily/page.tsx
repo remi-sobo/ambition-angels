@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { websiteDb } from "@/lib/site/websiteDb";
 import { laDateString } from "@/lib/games/guess";
 import PageHeader from "../../_components/PageHeader";
 import StatCard from "../../_components/StatCard";
@@ -18,7 +18,7 @@ const HORIZON_DAYS = 45;
 export default async function DailyPage() {
   const roleGate = await requirePagePermission("program.read", "Career library");
   if (!roleGate.ok) return roleGate.page;
-  const supabase = getSupabaseAdmin();
+  const supabase = websiteDb();
   const today = laDateString();
   const horizon = new Date(Date.parse(today) + HORIZON_DAYS * 86_400_000)
     .toISOString()

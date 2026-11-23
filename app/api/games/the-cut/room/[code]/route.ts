@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { websiteDb } from "@/lib/site/websiteDb";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { toPublicState, quorumNeeded } from "@/lib/games/the-cut";
 import { loadRoom } from "./_room";
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest, { params }: { params: { code: string
   if (!loaded) return NextResponse.json({ error: "Room not found" }, { status: 404 });
   const { room, expired } = loaded;
 
-  const supabase = getSupabaseAdmin();
+  const supabase = websiteDb();
   const [{ count: joined }, { count: votesIn }] = await Promise.all([
     supabase.from("cut_players").select("*", { count: "exact", head: true }).eq("room_id", room.id),
     supabase

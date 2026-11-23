@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { websiteDb } from "@/lib/site/websiteDb";
 import { normalizeClaimCode, CLAIM_CODE_LENGTH } from "@/lib/ms/claim";
 import DeckCodeEntry from "../DeckCodeEntry";
 import SendToAdult from "./SendToAdult";
@@ -23,7 +23,7 @@ export default async function DeckPage({ params }: { params: { code: string } })
     return <DeckCodeEntry wrongCode={params.code.slice(0, 12)} />;
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = websiteDb();
   const { data: session } = await supabase
     .from("ms_sessions")
     .select("id, claim_code")

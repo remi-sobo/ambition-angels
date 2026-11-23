@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { websiteDb } from "@/lib/site/websiteDb";
 import { NATIONAL_MEDIAN, fmtUsd } from "@/lib/ms/render";
 import RoomBanner from "./RoomBanner";
 
@@ -24,7 +24,7 @@ const fmtPay = (n: number | null) => (n == null ? "" : `$${n.toLocaleString("en-
 export default async function ResultsPage({ params }: { params: { session: string } }) {
   if (!/^[0-9a-f-]{36}$/i.test(params.session)) notFound();
 
-  const supabase = getSupabaseAdmin();
+  const supabase = websiteDb();
   const { data: session } = await supabase
     .from("ms_sessions")
     .select("id, claim_code, ranked_careers, summary_text, created_at, handle, room_id, ms_rooms(room_code)")

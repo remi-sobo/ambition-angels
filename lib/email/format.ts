@@ -1,5 +1,5 @@
 import { formatInTimeZone } from "date-fns-tz";
-import { marketingOrigin } from "@/lib/origins";
+import { appOrigin } from "@/lib/origins";
 
 /** "Thursday, May 21, 2026" in the given IANA timezone. */
 export function formatDateLong(date: Date, tz: string): string {
@@ -34,7 +34,7 @@ export function escapeHtml(s: string): string {
 
 /** Public URL of the manage-booking page for a given cancel token. */
 export function manageUrl(token: string): string {
-  return `${marketingOrigin()}/meet/booked/${token}`;
+  return `${appOrigin()}/meet/booked/${token}`;
 }
 
 /**

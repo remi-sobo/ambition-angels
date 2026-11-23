@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { isOnRoster } from "@/lib/board/auth";
 import { audit } from "@/lib/audit";
-import { marketingOrigin } from "@/lib/origins";
+import { appOrigin } from "@/lib/origins";
 
 /**
  * Board portal sign-in. Magic link only (spec §4).
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
   // silently falls back to the project's Site URL — so the director clicks her
   // link, gets a valid session, and lands in BloomOS instead of the portal
   // with no error anywhere. lib/origins.ts exists for exactly this reason.
-  const origin = marketingOrigin();
+  const origin = appOrigin();
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {

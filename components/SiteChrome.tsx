@@ -43,6 +43,10 @@ export default function SiteChrome({
       pathname?.startsWith("/ygb") ||
       pathname?.startsWith("/shannon") ||
       pathname?.startsWith("/strategy") ||
+      // BloomOS surfaces served on app.bloomos.org (repo split §6c). The
+      // marketing nav's links don't exist on that host.
+      pathname?.startsWith("/meet") ||
+      pathname?.startsWith("/coach/me") ||
       pathname?.startsWith("/update/koshland")) ??
     false;
 

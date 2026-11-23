@@ -3,6 +3,7 @@ import { Resend } from "resend";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { adminUrl } from "@/lib/origins";
+import { intakeMode, sendToBloomOS } from "@/lib/site/bloomos";
 
 // Postgres "relation does not exist" — surfaced if the create_demoday_signups
 // migration hasn't been applied. Treated as a clean 503 so the form shows a
@@ -82,6 +83,19 @@ export async function POST(req: NextRequest) {
     note: str(body.note) || null,
     source: "Demo Day Signup",
   };
+
+  // INTAKE_MODE=api: BloomOS stores the sign-up and emails Remi.
+  if (intakeMode() === "api") {
+    const { first_name, last_name, email: em, phone, company, title, note } = row;
+    const sent = await sendToBloomOS("demoday_signup", {
+      first_name, last_name, email: em, phone, company, title, engagement, note,
+    });
+    if (sent.outcome === "rejected") return NextResponse.json({ error: sent.error }, { status: 400 });
+    if (sent.outcome === "failed") {
+      return NextResponse.json({ error: "Failed to save. Please try again." }, { status: 500 });
+    }
+    return NextResponse.json({ success: true });
+  }
 
   const supabase = getSupabaseAdmin();
   const { error: dbError } = await supabase.from("demoday_signups").insert(row);

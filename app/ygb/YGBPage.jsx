@@ -493,7 +493,7 @@ function RegistrationForm({ earlyAccess }) {
               <span style={{ fontFamily:"'Barlow',sans-serif", fontSize:17, color:C.white }}>{r.name}</span>
               <span style={{ fontFamily:"'Bebas Neue',sans-serif", letterSpacing:"0.12em", fontSize:14,
                 color: r.status === "confirmed" ? C.gold : "#bbb" }}>
-                {r.status === "confirmed" ? "✓ CONFIRMED" : "WAITLISTED"}
+                {r.status === "confirmed" ? "✓ CONFIRMED" : r.status === "received" ? "RECEIVED" : "WAITLISTED"}
               </span>
             </div>
           ))}
@@ -501,7 +501,9 @@ function RegistrationForm({ earlyAccess }) {
         <p style={{ fontFamily:"'Barlow',sans-serif", fontSize:16, color:C.white, marginBottom:8 }}>
           {allConfirmed
             ? `Registered for YGB Creators Camp 2026.`
-            : `The camp is filling up — any waitlisted campers will be contacted the moment a spot opens.`}
+            : results.some(r => r.status === "received")
+              ? `We got your registration. We'll email you within a day to confirm each camper's spot.`
+              : `The camp is filling up — any waitlisted campers will be contacted the moment a spot opens.`}
         </p>
         <p style={{ fontFamily:"'Barlow',sans-serif", fontSize:14, color:C.muted }}>
           We&apos;ll follow up at {shared.parent_email}.

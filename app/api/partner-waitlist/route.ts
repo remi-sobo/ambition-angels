@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { adminUrl } from "@/lib/origins";
+import { intakeMode, sendToBloomOS } from "@/lib/site/bloomos";
 
 const getSupabase = () =>
   createClient(
@@ -141,9 +142,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  // Save to Supabase
-  const supabase = getSupabase();
-  const { error: dbError } = await supabase.from("partner_waitlist").insert({
+  // INTAKE_MODE=api: BloomOS stores the contact and alerts staff. The
+  // confirmations to the person below are the website's either way.
+  const viaBloomOS = intakeMode() === "api";
+  if (viaBloomOS) {
+    const sent = await sendToBloomOS("company_contact", {
+      first_name, last_name: last_name || "", email, role, teen_count: teen_count || null,
+      company, role_category, interest, problem_to_solve,
+    });
+    if (sent.outcome === "rejected") return NextResponse.json({ error: sent.error }, { status: 400 });
+    if (sent.outcome === "failed") {
+      return NextResponse.json({ error: "Failed to save. Please try again." }, { status: 500 });
+    }
+  }
+
+  // Save to Supabase (db mode only; in api mode BloomOS stored it above)
+  const { error: dbError } = viaBloomOS
+    ? { error: null }
+    : await getSupabase().from("partner_waitlist").insert({
     first_name,
     last_name: last_name || "",
     email,
@@ -189,8 +205,8 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Notification to Remi (non-blocking)
-  try {
+  // Notification to Remi (non-blocking). In api mode BloomOS sends it.
+  if (!viaBloomOS) try {
     const subjectPrefix = isCorporate
       ? "New company inquiry"
       : isStudent

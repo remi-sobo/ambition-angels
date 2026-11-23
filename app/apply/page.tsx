@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getResidentOrgId } from "@/lib/admin/orgs";
+import { fetchOpenCohorts, intakeMode } from "@/lib/site/bloomos";
 import ApplyForm, { type OpenCohort } from "./ApplyForm";
 
 export const metadata: Metadata = {
@@ -19,14 +21,28 @@ const dotTexture = {
   backgroundSize: "22px 22px",
 };
 
-export default async function ApplyPage() {
+/**
+ * The programs to offer. INTAKE_MODE=api asks BloomOS, which returns only
+ * this org's open cohorts. The db path reads them directly, scoped to the
+ * resident org (it used to read every tenant's open cohorts).
+ */
+async function loadCohorts(): Promise<OpenCohort[]> {
+  if (intakeMode() === "api") {
+    const cohorts = await fetchOpenCohorts();
+    return cohorts ?? [];
+  }
   const { data } = await getSupabaseAdmin()
     .from("cohorts")
     .select("id, name")
+    .eq("org_id", await getResidentOrgId())
     .eq("accepting_applications", true)
     .in("status", ["planning", "active"])
     .order("start_date", { ascending: true, nullsFirst: false });
-  const cohorts = (data ?? []) as OpenCohort[];
+  return (data ?? []) as OpenCohort[];
+}
+
+export default async function ApplyPage() {
+  const cohorts = await loadCohorts();
 
   return (
     <main className="bg-ink min-h-screen" style={dotTexture}>

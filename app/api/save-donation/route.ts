@@ -4,6 +4,7 @@ import { Resend } from "resend";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { adminUrl } from "@/lib/origins";
 import { getResidentOrgId } from "@/lib/admin/orgs";
+import { intakeMode, sendToBloomOS } from "@/lib/site/bloomos";
 
 const getSupabase = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -64,6 +65,18 @@ export async function POST(req: NextRequest) {
   // Support both new (firstName/lastName) and old (name) shapes
   const resolvedFirst = firstName ?? (name ? name.split(" ")[0] : null) ?? null;
   const resolvedLast  = lastName  ?? (name ? name.split(" ").slice(1).join(" ") : null) ?? null;
+
+  // INTAKE_MODE=api: BloomOS records the gift (upsert by Stripe payment id)
+  // and emails Remi. The donor's receipt is send-receipt, unchanged.
+  if (intakeMode() === "api") {
+    const sent = await sendToBloomOS("donation", {
+      firstName: resolvedFirst, lastName: resolvedLast, email: email || null,
+      amount: Number(amount), recurring: !!recurring, stripePaymentId, subscriptionId: subscriptionId ?? null,
+    });
+    if (sent.outcome === "rejected") return NextResponse.json({ error: sent.error }, { status: 400 });
+    if (sent.outcome === "failed") return NextResponse.json({ error: "Failed to save." }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
 
   // This public form lives on the resident org's website, so the org is a
   // deployment fact — stamped explicitly, never left to a column default.

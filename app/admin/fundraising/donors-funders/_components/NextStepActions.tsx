@@ -14,6 +14,11 @@ import { useSaveAction } from "@/app/admin/_lib/useSaveAction";
  * showed). Mark done, Reschedule and Change all PATCH that ask through
  * saveAction, then the page re-reads. No optimistic update: the bar changes
  * when the server says yes, and a failure says so in a toast.
+ *
+ * Also used by the person preview in global search (EntityProfile) and the
+ * phone lookup card: `onSaved` replaces the page re-read where the bar is not
+ * on a server-rendered record, and `readOnly` (no fundraising.write) drops
+ * every action so the step shows without Mark done or Change.
  */
 export default function NextStepActions({
   oppId,
@@ -23,6 +28,8 @@ export default function NextStepActions({
   meta,
   today,
   emptyAction,
+  readOnly = false,
+  onSaved,
 }: {
   /** The ask the step belongs to; null when the donor has no open ask. */
   oppId: string | null;
@@ -33,6 +40,10 @@ export default function NextStepActions({
   today: string;
   /** What to offer when there is no open ask at all (a link to Pipeline). */
   emptyAction?: ReactNode;
+  /** No write permission: show the step, offer nothing. */
+  readOnly?: boolean;
+  /** Called after a save the server accepted, in place of router.refresh(). */
+  onSaved?: () => void;
 }) {
   const router = useRouter();
   const save = useSaveAction();
@@ -42,13 +53,14 @@ export default function NextStepActions({
   const [date, setDate] = useState(dueISO ?? today);
 
   async function patch(body: Record<string, unknown>, success: string) {
-    if (!oppId || busy) return false;
+    if (!oppId || busy || readOnly) return false;
     setBusy(true);
     const r = await save({ request: { url: `/api/admin/opportunities/${oppId}`, method: "PATCH", body }, success });
     setBusy(false);
     if (r.ok) {
       setDialog(null);
-      router.refresh();
+      if (onSaved) onSaved();
+      else router.refresh();
     }
     return r.ok;
   }
@@ -59,7 +71,7 @@ export default function NextStepActions({
     setDialog(d);
   };
 
-  const actions: [ReactNode] | [ReactNode, ReactNode] | [ReactNode, ReactNode, ReactNode] | undefined = !oppId
+  const actions: [ReactNode] | [ReactNode, ReactNode] | [ReactNode, ReactNode, ReactNode] | undefined = readOnly ? undefined : !oppId
     ? emptyAction
       ? [emptyAction]
       : undefined

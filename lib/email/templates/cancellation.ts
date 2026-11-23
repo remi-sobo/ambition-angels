@@ -1,6 +1,6 @@
 import type { Booking, MeetingType } from "../../database.types";
 import { escapeHtml, htmlShell } from "../format";
-import { marketingOrigin } from "@/lib/origins";
+import { appOrigin } from "@/lib/origins";
 
 export function buildCancellationEmail(args: {
   booking: Booking;
@@ -9,7 +9,7 @@ export function buildCancellationEmail(args: {
 }): { subject: string; text: string; html: string } {
   const { booking, meetingType, host } = args;
   const firstName = booking.attendee_name.split(" ")[0];
-  const meetHome = `${marketingOrigin()}/meet`;
+  const meetHome = `${appOrigin()}/meet`;
 
   const subject = `Cancelled: ${meetingType.name} with ${host.firstName}`;
 

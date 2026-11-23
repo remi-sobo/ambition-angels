@@ -1,5 +1,9 @@
 # Cron restoration — inventory, blast radius, diagnosis, staged plan (2026-09-03)
 
+> **Current state lives in §10 (2026-11-21).** Sections 1 to 9 are the
+> September record and are kept as history; the schedules in the §1 table
+> are the ones that were in `vercel.json` then, not now.
+
 Read-and-report. No environment variable, `vercel.json` entry, or database row
 was changed. Companion to `docs/interaction-capture-diagnostic.md` (which found
 the 401s) and `docs/unapplied-migrations-triage.md`.
@@ -345,3 +349,53 @@ The three orphaned `running` rows (section 6) are closed by
 `docs/ops/2026-09-03-mark-orphaned-sync-jobs-failed.sql`, a one-off data fix
 pasted by hand after review; it is not a migration. `gmail_sync_jobs`
 `236a6e7a` stays `running` on purpose so the first authenticated tick resumes it.
+
+## 10. Current state (2026-11-21, pre-SafeSpace item 10)
+
+`vercel.json` is the source of truth; `tests/cron-schedule.test.ts` fails CI
+when a route under `app/api/cron/` is neither scheduled there nor on that
+test's "intentionally unscheduled" list with a reason. Times are UTC; Remi is
+in Pacific (UTC-8 in winter, UTC-7 in summer, so a 15:07 UTC job lands at
+7:07 or 8:07 local). Minutes are off the hour on purpose so the jobs do not
+queue behind everyone else's top-of-hour crons.
+
+| Route | Schedule (UTC) | Pacific (winter) | Sends email? | Gate |
+|---|---|---|---|---|
+| `comms-queue` | `* * * * *` | every minute | Comms sends | per-campaign |
+| `calendar-sync` | `*/15 * * * *` | every 15 min | no | none |
+| `gmail-sync` | `45 * * * *` | hourly | no | env owner |
+| `calendar-watch-renew` | `0 8 * * *` | 00:00 | no | inert without `APP_ORIGIN` |
+| `metric-snapshots` | `0 13 * * *` | 05:00 | no | none |
+| `stewardship-milestones` | `37 14 * * *` | 06:37 | **no**, creates `ops_tasks` only | none |
+| `daily-reminders` | `7 15 * * *` | 07:07 | yes, operators of the org | `notify.operator_emails` |
+| `weekly-digest` | `23 15 * * 1` | Mon 07:23 | yes, operators of the resident org | `notify.operator_emails` |
+| `meet-reminders` | `12 * * * *` | hourly at :12 | yes, the booker (Gmail) | `notify.operator_emails` on the booking's org |
+| `hubspot-sync` | **unscheduled** | | no | see below |
+| `journeys` | **unscheduled** | | yes, constituents (Resend) | see below |
+
+**The opt-in.** The three jobs that email people send only for orgs that hold
+the `notify.operator_emails` entitlement (`lib/cron/emailOptIn.ts`). Any other
+org is skipped before its rows are read, and a failed read of the opt-in sends
+nothing (500). `supabase/migrations/seed_operator_email_optin.sql` enables it
+for Ambition Angels only (by slug). It must be applied **before** this code
+deploys, or Ambition Angels gets no reminders either. Turning email on for
+another tenant is one `org_entitlements` row, written by the operator.
+
+The §1 concern about recipients is closed: `getOperatorEmails(orgId)` reads
+only that org's owners and admins, and `daily-reminders` fences every read to
+the org (`tests/operator-email-scope.test.ts`).
+
+**Still unscheduled, on purpose:**
+
+- `hubspot-sync`: its last runs (July to September) ended `partial` or
+  `failed`, and no run has ever finished `completed`. The operator runs it once
+  by hand, watching, before it gets a schedule. What that run needs is in the
+  PR description for this change.
+- `journeys`: no journey is active, and its Comms home arrives in V4 Stage D.
+  The code stays. When it is scheduled it must also be gated (it emails
+  constituents through Resend).
+
+**Before the first tick** of the four new schedules: confirm `CRON_SECRET` is
+set for Production in Vercel (§3), and that the Resend sender domain is
+verified for the operator emails (the headline, fact 1). Meeting reminders go through
+the Gmail token and do not depend on Resend.

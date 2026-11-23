@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getResidentOrgId } from "@/lib/admin/orgs";
 import { sendOperatorEmailTo, getOperatorEmails, operatorEmailShell, fmtUsd } from "@/lib/email/operator";
 import { refreshAllPlanMetrics } from "@/lib/admin/plan/metrics";
+import { loadOperatorEmailOrgs, NOT_OPTED_IN } from "@/lib/cron/emailOptIn";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 import { generateBriefing } from "@/lib/briefing";
 import {
@@ -18,7 +19,9 @@ import { OPEN_STAGE_LIST } from "@/lib/fundraising/stage-sets";
  * data path.
  *
  * Auth via Bearer CRON_SECRET. Always sends — Monday silence reads as
- * breakage, so a quiet week says so explicitly.
+ * breakage, so a quiet week says so explicitly. Except when the org has not
+ * opted in to automated email (`notify.operator_emails`, lib/cron/emailOptIn.ts):
+ * then nothing is read, generated or sent.
  */
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -49,6 +52,13 @@ export async function GET(req: NextRequest) {
   // service-role client bypasses RLS — every read below scopes to that org so
   // other tenants' gifts/deadlines never land in this inbox.
   const orgId = await getResidentOrgId();
+  const optIn = await loadOperatorEmailOrgs(supabase);
+  if (!optIn.ok) {
+    return NextResponse.json({ error: optIn.error }, { status: 500 });
+  }
+  if (!optIn.orgIds.has(orgId)) {
+    return NextResponse.json({ sent: 0, recipients: 0, skipped: NOT_OPTED_IN });
+  }
   const weekAgo = daysAgo(7);
   const today = daysAgo(0);
   const horizon = daysAhead(14);

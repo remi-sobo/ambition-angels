@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 import { ACTIVE_ORG_COOKIE, sessionOrgHasEntitlement } from "@/lib/admin/activeOrg";
+import { twoStepApiRefusal, twoStepPageRedirect } from "@/lib/auth/twoStep";
 import { isUnknownAdminPath } from "@/lib/admin/adminRoutes";
 
 /**
@@ -40,6 +41,13 @@ import { isUnknownAdminPath } from "@/lib/admin/adminRoutes";
  *     closed: if STRATEGY_ROOM_PASSWORD is unset, only those users can view.
  *     The page itself is reachable only past this gate, so the gate IS the
  *     full check (funders arrive with the password and no session).
+ *
+ * Two-step login (pre-SafeSpace item D, lib/auth/twoStep.ts) applies to every
+ * signed-in user on every /admin and /board page and every /api/admin,
+ * /api/reed and /api/board route: a session below aal2 is sent to the enroll
+ * screen (no verified factor yet) or the verify screen (has one); API routes
+ * get a JSON 401 with code "two_step_required" instead of a redirect. The
+ * session path into /demoday and /strategy also needs aal2. No bypass flag.
  */
 
 // Hosts that serve only the admin app. The PUBLIC_ADMIN_PATHS assets below
@@ -109,6 +117,8 @@ async function isAaPageAuthed(
   const cookie = req.cookies.get(cookieName)?.value;
   if (passwordEnv && cookie === passwordEnv) return true;
   if (!session.userId || !session.supabase) return false;
+  // A session that has not finished two-step login is not a session here.
+  if (session.twoStep !== "ok") return false;
   return sessionOrgHasEntitlement(
     session.supabase,
     session.userId,
@@ -214,6 +224,12 @@ function demodayGateHtml(error: boolean): string {
 </html>`;
 }
 
+/** Carry the refreshed Supabase cookies onto a response we build ourselves. */
+function withSessionCookies(res: NextResponse, from: NextResponse): NextResponse {
+  for (const c of from.cookies.getAll()) res.cookies.set(c);
+  return res;
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
@@ -240,7 +256,12 @@ export async function middleware(req: NextRequest) {
   // gates or redirects for API paths — the handler does its own authz, and an
   // unauthenticated API call must get its own JSON 401, never an HTML bounce.
   if (pathname.startsWith("/api/")) {
-    const { response } = await updateSession(req);
+    const { response, twoStep } = await updateSession(req);
+    // Signed in but short of aal2: a clear JSON 401, never an HTML bounce.
+    const refusal = twoStepApiRefusal(twoStep, pathname);
+    if (refusal) {
+      return withSessionCookies(NextResponse.json(refusal.body, { status: refusal.status }), response);
+    }
     return response;
   }
 
@@ -248,6 +269,7 @@ export async function middleware(req: NextRequest) {
   // straight through on every other host — marketing behavior is unchanged,
   // and updateSession() never runs where it didn't before this guard existed.
   const gated =
+    pathname === "/admin" ||
     pathname.startsWith("/admin/") ||
     pathname === "/board" ||
     pathname.startsWith("/board/") ||
@@ -260,6 +282,25 @@ export async function middleware(req: NextRequest) {
   // enforcement lives in route handlers + RLS.
   const session = await updateSession(req);
   const { response, hasUser } = session;
+
+  // ── Two-step login gate ───────────────────────────────────────────────
+  // Every /admin and /board page (bar the pre-auth PWA assets): a signed-in
+  // session below aal2 goes to enroll or verify, carrying where it was
+  // headed in ?next. Anonymous requests fall through to the gates below.
+  const isAdminOrBoard =
+    pathname === "/admin" ||
+    pathname.startsWith("/admin/") ||
+    pathname === "/board" ||
+    pathname.startsWith("/board/");
+  if (isAdminOrBoard && !PUBLIC_ADMIN_PATHS.has(pathname)) {
+    const target = twoStepPageRedirect(
+      session.twoStep,
+      pathname,
+      req.nextUrl.search,
+      req.nextUrl.searchParams.get("next"),
+    );
+    if (target) return withSessionCookies(NextResponse.redirect(new URL(target, req.url)), response);
+  }
 
   // ── Demo-day lookbook gate ────────────────────────────────────────────
   if (DEMODAY_PATHS.has(pathname)) {
@@ -348,6 +389,8 @@ export const config = {
     // authenticate with a secret, not a session, so they're deliberately out.
     "/api/admin/:path*",
     "/api/reed/:path*",
+    // Board portal APIs: refreshed, and held to the two-step rule.
+    "/api/board/:path*",
     "/demoday",
     "/demoday/index.html",
     "/strategy",

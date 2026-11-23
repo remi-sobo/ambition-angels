@@ -34,6 +34,8 @@ export type Member = {
   /** Never signed in: the invite is still open. */
   invited: boolean;
   lastSignIn: string | null;
+  /** Has at least one verified two-step authenticator. */
+  twoStep: boolean;
 };
 
 type MembershipRow = { user_id: string; role: MemberRole; created_at: string };
@@ -80,6 +82,7 @@ export async function listMembers(orgId: string): Promise<{ members: Member[]; e
         joinedAt: r.created_at,
         invited: !!u && !u.last_sign_in_at,
         lastSignIn: u?.last_sign_in_at ?? null,
+        twoStep: (u?.factors ?? []).some((f) => f.status === "verified"),
       };
     }),
   };
@@ -156,4 +159,25 @@ export async function restoreOwner(orgId: string, userId: string): Promise<void>
   await createServerSupabase()
     .from("memberships")
     .upsert({ user_id: userId, org_id: orgId, role: "owner" }, { onConflict: "user_id,org_id" });
+}
+
+/**
+ * Reset a member's two-step login: delete every authenticator on their
+ * account through the auth admin API, so their open sessions drop to the
+ * enroll screen (lib/auth/twoStep.ts: no factor means enroll, even at aal2)
+ * and they set one up again. Callers MUST have passed
+ * requirePermission("members.manage") and checkTwoStepReset for the ACTIVE
+ * org. Returns how many factors went, or an error sentence.
+ */
+export async function resetTwoStep(userId: string): Promise<{ ok: true; removed: number } | { ok: false; error: string }> {
+  const admin = getSupabaseAdmin().auth.admin.mfa;
+  const { data, error } = await admin.listFactors({ userId });
+  if (error || !data) return { ok: false, error: error?.message ?? "no factor list" };
+  let removed = 0;
+  for (const f of data.factors) {
+    const { error: delErr } = await admin.deleteFactor({ id: f.id, userId });
+    if (delErr) return { ok: false, error: delErr.message };
+    removed += 1;
+  }
+  return { ok: true, removed };
 }

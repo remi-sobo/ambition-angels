@@ -12,12 +12,18 @@
 //   V4_LOG_DIR   default e2e/v4/.logs
 //   V4_PERSIST   1 = apply writes to the in-memory store (default: discard)
 //   V4_DELAY_MS  delay every REST read by N ms (loading-state captures)
+//   V4_MFA       two-step login state of the signed-in user:
+//                aal2 (default: has an authenticator, sign-in lands at aal2,
+//                so every admin page renders as before) | verify (has one,
+//                sign-in lands at aal1 → the verify screen) | enroll (none →
+//                the enroll screen). Any 6-digit code verifies except 000000.
 //   V4_TWO_ORG   1 = two orgs in one store (the demo org + "Lanternfield Youth
 //                Alliance (demo)", fixtures/index.mjs buildTwoOrgFixtures), with
 //                RLS emulated for session-client reads (see rlsFilter below)
 //   V4_ORG       a (default) | b: which org's owner is signed in (two-org mode)
 // Runtime control (no restart): POST /__mock/config with JSON
-//   { delayMs, delayPattern, failWrite, failRead, role, profile, org, twoOrg }
+//   { delayMs, delayPattern, failWrite, failRead, role, profile, org, twoOrg, mfa }
+//   (setting mfa also resets the user's authenticators to match it)
 //   failWrite/failRead: a table name, an rpc name, or "*". GET /__mock/config reads it.
 //   GET /__mock/coverage returns the coverage log so far.
 
@@ -44,6 +50,7 @@ const config = {
   failWrite: null,
   failRead: null,
   persist: process.env.V4_PERSIST === "1",
+  mfa: process.env.V4_MFA || "aal2",
   twoOrg: process.env.V4_TWO_ORG === "1",
   org: process.env.V4_ORG || "a",
 };
@@ -142,6 +149,31 @@ function scheduleFlush() {
 }
 
 // ── auth ────────────────────────────────────────────────────────────────────
+// Two-step login (lib/auth/twoStep.ts): the demo user's authenticators, and
+// whether the current session has passed the second step.
+let factors = [];
+let sessionAal = "aal1";
+function resetMfa() {
+  factors =
+    config.mfa === "enroll"
+      ? []
+      : [{ id: "f0000000-0000-4000-8000-000000000001", friendly_name: "Authenticator app", factor_type: "totp", status: "verified", created_at: "2026-11-02T17:00:00Z", updated_at: "2026-11-02T17:00:00Z" }];
+  sessionAal = config.mfa === "aal2" ? "aal2" : "aal1";
+}
+resetMfa();
+// A made-up QR-looking SVG (deterministic squares); not scannable.
+function fakeQrSvg(seed) {
+  const n = 21;
+  let cells = "";
+  const h = crypto.createHash("sha256").update(seed).digest();
+  for (let y = 0; y < n; y++)
+    for (let x = 0; x < n; x++) {
+      const finder = (x < 7 && y < 7) || (x > 13 && y < 7) || (x < 7 && y > 13);
+      const on = finder ? (x % 6 === 0 || y % 6 === 0 || (x % 7 > 1 && x % 7 < 5 && y % 7 > 1 && y % 7 < 5) || x === 20 || y === 20 || x === 14 || y === 14) : (h[(y * n + x) % 32] >> (x % 8)) & 1;
+      if (on) cells += `<rect x="${x}" y="${y}" width="1" height="1"/>`;
+    }
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${n} ${n}" shape-rendering="crispEdges"><rect width="${n}" height="${n}" fill="#fff"/><g fill="#000">${cells}</g></svg>`;
+}
 const b64u = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
 export function fakeJwt(payload) {
   return `${b64u({ alg: "HS256", typ: "JWT" })}.${b64u(payload)}.sig`;
@@ -169,12 +201,13 @@ function authUser() {
     identities: [],
     created_at: "2026-01-05T16:00:00Z",
     updated_at: new Date().toISOString(),
+    factors,
   };
 }
 function session() {
   const exp = Math.floor(Date.now() / 1000) + 3600 * 24 * 365;
   return {
-    access_token: fakeJwt({ sub: who.user.id, role: "authenticated", aud: "authenticated", email: who.user.email, aal: "aal2", amr: [{ method: "password", timestamp: Math.floor(Date.now() / 1000) }, { method: "totp", timestamp: Math.floor(Date.now() / 1000) }], exp }),
+    access_token: fakeJwt({ sub: who.user.id, role: "authenticated", aud: "authenticated", email: who.user.email, exp, aal: sessionAal, amr: [{ method: "password", timestamp: Math.floor(Date.now() / 1000) }].concat(sessionAal === "aal2" ? [{ method: "totp", timestamp: Math.floor(Date.now() / 1000) }] : []) }),
     token_type: "bearer",
     expires_in: 3600 * 24 * 365,
     expires_at: exp,
@@ -526,6 +559,7 @@ const server = http.createServer(async (req, res) => {
         delete body.reset;
         Object.assign(config, body);
         if (needRebuild) rebuild();
+        if (body.mfa) resetMfa();
       }
       return send(res, 200, config);
     }
@@ -536,16 +570,64 @@ const server = http.createServer(async (req, res) => {
     if (p.startsWith("/auth/v1/")) {
       const sub = p.slice("/auth/v1/".length);
       const authBody = await readBody(req);
-      if (sub === "token") return send(res, 200, session());
+      if (sub === "token") {
+        // A fresh password sign-in starts at aal1 unless the mock is set to
+        // aal2; a refresh keeps whatever the session already reached.
+        if (url.searchParams.get("grant_type") === "password") sessionAal = config.mfa === "aal2" ? "aal2" : "aal1";
+        return send(res, 200, session());
+      }
+      // MFA (TOTP): enroll, challenge, verify, unenroll for the demo user.
+      if (sub === "factors" && req.method === "POST") {
+        const b = JSON.parse(authBody || "{}");
+        if (factors.some((f) => f.friendly_name === b.friendly_name))
+          return send(res, 422, { code: 422, error_code: "mfa_factor_name_conflict", msg: "A factor with the friendly name already exists" });
+        const f = { id: crypto.randomUUID(), friendly_name: b.friendly_name ?? null, factor_type: "totp", status: "unverified", created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+        factors.push(f);
+        const secret = "JBSWY3DPEHPK3PXPMOCKV4ANEXAMPLE";
+        return send(res, 200, { id: f.id, type: "totp", friendly_name: f.friendly_name, totp: { qr_code: fakeQrSvg(f.id), secret, uri: `otpauth://totp/BloomOS:${DEMO.user.email}?secret=${secret}&issuer=BloomOS` } });
+      }
+      const fm = sub.match(/^factors\/([^/]+)(?:\/(challenge|verify))?$/);
+      if (fm) {
+        const f = factors.find((x) => x.id === fm[1]);
+        if (!f) return send(res, 404, { code: 404, error_code: "mfa_factor_not_found", msg: "Factor not found" });
+        if (req.method === "DELETE") {
+          factors = factors.filter((x) => x.id !== f.id);
+          return send(res, 200, { id: f.id });
+        }
+        if (fm[2] === "challenge") return send(res, 200, { id: crypto.randomUUID(), type: "totp", expires_at: Math.floor(Date.now() / 1000) + 300 });
+        if (fm[2] === "verify") {
+          const b = JSON.parse(authBody || "{}");
+          if (!/^\d{6}$/.test(b.code || "") || b.code === "000000")
+            return send(res, 422, { code: 422, error_code: "mfa_verification_failed", msg: "Invalid TOTP code entered" });
+          f.status = "verified";
+          sessionAal = "aal2";
+          return send(res, 200, session());
+        }
+      }
       // Auth admin API (Settings → People and roles): team members as auth
       // users; the last one has never signed in, so the screen shows an open
       // invite. POST /invite returns a new invented user.
+      // Two-step: the demo user's own factors; everyone else has one
+      // verified authenticator except the second person and the open invite.
+      const teamFactors = (p, i) =>
+        p.id === DEMO.user.id ? factors : i === 1 || i === DEMO.team.length - 1 ? [] : [{ id: `f${String(i).padStart(7, "0")}-0000-4000-8000-00000000000${i % 10}`, friendly_name: "Authenticator app", factor_type: "totp", status: "verified", created_at: "2026-11-02T17:00:00Z", updated_at: "2026-11-02T17:00:00Z" }];
       const teamUser = (p, i) => ({
         id: p.id, aud: "authenticated", role: "authenticated", email: p.email,
         created_at: "2024-08-01T17:00:00Z",
         last_sign_in_at: i === who.team.length - 1 ? null : new Date(Date.now() - i * 86400000).toISOString(),
         app_metadata: {}, user_metadata: {},
+        factors: teamFactors(p, i),
       });
+      const am = sub.match(/^admin\/users\/([^/]+)\/factors(?:\/([^/]+))?$/);
+      if (am) {
+        const i = DEMO.team.findIndex((p) => p.id === am[1]);
+        if (i < 0) return send(res, 404, { code: 404, msg: "User not found" });
+        if (req.method === "DELETE") {
+          if (am[1] === DEMO.user.id) factors = factors.filter((x) => x.id !== am[2]);
+          return send(res, 200, { id: am[2] });
+        }
+        return send(res, 200, teamFactors(DEMO.team[i], i));
+      }
       if (sub.startsWith("admin/users/")) {
         const id = sub.slice("admin/users/".length);
         const i = who.team.findIndex((p) => p.id === id);

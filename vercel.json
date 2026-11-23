@@ -19,6 +19,22 @@
     {
       "path": "/api/cron/comms-queue",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/stewardship-milestones",
+      "schedule": "37 14 * * *"
+    },
+    {
+      "path": "/api/cron/daily-reminders",
+      "schedule": "7 15 * * *"
+    },
+    {
+      "path": "/api/cron/weekly-digest",
+      "schedule": "23 15 * * 1"
+    },
+    {
+      "path": "/api/cron/meet-reminders",
+      "schedule": "12 * * * *"
     }
   ]
 }

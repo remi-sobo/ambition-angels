@@ -54,14 +54,20 @@ export default async function Page({ searchParams }: { searchParams?: Record<str
       key: "status",
       header: "Status",
       className: "text-ink-2",
-      render: (m) =>
-        m.invited ? (
-          <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-status-watch-bg text-status-watch-text uppercase tracking-wider">
-            Invited
+      render: (m) => (
+        <span className="block">
+          {m.invited ? (
+            <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-status-watch-bg text-status-watch-text uppercase tracking-wider">
+              Invited
+            </span>
+          ) : (
+            <span className="block text-xs text-ink-2">Last signed in {fmtDate(m.lastSignIn)}</span>
+          )}
+          <span className="block text-xs text-ink-2 mt-0.5">
+            {m.twoStep ? "Two-step login on" : "Two-step login not set up yet"}
           </span>
-        ) : (
-          <span className="text-xs text-ink-2">Last signed in {fmtDate(m.lastSignIn)}</span>
-        ),
+        </span>
+      ),
     },
     {
       key: "role",
@@ -76,6 +82,7 @@ export default async function Page({ searchParams }: { searchParams?: Record<str
             roleChoices={p.roleChoices.map((v) => ({ value: v, label: roleLabel(v) }))}
             canChangeRole={p.canChangeRole}
             canRemove={p.canRemove}
+            canResetTwoStep={p.canResetTwoStep && m.twoStep}
             lockedReason={
               p.isSelf
                 ? "Your own role is changed by another owner or admin."

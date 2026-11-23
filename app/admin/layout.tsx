@@ -18,6 +18,7 @@ import CaptureLauncher from "./capture/_components/CaptureLauncher";
 import { getAdminUser, getOrgContext, getUserOrgs } from "@/lib/admin/auth";
 import { getMyDisplayName } from "@/lib/admin/profile";
 import { getEntitlements, hasFeature } from "@/lib/admin/entitlements";
+import { getWebsiteAdminUrl } from "@/lib/admin/websiteAdmin";
 import { getShellTermLabels } from "@/lib/admin/terminology";
 import { resolveShellNav } from "@/lib/admin/v2shellNav";
 import { visibleSettingsSections } from "@/lib/admin/settingsSections";
@@ -128,6 +129,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     // V4 A2: global search's page list is generated from the same nav (and
     // the Settings sections this person can see), never a hand-kept list.
     const searchPages = navPageIndex(nav, visibleSettingsSections(ctx?.role ?? null, features));
+    // Repo split §6e: a link out to the org's own website admin, when it has one.
+    const websiteAdminUrl = ents && orgId ? await getWebsiteAdminUrl(orgId, ents) : null;
     return (
       <AdminUserProvider value={{ user, isOwner: ctx?.role === "owner" }}>
       <AdminBadgesProvider orgId={orgId} enabled={authed}>
@@ -151,6 +154,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           orgs={orgs}
           activeOrgId={orgId}
           captureEnabled={canCapture}
+          websiteAdminUrl={websiteAdminUrl}
         />
         <ReedLauncherProvider enabled={reedEnabled}>
           <RailEntityProvider>

@@ -1,7 +1,7 @@
 import "server-only";
 import { Resend } from "resend";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { marketingOrigin } from "@/lib/origins";
+import { appOrigin } from "@/lib/origins";
 import { fullName, toPlan, type AmbitionPlan, type MatchStatus } from "./program";
 
 // Server side of Ambition Coach: private-link lookups and the program emails.
@@ -69,7 +69,7 @@ export function newToken(): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export const privateUrl = (token: string) => `${marketingOrigin()}/coach/me/${token}`;
+export const privateUrl = (token: string) => `${appOrigin()}/coach/me/${token}`;
 
 export async function getPersonByToken(token: string): Promise<CoachPerson | null> {
   if (!TOKEN_RE.test(token)) return null;

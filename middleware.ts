@@ -53,7 +53,30 @@ import { isUnknownAdminPath } from "@/lib/admin/adminRoutes";
 // Hosts that serve only the admin app. The PUBLIC_ADMIN_PATHS assets below
 // all live under /admin/, so the prefix allowlist covers them.
 const APP_HOSTS = new Set(["app.bloomos.org"]);
-const APP_HOST_PREFIXES = ["/admin", "/auth", "/api"];
+// Repo split phase 1c (specs/bloomos-repo-split.md §6c): the board portal,
+// meeting scheduler, Strategy Room and Ambition Coach private pages are
+// BloomOS features, served on the app host ahead of the split.
+const APP_HOST_PREFIXES = ["/admin", "/auth", "/api", "/board", "/meet", "/strategy", "/coach/me"];
+
+// The Ambition Angels marketing hosts. On these, the paths above (and the two
+// API paths old emails link to) 308 to the app host so every link already in
+// an inbox or bookmark keeps working. Only these exact hosts: localhost and
+// Vercel previews stay both-capable.
+const MARKETING_HOSTS = new Set(["ambitionangels.org", "www.ambitionangels.org"]);
+
+/** Paths that moved to the app host. Matched on the marketing hosts only. */
+export function movedToAppHost(pathname: string): boolean {
+  const under = (p: string) => pathname === p || pathname.startsWith(`${p}/`);
+  return (
+    under("/board") ||
+    under("/meet") ||
+    pathname === "/strategy" ||
+    pathname.startsWith("/coach/me/") ||
+    pathname === "/api/unsubscribe" ||
+    // Cancel and reschedule links in sent booking emails.
+    /^\/api\/meet\/booking\/[^/]+\/[^/]+$/.test(pathname)
+  );
+}
 
 function requestHost(req: NextRequest): string {
   // Vercel terminates at the edge, so the original host arrives in
@@ -233,6 +256,22 @@ function withSessionCookies(res: NextResponse, from: NextResponse): NextResponse
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // ── Moved to the app host ─────────────────────────────────────────────
+  // Board, meet, Strategy Room, coach private pages, unsubscribe and booking
+  // links live on app.bloomos.org now. 308 keeps the method, so a POSTed
+  // unsubscribe or booking action still lands. Machine callers that send an
+  // Authorization header must be pointed at the app host directly: browsers
+  // and fetch drop that header on a cross-host redirect.
+  const appOriginEnv = process.env.APP_ORIGIN?.replace(/\/+$/, "");
+  if (appOriginEnv && MARKETING_HOSTS.has(requestHost(req)) && movedToAppHost(pathname)) {
+    return NextResponse.redirect(`${appOriginEnv}${pathname}${req.nextUrl.search}`, 308);
+  }
+  // These two API paths are matched only for the redirect above. Anywhere
+  // else they run their own handlers, with no session refresh.
+  if (pathname === "/api/unsubscribe" || pathname.startsWith("/api/meet/booking/")) {
+    return NextResponse.next();
+  }
+
   // ── App-host guard ────────────────────────────────────────────────────
   // On app.bloomos.org, only the admin surface exists: "/" redirects to
   // /admin, admin/auth/api paths fall through to the gates below, and
@@ -394,6 +433,9 @@ export const config = {
     "/demoday",
     "/demoday/index.html",
     "/strategy",
+    // Old email links on the marketing host that 308 to the app host.
+    "/api/unsubscribe",
+    "/api/meet/booking/:path*",
     // Host-guard coverage: "/" and extension-less page paths, so the app host
     // can redirect/404 them. Excludes /api and Next internals; files with an
     // extension (static assets) are left alone. Non-app hosts pass straight

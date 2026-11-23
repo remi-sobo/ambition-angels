@@ -7,8 +7,13 @@ import { join } from "node:path";
 // only if every CREATE TABLE / CREATE INDEX is idempotent. This test enforces
 // the convention on every migration so a non-idempotent one can't merge.
 
-const DIR = join(process.cwd(), "supabase", "migrations");
-const files = readdirSync(DIR).filter((f) => f.endsWith(".sql"));
+// BloomOS migrations, plus the Ambition Angels website database's own
+// (supabase/site/migrations, repo split §5b) until it gets its own repo.
+const DIRS = [
+  join(process.cwd(), "supabase", "migrations"),
+  join(process.cwd(), "supabase", "site", "migrations"),
+];
+const files = DIRS.flatMap((d) => readdirSync(d).filter((f) => f.endsWith(".sql")).map((f) => join(d, f)));
 
 // Strip line comments so "-- create table foo" can't trip the check.
 const stripComments = (sql: string) => sql.replace(/--.*$/gm, "");
@@ -19,7 +24,7 @@ describe("migration idempotency (drift guard)", () => {
   });
 
   for (const f of files) {
-    const sql = stripComments(readFileSync(join(DIR, f), "utf8")).toLowerCase();
+    const sql = stripComments(readFileSync(f, "utf8")).toLowerCase();
 
     test(`${f}: every create table uses 'if not exists'`, () => {
       const offending = sql.match(/create\s+table\s+(?!if\s+not\s+exists)/g);

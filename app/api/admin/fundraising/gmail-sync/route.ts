@@ -7,8 +7,9 @@
  * history) or { mode: 'incremental' } (only mail newer than the last
  * watermark). GET returns the most recent job for a "last synced" display.
  *
- * Requires the gmail.readonly scope on GOOGLE_REFRESH_TOKEN; without it the
- * job completes having logged zero and records the 403 in errors.
+ * Reads the mailbox connected through the Internal OAuth client
+ * (lib/google/gmail-sync-connection.ts), never the "bloom / meet" env token;
+ * with no mailbox connected the job fails with a plain reason.
  *
  * The mailbox belongs to one org (lib/integrations/env-owner.ts); every other
  * org gets a 403, and every job read is scoped to the owner.

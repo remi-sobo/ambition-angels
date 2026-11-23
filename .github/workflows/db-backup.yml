@@ -11,6 +11,9 @@
 #                        in the org password manager; a lost passphrase means
 #                        unrecoverable backups).
 #
+# Restore test: .github/workflows/db-restore-test.yml restores the newest
+# artifact into a throwaway Postgres 17 and compares row counts with production.
+#
 # Restore (locally):
 #   gpg --batch --passphrase "$BACKUP_PASSPHRASE" -d backup.sql.gz.gpg | gunzip | psql "$TARGET_DB_URL"
 #
@@ -30,15 +33,22 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Install Postgres client
+      - name: Install Postgres 17 client
+        # Matches production's major version; an older pg_dump refuses to run.
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq postgresql-client
+          sudo apt-get install -y -qq postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y >/dev/null
+          sudo apt-get install -y -qq postgresql-client-17
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
 
       - name: Dump database
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
+          # pipefail: without it a failed pg_dump still exits 0 through gzip
+          # and the run goes green with an empty backup.
+          set -euo pipefail
           if [ -z "$SUPABASE_DB_URL" ]; then
             echo "::error::SUPABASE_DB_URL secret is not set"; exit 1
           fi
@@ -50,6 +60,10 @@ jobs:
             --exclude-schema=supabase_functions \
             | gzip > backup.sql.gz
           ls -lh backup.sql.gz
+          size=$(stat -c %s backup.sql.gz)
+          if [ "$size" -lt 1000000 ]; then
+            echo "::error::backup is only $size bytes; expected tens of MB"; exit 1
+          fi
 
       - name: Encrypt dump
         env:

@@ -230,8 +230,8 @@ export const BASELINE: { ledgerOnly: string[]; fileOnly: string[] } = {
   // docs/unapplied-migrations-triage.md §3 and §4: mostly reconstructions of
   // pre-ledger tables and SQL-editor applications, plus the three
   // never-applied-BREAKING files (add_constituents_is_volunteer,
-  // add_students_leader_id, hs_sync_jobs_add_totals) that production is
-  // genuinely missing.
+  // add_students_leader_id) that production is genuinely missing.
+  // hs_sync_jobs_add_totals was applied 2026-11-23 and left this list.
   fileOnly: [
     "add_constituents_is_volunteer",
     "add_planned_week_to_ops_tasks",
@@ -253,7 +253,6 @@ export const BASELINE: { ledgerOnly: string[]; fileOnly: string[] } = {
     "drop_households_org_id_default",
     "fix_due_tier_overdue_commitments_and_stale_grants",
     "fr_sync_exclude_partnership_pipeline",
-    "hs_sync_jobs_add_totals",
     "seed_aa_ai_prospect_research",
     "seed_aa_hubspot_mirror_entitlement",
     "seed_partners_2026",

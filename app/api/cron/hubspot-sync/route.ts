@@ -22,6 +22,8 @@ import { resolveEnvIntegrationOwner } from "@/lib/integrations/env-owner";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
+const FRESH_FOR_MS = 20 * 60 * 60 * 1000;
+
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
   const auth = req.headers.get("authorization");
@@ -38,9 +40,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ status: "skipped", reason: "HUBSPOT_ACCESS_TOKEN is not set" });
   }
 
-  // Resume an in-flight job if one is mid-run, otherwise start a fresh sync.
+  // Resume an in-flight job if one is mid-run. Otherwise start a fresh sync,
+  // unless one already started in the last 20 hours: the schedule fires every
+  // 10 minutes inside one daily hour so a long sync can finish across ticks,
+  // and the ticks after it finishes must not start another full sync.
   let job = await loadLatestJob(owner.orgId);
   if (!job || job.status !== "running") {
+    if (job && Date.now() - new Date(job.started_at).getTime() < FRESH_FOR_MS) {
+      return NextResponse.json({ status: "skipped", reason: "synced in the last 20 hours", last: job.status });
+    }
     job = await createJob(owner.orgId, null); // null triggered_by = system/cron
   }
 

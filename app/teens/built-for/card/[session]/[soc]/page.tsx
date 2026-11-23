@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { websiteDb } from "@/lib/site/websiteDb";
 import CardClient from "./CardClient";
 
 // The card (Phase 3): THE DAY → THE CLUES → THE ANSWER. The page payload
@@ -21,7 +21,7 @@ export default async function CardPage({
   if (!/^[0-9a-f-]{36}$/i.test(params.session)) notFound();
   if (!/^\d{2}-\d{4}$/.test(params.soc)) notFound();
 
-  const supabase = getSupabaseAdmin();
+  const supabase = websiteDb();
   const [{ data: session }, { data: card }] = await Promise.all([
     supabase.from("ms_sessions").select("id").eq("id", params.session).maybeSingle(),
     supabase

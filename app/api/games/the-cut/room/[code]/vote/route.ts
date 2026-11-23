@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { websiteDb } from "@/lib/site/websiteDb";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { standing } from "@/lib/games/the-cut";
 import { loadRoom, isVoterId } from "../_room";
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest, { params }: { params: { code: strin
     return NextResponse.json({ error: "That career is not on the board" }, { status: 400 });
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = websiteDb();
   const [{ error: joinError }, { error: voteError }] = await Promise.all([
     supabase.from("cut_players").upsert({ room_id: room.id, voter_id: body.voterId }),
     supabase.from("cut_votes").upsert({

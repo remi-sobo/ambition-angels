@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { websiteDb } from "@/lib/site/websiteDb";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { normalizeClaimCode, CLAIM_CODE_LENGTH } from "@/lib/ms/claim";
 
@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "That doesn't look like an email address" }, { status: 400 });
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = websiteDb();
   const { data: session } = await supabase
     .from("ms_sessions")
     .select("id, claim_code")

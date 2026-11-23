@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { websiteDb } from "@/lib/site/websiteDb";
 import { eligibilityIssues } from "@/lib/games/pool";
 import PageHeader from "../../_components/PageHeader";
 import StatCard from "../../_components/StatCard";
@@ -18,7 +18,7 @@ const ELIGIBLE_TARGET = 300;
 export default async function PoolPage() {
   const roleGate = await requirePagePermission("program.read", "Career library");
   if (!roleGate.ok) return roleGate.page;
-  const supabase = getSupabaseAdmin();
+  const supabase = websiteDb();
   const [{ data: occData }, { data: poolData }] = await Promise.all([
     supabase
       .from("ms_occupations")

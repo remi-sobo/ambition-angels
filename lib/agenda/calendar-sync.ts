@@ -8,6 +8,7 @@ import {
 } from "@/lib/google/connection";
 import { laDateOf, mondayOf } from "@/lib/admin/ops/week";
 import { blockPatchFromInstants } from "@/lib/agenda/work-blocks";
+import { googleErrorSummary } from "@/lib/google/log-safe";
 
 /**
  * Service-role Google Calendar → calendar_events sync (BloomOS Agenda Phase 2,
@@ -343,7 +344,7 @@ export async function syncUserCalendar(
     try {
       await updateConnectionMeta(conn.id, { sync_token: nextSyncToken });
     } catch (e) {
-      console.error(`saving syncToken for user ${conn.userId} failed:`, e);
+      console.error(`saving syncToken for user ${conn.userId} failed:`, googleErrorSummary(e));
     }
   }
 

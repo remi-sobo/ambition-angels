@@ -387,10 +387,11 @@ the org (`tests/operator-email-scope.test.ts`).
 
 **Still unscheduled, on purpose:**
 
-- `hubspot-sync`: its last runs (July to September) ended `partial` or
-  `failed`, and no run has ever finished `completed`. The operator runs it once
-  by hand, watching, before it gets a schedule. What that run needs is in the
-  PR description for this change.
+- `hubspot-sync`: **scheduled 2026-11-23** at `*/10 22 * * *` (every 10
+  minutes inside one daily hour, 2 to 3pm Pacific), with a guard that starts at
+  most one full sync per 20 hours. Unblocked by applying
+  `hs_sync_jobs_add_totals` and granting the private app `sales-email-read`
+  (Remi's call, reversing the §8 decline). First run watched by the operator.
 - `journeys`: no journey is active, and its Comms home arrives in V4 Stage D.
   The code stays. When it is scheduled it must also be gated (it emails
   constituents through Resend).

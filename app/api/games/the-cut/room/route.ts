@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { websiteDb } from "@/lib/site/websiteDb";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { newRoomCode } from "@/lib/ms/claim";
 import { newRoomState, pickBoard, BOARD_SIZE, type CutCareer } from "@/lib/games/the-cut";
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = websiteDb();
   const { data: pool, error: poolError } = await supabase
     .from("game_pool")
     .select("soc_code, reveal_line")

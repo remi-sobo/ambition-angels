@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { websiteDb } from "@/lib/site/websiteDb";
 
-const getSupabase = () =>
-  createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
 
 // Click / interaction events. Always returns success — silent failure on
 // any error so analytics can never break the page.
@@ -31,7 +26,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    const supabase = getSupabase();
+    const supabase = websiteDb();
     await supabase.from("click_events").insert({
       event_name,
       page: typeof page === "string" ? page : null,

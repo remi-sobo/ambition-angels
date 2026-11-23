@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { websiteDb } from "@/lib/site/websiteDb";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { pickPair, toPairCard, type PoolPlayRow } from "@/lib/games/higher-wage";
 import { signPairToken, PAIR_TOKEN_TTL_MS } from "@/lib/games/token";
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     ? body.exclude.filter((s: unknown) => typeof s === "string").slice(0, MAX_EXCLUDE)
     : [];
 
-  const supabase = getSupabaseAdmin();
+  const supabase = websiteDb();
   const { data: pool, error } = await supabase
     .from("game_pool")
     .select("soc_code, reveal_line")

@@ -262,6 +262,7 @@ ordered=(
   seed_capture_safespace_ylepa.sql
   import_batch_undo.sql
   seed_operator_email_optin.sql
+  create_org_api_keys_intake.sql
 )
 for f in "${ordered[@]}"; do
   echo "   $f"

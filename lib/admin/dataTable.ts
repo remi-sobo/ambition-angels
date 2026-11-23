@@ -216,6 +216,9 @@ export function applyTableSort<Q extends Orderable<Q>>(
  *  - "choose": opens a menu of `options`; picking one sends
  *    `{ ids: [...], <field>: value }` to `url` (an empty value sends null),
  *    e.g. "Assign to…" with the org's members (V4 B2).
+ *  - "run": calls `run(ids)` in the browser (copy emails, open a composer).
+ *    Only for a table rendered from a client component, since a function
+ *    cannot cross from a server page; the selection clears when it settles.
  */
 export type DataTableBulkAction =
   | {
@@ -242,4 +245,5 @@ export type DataTableBulkAction =
       /** Success toast; `{label}` is replaced with the chosen option's label. */
       success?: string;
       tone?: undefined;
-    };
+    }
+  | { kind: "run"; key: string; label: string; run: (ids: string[]) => void | Promise<void>; tone?: "danger" };

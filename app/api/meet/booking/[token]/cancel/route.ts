@@ -6,6 +6,7 @@ import { buildCancellationEmail } from "@/lib/email/templates/cancellation";
 import { getBookingHost } from "@/lib/meet/host";
 import { cancelSchema } from "@/lib/meet/schemas";
 import type { Booking, MeetingType } from "@/lib/database.types";
+import { googleErrorSummary } from "@/lib/google/log-safe";
 
 export async function POST(
   req: NextRequest,
@@ -50,7 +51,7 @@ export async function POST(
     try {
       await cancelEvent(booking.google_event_id);
     } catch (err) {
-      console.error("cancelEvent failed", err);
+      console.error("cancelEvent failed", googleErrorSummary(err));
       return NextResponse.json(
         { error: "Could not cancel the calendar event. Try again." },
         { status: 502 }
@@ -87,7 +88,7 @@ export async function POST(
     subject: email.subject,
     html: email.html,
     text: email.text,
-  }).catch((e) => console.error("cancellation email failed", e));
+  }).catch((e) => console.error("cancellation email failed", googleErrorSummary(e)));
 
   return NextResponse.json({ success: true });
 }

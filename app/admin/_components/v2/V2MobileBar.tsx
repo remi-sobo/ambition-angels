@@ -12,6 +12,7 @@ import {
 } from "@/lib/admin/v2shellNav";
 import { Icon } from "../Icon";
 import QuickAddModal from "../QuickAddModal";
+import Drawer from "../ui/Drawer";
 import CaptureModal from "../../capture/_components/CaptureModal";
 import ReportModal from "../ReportModal";
 import { useReedLauncher } from "../reed/ReedLauncherProvider";
@@ -81,7 +82,7 @@ function BarSlot({
   return (
     <span
       className={`flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 ${
-        active ? "text-orange-mid" : "text-cream/55"
+        active ? "text-cream" : "text-cream/55"
       }`}
     >
       {children}
@@ -95,12 +96,15 @@ export default function V2MobileBar({
   currentUser,
   reedEnabled,
   captureEnabled = false,
+  storyEnabled = false,
 }: {
   nav: ShellNav;
   currentUser: AdminUser | null;
   reedEnabled: boolean;
   /** Record (Capture, C4) behind ai.capture. */
   captureEnabled?: boolean;
+  /** V4 Stage D: Capture a story (StoryPhone), in the More sheet. */
+  storyEnabled?: boolean;
 }) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
@@ -115,18 +119,10 @@ export default function V2MobileBar({
   // Org lacking modules.messages has no Messages tab — the sheet row follows.
   const hasMessages = nav.inbox?.tabs.some((t) => t.key === "messages") ?? false;
 
-  // Close any sheet on navigation and on Escape.
+  // Close any sheet on navigation (Escape comes from the kit Drawer).
   useEffect(() => {
     setSheet(null);
   }, [pathname]);
-  useEffect(() => {
-    if (!sheet) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setSheet(null);
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [sheet]);
 
   const barLabel = (d: ShellDestination) => (d.key === "home" ? "Today" : d.label);
 
@@ -208,14 +204,10 @@ export default function V2MobileBar({
       </nav>
 
       {/* ── More sheet — the rest of the IA, entitlement-filtered ─────── */}
-      {sheet === "more" && (
-        <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end" role="dialog" aria-modal="true" aria-label="More destinations">
-          <button aria-label="Close" onClick={() => setSheet(null)} className="absolute inset-0 bg-ink/50 cursor-default" />
-          <div
-            className="relative z-10 rounded-t-card-lg border-t border-white/10 bg-navy px-4 pt-3 text-cream shadow-2xl animate-[sheet-up_180ms_ease-out]"
-            style={{ paddingBottom: "max(1.25rem, calc(env(safe-area-inset-bottom) + 0.5rem))" }}
-          >
-            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" aria-hidden />
+      {/* The kit Drawer (V4 P1): a bottom sheet on phones, with the shared
+          focus trap, Escape and scrim close. */}
+      <Drawer open={sheet === "more"} onClose={() => setSheet(null)} title="More">
+          <div style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
             <div className="grid grid-cols-2 gap-1.5">
               {more.map((d) => (
                 <Link
@@ -223,7 +215,7 @@ export default function V2MobileBar({
                   href={d.href}
                   onClick={() => setSheet(null)}
                   className={`flex min-h-[52px] items-center gap-3 rounded-panel px-3 py-2 transition-colors active:scale-[0.99] ${
-                    activeKey === d.key ? "bg-white/[0.09] text-orange-mid" : "hover:bg-white/[0.06]"
+                    activeKey === d.key ? "bg-orange-light text-orange-dark" : "text-ink-1 hover:bg-tile"
                   }`}
                 >
                   <Icon name={d.icon} className="w-5 h-5 shrink-0 opacity-80" />
@@ -236,12 +228,12 @@ export default function V2MobileBar({
                 </Link>
               ))}
             </div>
-            <div className="my-3 border-t border-white/[0.07]" aria-hidden />
+            <div className="my-3 border-t border-hairline" aria-hidden />
             <div className="grid grid-cols-2 gap-1.5">
               <Link
                 href="/admin/settings"
                 onClick={() => setSheet(null)}
-                className="flex min-h-[52px] items-center gap-3 rounded-panel px-3 py-2 transition-colors hover:bg-white/[0.06] active:scale-[0.99]"
+                className="flex min-h-[52px] items-center gap-3 rounded-panel px-3 py-2 transition-colors text-ink-1 hover:bg-tile active:scale-[0.99]"
               >
                 <Svg className="w-5 h-5 shrink-0 opacity-80">
                   <>
@@ -260,7 +252,7 @@ export default function V2MobileBar({
                     setSheet(null);
                     setModal("task");
                   }}
-                  className="flex min-h-[52px] items-center gap-3 rounded-panel px-3 py-2 text-left transition-colors hover:bg-white/[0.06] active:scale-[0.99]"
+                  className="flex min-h-[52px] items-center gap-3 rounded-panel px-3 py-2 text-left transition-colors text-ink-1 hover:bg-tile active:scale-[0.99]"
                 >
                   <Svg className="w-5 h-5 shrink-0 opacity-80">
                     <>
@@ -271,6 +263,21 @@ export default function V2MobileBar({
                   <span className="font-heading font-semibold text-sm">Add task</span>
                 </button>
               )}
+              {storyEnabled && (
+                <Link
+                  href="/admin/comms/stories/new"
+                  onClick={() => setSheet(null)}
+                  className="flex min-h-[52px] items-center gap-3 rounded-panel px-3 py-2 text-left transition-colors text-ink-1 hover:bg-tile active:scale-[0.99]"
+                >
+                  <Svg className="w-5 h-5 shrink-0 opacity-80">
+                    <>
+                      <path d="M5 4h11l3 3v13H5z" />
+                      <path d="M8 10h8M8 14h6" />
+                    </>
+                  </Svg>
+                  <span className="font-heading font-semibold text-sm">Capture a story</span>
+                </Link>
+              )}
               {/* Report an issue lives in the More sheet too (DoD 5: the
                   trigger works from Quick Add AND mobile More). */}
               <button
@@ -279,7 +286,7 @@ export default function V2MobileBar({
                   setSheet(null);
                   setModal("report");
                 }}
-                className="flex min-h-[52px] items-center gap-3 rounded-panel px-3 py-2 text-left transition-colors hover:bg-white/[0.06] active:scale-[0.99]"
+                className="flex min-h-[52px] items-center gap-3 rounded-panel px-3 py-2 text-left transition-colors text-ink-1 hover:bg-tile active:scale-[0.99]"
               >
                 <span className="w-5 shrink-0 text-center" aria-hidden>🐞</span>
                 <span className="font-heading font-semibold text-sm">Report an issue</span>
@@ -291,26 +298,19 @@ export default function V2MobileBar({
                     setSheet(null);
                     openReed({ surface: "v2-mobile-more" });
                   }}
-                  className="flex min-h-[52px] items-center gap-3 rounded-panel px-3 py-2 text-left transition-colors hover:bg-white/[0.06] active:scale-[0.99]"
+                  className="flex min-h-[52px] items-center gap-3 rounded-panel px-3 py-2 text-left transition-colors text-ink-1 hover:bg-tile active:scale-[0.99]"
                 >
-                  <ReedMark className="w-5 h-5 shrink-0 text-orange-mid" />
+                  <ReedMark className="w-5 h-5 shrink-0 text-orange" />
                   <span className="font-heading font-semibold text-sm">Reed</span>
                 </button>
               )}
             </div>
           </div>
-        </div>
-      )}
+      </Drawer>
 
       {/* ── Action sheet (the ＋) ──────────────────────────────────────── */}
-      {sheet === "actions" && (
-        <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end" role="dialog" aria-modal="true" aria-label="Quick actions">
-          <button aria-label="Close" onClick={() => setSheet(null)} className="absolute inset-0 bg-ink/50 cursor-default" />
-          <div
-            className="relative z-10 rounded-t-card-lg border-t border-white/10 bg-navy px-4 pt-3 text-cream shadow-2xl animate-[sheet-up_180ms_ease-out]"
-            style={{ paddingBottom: "max(1.25rem, calc(env(safe-area-inset-bottom) + 0.5rem))" }}
-          >
-            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" aria-hidden />
+      <Drawer open={sheet === "actions"} onClose={() => setSheet(null)} title="Quick actions">
+          <div style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
             <div className="space-y-1.5">
               {reedEnabled && (
                 <ActionRow
@@ -321,7 +321,7 @@ export default function V2MobileBar({
                   title="Ask Reed"
                   blurb="Your BloomOS assistant"
                   accent
-                  icon={<ReedMark className="w-5 h-5 text-orange-mid" />}
+                  icon={<ReedMark className="w-5 h-5 text-orange" />}
                 />
               )}
               {/* No Record row: this sheet only opens for orgs WITHOUT
@@ -334,7 +334,7 @@ export default function V2MobileBar({
                 title="Add task"
                 blurb="Capture a to-do"
                 icon={
-                  <Svg className="w-5 h-5 text-cream">
+                  <Svg className="w-5 h-5 text-ink-1">
                     <>
                       <rect x="4.5" y="4.5" width="15" height="15" rx="2.5" />
                       <path d="M8.5 12.5l2.5 2.5 4.5-5" />
@@ -351,7 +351,7 @@ export default function V2MobileBar({
                   title="Message someone"
                   blurb="DM a teammate or group"
                   icon={
-                    <Svg className="w-5 h-5 text-cream">
+                    <Svg className="w-5 h-5 text-ink-1">
                       <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
                     </Svg>
                   }
@@ -365,7 +365,7 @@ export default function V2MobileBar({
                 title="Report an issue"
                 blurb="Flag something to fix"
                 icon={
-                  <Svg className="w-5 h-5 text-cream">
+                  <Svg className="w-5 h-5 text-ink-1">
                     <>
                       <path d="M12 4.5a4 4 0 0 1 4 4v1H8v-1a4 4 0 0 1 4-4z" />
                       <path d="M5 13h14M6 9.5 4 8M18 9.5 20 8M6.5 16.5 4.5 18M17.5 16.5 19.5 18M12 13v6.5" />
@@ -375,8 +375,7 @@ export default function V2MobileBar({
               />
             </div>
           </div>
-        </div>
-      )}
+      </Drawer>
 
       {modal === "task" && <QuickAddModal currentUser={currentUser} onClose={() => setModal(null)} />}
       {modal === "report" && <ReportModal onClose={() => setModal(null)} />}
@@ -403,13 +402,13 @@ function ActionRow({
       type="button"
       onClick={onClick}
       className={`flex w-full min-h-[52px] items-center gap-3 rounded-panel px-3 py-3 text-left transition-colors active:scale-[0.99] ${
-        accent ? "bg-white/[0.07] hover:bg-white/10" : "hover:bg-white/[0.06]"
+        accent ? "bg-orange-light hover:bg-orange-light/80" : "hover:bg-tile"
       }`}
     >
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10">{icon}</span>
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-tile">{icon}</span>
       <span className="min-w-0 leading-tight">
-        <span className="block font-heading font-semibold text-cream">{title}</span>
-        <span className="block text-xs text-cream/55">{blurb}</span>
+        <span className="block font-heading font-semibold text-ink-1">{title}</span>
+        <span className="block text-xs text-ink-3">{blurb}</span>
       </span>
     </button>
   );

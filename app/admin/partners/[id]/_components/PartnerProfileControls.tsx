@@ -12,6 +12,7 @@ import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import { KIND_LABELS, inputCls } from "../../_lib/partners";
 import { STATUS_ORDER, STATUS_LABELS } from "../../_lib/status";
 import { TYPE } from "@/lib/admin/typeScale";
+import { TextField, TextareaField, SelectField } from "@/app/admin/_components/ui/Field";
 
 const splitCsv = (s: string): string[] =>
   s.split(",").map((x) => x.trim()).filter(Boolean);
@@ -95,24 +96,20 @@ export function EditPartnerButton({ partner }: {
       }}
       className="space-y-2 mt-1 w-full"
     >
-      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Organization" className={inputCls + " w-full"} />
+      <TextField label="Organization" controlSize="md" className="w-full" value={name} onChange={(e) => setName(e.target.value)} />
       <div className="flex gap-2">
-        <select value={kind} onChange={(e) => setKind(e.target.value)} className={inputCls + " w-full"}>
-          {Object.entries(KIND_LABELS).map(([k, v]) => <option key={k} value={k} className="bg-surface">{v}</option>)}
-        </select>
-        <select value={status} onChange={(e) => setStatus(e.target.value)} className={inputCls + " w-full"}>
-          {STATUS_ORDER.map((s) => <option key={s} value={s} className="bg-surface">{STATUS_LABELS[s]}</option>)}
-        </select>
+        <SelectField label="Kind" controlSize="md" className="w-full" value={kind} onChange={(e) => setKind(e.target.value)} options={Object.entries(KIND_LABELS).map(([k, v]) => ({ value: k, label: v }))} />
+        <SelectField label="Status" controlSize="md" className="w-full" value={status} onChange={(e) => setStatus(e.target.value)} options={STATUS_ORDER.map((st) => ({ value: st, label: STATUS_LABELS[st] }))} />
       </div>
       <div className="flex gap-2">
-        <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" className={inputCls + " w-full"} />
-        <input value={region} onChange={(e) => setRegion(e.target.value)} placeholder="State / area" className={inputCls + " w-28"} />
+        <TextField label="City" controlSize="md" className="w-full" value={city} onChange={(e) => setCity(e.target.value)} />
+        <TextField label="State / area" controlSize="md" className="w-28" value={region} onChange={(e) => setRegion(e.target.value)} />
       </div>
       <div className="flex gap-2">
-        <input value={domain} onChange={(e) => setDomain(e.target.value)} placeholder="Website" className={inputCls + " w-full"} />
-        <input value={score} onChange={(e) => setScore(e.target.value)} placeholder="Score 0–100" inputMode="numeric" className={inputCls + " w-28"} />
+        <TextField label="Website" controlSize="md" className="w-full" value={domain} onChange={(e) => setDomain(e.target.value)} />
+        <TextField label="Score (0–100)" controlSize="md" className="w-28" value={score} onChange={(e) => setScore(e.target.value)} inputMode="numeric" />
       </div>
-      <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notes" rows={2} className={inputCls + " w-full resize-y"} />
+      <TextareaField label="Notes" className="w-full" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
       <div className="flex items-center gap-2">
         <button type="submit" disabled={busy} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors disabled:opacity-50">
           {busy ? "Saving…" : "Save"}
@@ -153,11 +150,11 @@ export function AddContactForm({ partnerId }: { partnerId: string }) {
       }}
       className="w-full bg-surface border-hairline rounded-panel p-3 grid grid-cols-2 gap-2 mt-2"
     >
-      <input value={first} onChange={(e) => setFirst(e.target.value)} placeholder="First name" className={inputCls} autoFocus />
-      <input value={last} onChange={(e) => setLast(e.target.value)} placeholder="Last name" className={inputCls} />
-      <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className={inputCls} />
-      <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" className={inputCls} />
-      <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title / role" className={inputCls + " col-span-2"} />
+      <TextField label="First name" controlSize="md" value={first} onChange={(e) => setFirst(e.target.value)} autoFocus />
+      <TextField label="Last name" controlSize="md" value={last} onChange={(e) => setLast(e.target.value)} />
+      <TextField label="Email" controlSize="md" value={email} onChange={(e) => setEmail(e.target.value)} />
+      <TextField label="Phone" controlSize="md" value={phone} onChange={(e) => setPhone(e.target.value)} />
+      <TextField label="Title / role" controlSize="md" className="col-span-2" value={title} onChange={(e) => setTitle(e.target.value)} />
       <div className="col-span-2 flex items-center gap-2">
         <button type="submit" disabled={busy} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-1.5 rounded-full disabled:opacity-50">
           {busy ? "Adding…" : "Add contact"}
@@ -193,12 +190,12 @@ export function ContactCard({ contact }: { contact: ContactT }) {
         }}
         className="bg-surface border-hairline rounded-panel p-3 grid grid-cols-2 gap-2"
       >
-        <input value={first} onChange={(e) => setFirst(e.target.value)} placeholder="First" className={inputCls} />
-        <input value={last} onChange={(e) => setLast(e.target.value)} placeholder="Last" className={inputCls} />
-        <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className={inputCls} />
-        <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" className={inputCls} />
-        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title / role" className={inputCls + " col-span-2"} />
-        <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="Tags (comma-separated: champion, decision-maker)" className={inputCls + " col-span-2"} />
+        <TextField label="First" controlSize="md" value={first} onChange={(e) => setFirst(e.target.value)} />
+        <TextField label="Last" controlSize="md" value={last} onChange={(e) => setLast(e.target.value)} />
+        <TextField label="Email" controlSize="md" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <TextField label="Phone" controlSize="md" value={phone} onChange={(e) => setPhone(e.target.value)} />
+        <TextField label="Title / role" controlSize="md" className="col-span-2" value={title} onChange={(e) => setTitle(e.target.value)} />
+        <TextField label="Tags" placeholder="Comma-separated: champion, decision-maker" controlSize="md" className="col-span-2" value={tags} onChange={(e) => setTags(e.target.value)} />
         <div className="col-span-2 flex items-center gap-2">
           <button type="submit" disabled={busy} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-1.5 rounded-full disabled:opacity-50">Save</button>
           <button type="button" onClick={() => setEditing(false)} className="text-xs text-ink-2 hover:text-ink-1 px-2">Cancel</button>

@@ -2,87 +2,70 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Button from "@/app/admin/_components/ui/Button";
+import Drawer from "@/app/admin/_components/ui/Drawer";
+import { TextField } from "@/app/admin/_components/ui/Field";
+import { useSaveAction } from "@/app/admin/_lib/useSaveAction";
 
-// Manual snapshot entry for a catalog metric. POSTs to the snapshot route,
-// which writes metric_snapshots (captured_by = the caller's uuid) and syncs
-// the plan-side KPI in the same request.
-export default function MetricUpdateForm({ metricId }: { metricId: string }) {
+// Manual snapshot entry for a catalog metric (V4 Stage G2: the kit Drawer,
+// labeled fields, saveAction). POSTs to the snapshot route, which writes
+// metric_snapshots (captured_by = the caller's uuid) and syncs the plan-side
+// KPI in the same request.
+export default function MetricUpdateForm({ metricId, metricName }: { metricId: string; metricName?: string }) {
   const router = useRouter();
+  const save = useSaveAction();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const n = Number(value);
+  const valid = value.trim() !== "" && Number.isFinite(n);
 
-  const save = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const n = Number(value);
-    if (!Number.isFinite(n) || busy) return;
+  async function submit() {
+    if (!valid || busy) return;
     setBusy(true);
-    setError(null);
-    const res = await fetch(`/api/admin/metrics/${metricId}/snapshot`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ value: n, ...(note.trim() ? { note: note.trim() } : {}) }),
+    const r = await save({
+      request: {
+        url: `/api/admin/metrics/${metricId}/snapshot`,
+        method: "POST",
+        body: { value: n, ...(note.trim() ? { note: note.trim() } : {}) },
+      },
+      success: "Value recorded",
     });
-    const j = (await res.json().catch(() => ({}))) as { error?: string };
     setBusy(false);
-    if (!res.ok) {
-      setError(j.error || "Save failed");
-      return;
-    }
+    if (!r.ok) return;
     setOpen(false);
     setValue("");
     setNote("");
     router.refresh();
-  };
-
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="text-xs font-semibold px-2.5 py-1 rounded-full border border-hairline text-ink-2 hover:border-orange/40 hover:text-orange transition-colors whitespace-nowrap"
-      >
-        Update
-      </button>
-    );
   }
 
   return (
-    <form onSubmit={save} className="flex items-center gap-1.5">
-      <input
-        type="number"
-        step="any"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder="Value"
-        required
-        autoFocus
-        className="w-24 bg-tile border-hairline rounded-control px-2 py-1 text-sm text-ink-1 focus:outline-none focus:border-orange/40"
-      />
-      <input
-        type="text"
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        placeholder="Note (optional)"
-        className="w-32 bg-tile border-hairline rounded-control px-2 py-1 text-sm text-ink-1 placeholder-ink-3 focus:outline-none focus:border-orange/40"
-      />
-      <button
-        type="submit"
-        disabled={busy}
-        className="text-xs font-semibold px-2.5 py-1 rounded-full bg-orange text-white hover:bg-orange-dark transition-colors disabled:opacity-50"
+    <>
+      <Button size="sm" variant="secondary" onClick={() => setOpen(true)} aria-label={metricName ? `Update ${metricName}` : undefined}>
+        Update
+      </Button>
+      <Drawer
+        open={open}
+        onClose={() => setOpen(false)}
+        title={metricName ? `Update ${metricName}` : "Update this metric"}
+        description="Records today's value. The old values stay in the history."
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setOpen(false)} disabled={busy}>
+              Cancel
+            </Button>
+            <Button onClick={submit} disabled={!valid} loading={busy}>
+              Save value
+            </Button>
+          </>
+        }
       >
-        {busy ? "…" : "Save"}
-      </button>
-      <button
-        type="button"
-        onClick={() => setOpen(false)}
-        className="text-xs font-semibold text-ink-3 hover:text-ink-1"
-      >
-        ✕
-      </button>
-      {error && <span className="text-xs font-semibold text-expense">{error}</span>}
-    </form>
+        <div className="grid gap-4">
+          <TextField label="Value" required type="number" step="any" value={value} onChange={(e) => setValue(e.target.value)} />
+          <TextField label="Note" hint="Optional: where the number came from." value={note} onChange={(e) => setNote(e.target.value)} />
+        </div>
+      </Drawer>
+    </>
   );
 }

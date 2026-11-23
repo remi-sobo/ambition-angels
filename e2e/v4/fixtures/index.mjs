@@ -9,7 +9,10 @@
 //
 // buildFixtures({ profile, role })
 //   profile: "populated" (default) | "empty" (auth, membership, entitlements
-//            and platform reference rows only)
+//            and platform reference rows only) | "fresh" (V4 Stage F: a new
+//            org as the setup script leaves it, one owner, Pilot plan, no
+//            data) | "halfdone" (fresh + identity confirmed, a teammate
+//            invited and a donor import finished: 3 of 5 setup steps)
 //   role:    membership role for the signed-in user (owner, admin, staff,
 //            finance, board_viewer)
 
@@ -185,6 +188,12 @@ export function buildFixtures({ profile = "populated", role = "owner", skipViews
   add("profiles", team.map((p) => ({ user_id: p.id, display_name: p.displayName, created_at: "2024-08-01T17:00:00Z", updated_at: iso(daysAgo(10)), v2_shell: true })));
   add("org_entitlements", ALL_FEATURES.map((k) => ({ org_id: ORG_ID, feature_key: k, enabled: true, source: "seed", updated_at: "2026-01-02T00:00:00Z" })));
   add("role_permissions", reference.role_permissions || []);
+  // V4 Stage D: the story bank's two keys (comms_phase1_story_schema), until
+  // reference.json is regenerated from the migrations.
+  // Voice for every role: capture.use for all five (capture_use_permission).
+  for (const [role, permission] of [["owner", "comms.manage"], ["admin", "comms.manage"], ["staff", "comms.manage"], ["owner", "comms.subjects.read"], ["admin", "comms.subjects.read"], ...["owner", "admin", "staff", "finance", "board_viewer"].map((r) => [r, "capture.use"])]) {
+    if (!tables.role_permissions.some((r) => r.role === role && r.permission === permission)) add("role_permissions", [{ role, permission }]);
+  }
   add("entity_types", reference.entity_types || []);
   add("org_terminology", []); // AA keeps zero rows by design (lib/admin/terminology.ts)
 
@@ -198,6 +207,7 @@ export function buildFixtures({ profile = "populated", role = "owner", skipViews
       const q = String(args.q || args.query || args.p_query || "").toLowerCase();
       if (!q) return [];
       return (fx.tables.constituents || [])
+        .filter((c) => !args.org || c.org_id === args.org)
         .filter((c) => `${c.first_name || ""} ${c.last_name || ""} ${c.org_name || ""}`.toLowerCase().includes(q))
         .slice(0, 10)
         .map((c) => ({ id: c.id, kind: "constituent", label: c.org_name || `${c.first_name} ${c.last_name}`, sublabel: c.type, name: c.org_name || `${c.first_name} ${c.last_name}`, type: c.type }));
@@ -206,12 +216,13 @@ export function buildFixtures({ profile = "populated", role = "owner", skipViews
     hubspot_bench_candidates: [],
   };
 
-  if (profile !== "empty") populate(T, add, tables, team);
+  if (profile === "fresh" || profile === "halfdone") freshOrg(T, tables, profile);
+  else if (profile !== "empty") populate(T, add, tables, team);
 
   // SQL views computed over these fixtures by compute-views.mjs (real view
   // definitions, run in a throwaway Postgres). Absent file = views stay empty.
   const viewsFile = path.join(here, "views.json");
-  if (profile !== "empty" && !skipViews && fs.existsSync(viewsFile)) {
+  if (profile === "populated" && !skipViews && fs.existsSync(viewsFile)) {
     const views = JSON.parse(fs.readFileSync(viewsFile, "utf8"));
     for (const [v, rows] of Object.entries(views)) if (Array.isArray(rows)) tables[v] = rows.filter((r) => !("org_id" in r) || r.org_id === ORG_ID);
   }
@@ -219,6 +230,37 @@ export function buildFixtures({ profile = "populated", role = "owner", skipViews
   // complete every row against the schema
   for (const t of Object.keys(tables)) if (!t.startsWith("v_") && t !== "ms_catalog") tables[t] = tables[t].map((r) => complete(t, r, T));
   return { tables, rpcs };
+}
+
+// V4 Stage F: a brand-new org as scripts/setup-org.ts leaves it (invented
+// "Harbor Youth Collective"), and the same org part way through setup.
+const PILOT = ["modules.fundraising", "modules.finance", "modules.comms", "modules.ops", "modules.meetings", "modules.messages", "modules.documents", "ai.capture", "modules.strategy", "modules.board", "modules.compliance", "modules.staff", "modules.metrics"];
+function freshOrg(T, tables, profile) {
+  const owner = tables.memberships[0];
+  tables.orgs = [{ id: ORG_ID, name: "Harbor Youth Collective", slug: "harbor-youth", settings: { email_domain: "harboryouth.example.org", timezone: "America/New_York" }, created_at: iso(daysAgo(1)), updated_at: iso(daysAgo(1)) }];
+  tables.memberships = [owner];
+  tables.profiles = tables.profiles.filter((p) => p.user_id === owner.user_id).map((p) => ({ ...p, display_name: "Maya Lindqvist" }));
+  tables.org_entitlements = PILOT.map((k) => ({ org_id: ORG_ID, feature_key: k, enabled: true, source: "setup-org", updated_at: iso(daysAgo(1)) }));
+  tables.org_terminology = [{ org_id: ORG_ID, term_key: "student", label: "Youth", updated_at: iso(daysAgo(1)) }];
+  tables.fin_config = [{ org_id: ORG_ID, fiscal_year_start_month: 7 }];
+  tables.pipelines = [{ id: T.id(70), org_id: ORG_ID, key: "default", label: "Donor pipeline", sort_order: 0, is_default: true }];
+  if (profile !== "halfdone") return;
+  tables.orgs[0].settings = {
+    ...tables.orgs[0].settings,
+    legal_name: "Harbor Youth Collective, Inc.",
+    ein: "12-3456789",
+    address: { street: "88 Wharf Street", city: "Portland", state: "ME", postal_code: "04101" },
+    mailing_address: "88 Wharf Street, Portland, ME 04101",
+  };
+  tables.memberships.push({ user_id: uid(106), org_id: ORG_ID, role: "staff", created_at: iso(daysAgo(0)) });
+  tables.profiles.push({ user_id: uid(106), display_name: "Jordan Ellis", created_at: iso(daysAgo(0)), updated_at: iso(daysAgo(0)), v2_shell: true });
+  const run = T.id(71);
+  tables.imports = [{ id: run, org_id: ORG_ID, entity_type: "gift", source: "csv", filename: "donors-2025.csv", status: "done", mapping: {}, counts: { total: 14, created: 12, skipped: 2, invalid: 0, donors_created: 9 }, created_at: iso(daysAgo(0)), finished_at: iso(daysAgo(0)) }];
+  tables.constituents = ["Dana Whitfield", "Priya Raman", "Marcus Oyelaran", "Elena Brandt", "Okafor Family", "Harlow Family Fund", "Northgate Credit Union", "Tidewater Community Trust", "Jon Castellano"].map((n, i) => {
+    const org = /Fund|Union|Trust|Family$/.test(n);
+    const [first, ...rest] = n.split(" ");
+    return { id: T.id(72), org_id: ORG_ID, type: org ? "organization" : "person", ...(org ? { org_name: n } : { first_name: first, last_name: rest.join(" ") }), emails: [`donor${i + 1}@example.org`], source: "import", import_id: run, created_at: iso(daysAgo(0)), updated_at: iso(daysAgo(0)) };
+  });
 }
 
 function populate(T, add, tables, team) {
@@ -382,6 +424,9 @@ function populate(T, add, tables, team) {
       probability: T.int(10, 90), capacity_rating: T.int(1, 5), affinity_rating: T.int(1, 5), owner: T.pick(["marcus", "dana"]),
       next_step: T.pick(["Send impact one-pager", "Schedule site visit", "Draft proposal", "Follow up on ask", "Invite to showcase"]),
       next_step_due: ymd(daysFromNow(T.int(-7, 21))), external_ids: {}, created_at: iso(daysAgo(T.int(10, 300))), updated_at: iso(daysAgo(T.int(0, 40))),
+      // add_owner_id_opportunities.sql: a third owned by id (you, or a
+      // teammate), the rest still on the free-text owner.
+      owner_id: i % 3 === 0 ? team[0].id : i % 3 === 1 ? team[1].id : null,
     };
   }));
 
@@ -446,6 +491,59 @@ function populate(T, add, tables, team) {
   add("email_sends", sends);
   add("email_suppressions", [{ id: T.id(18), org_id: ORG_ID, email: "bounced.address@example.com", reason: "hard_bounce", created_at: iso(daysAgo(40)) }]);
 
+  // ── V4 Stage D: story bank, consents, formats and editions ──────────────
+  // Invented people; first name and last initial only, as the bank stores.
+  const validSegs = add("segments", [
+    { id: T.id(16), org_id: ORG_ID, name: "Gave in 2025, not yet in 2026", definition: { view: "lapsed" }, created_by: "dana" },
+    { id: T.id(16), org_id: ORG_ID, name: "Donors of $250 or more", definition: { view: "donors", min_total: "250" }, created_by: "marcus" },
+  ]);
+  const st = (n, o) => ({ id: T.id(19), org_id: ORG_ID, tags: [], rank_order: null, strategic_goal_id: null, source: "manual", happened_on: ymd(daysAgo(n)), created_at: iso(daysAgo(n)), updated_at: iso(daysAgo(n)), outcome: null, ...o });
+  const stories = add("stories", [
+    st(4, { title: "Asked back for a summer job", body: "Jaylen practiced interviews with two Northgate staff. They asked him back for a summer job.", outcome: "He has a paid summer role lined up.", status: "approved", captured_by: "priya" }),
+    st(2, { title: "A question about pay, answered", body: "Sofia P. asked her coach how a paycheck works, and the group built a first budget together.", status: "approved", captured_by: "priya" }),
+    st(6, { title: "Showcase night, a full room", body: "Forty families came to the spring showcase and every table had a teen presenting.", outcome: "Twelve families signed up to host a site visit.", status: "approved", captured_by: "dana" }),
+    st(9, { title: "First robotics meet", body: "Ana R. led her team's first robotics meet and wrote the practice plan herself.", status: "approved", captured_by: "marcus" }),
+    st(1, { title: "Mentor match that clicked", body: "A volunteer engineer and Leo T. found they grew up two streets apart.", status: "raw", captured_by: "priya", source: "reed" }),
+  ]);
+  const [sJob, sPay, sShow, sRobot, sMentor] = stories;
+  const subj = add("story_subjects", [
+    { id: T.id(19), org_id: ORG_ID, story_id: sJob.id, subject_type: "participant", subject_id: null, display_label: "Jaylen M.", is_minor: true, created_at: sJob.created_at },
+    { id: T.id(19), org_id: ORG_ID, story_id: sPay.id, subject_type: "participant", subject_id: null, display_label: "Sofia P.", is_minor: true, created_at: sPay.created_at },
+    { id: T.id(19), org_id: ORG_ID, story_id: sShow.id, subject_type: "none", subject_id: null, display_label: "No one identifiable", is_minor: false, created_at: sShow.created_at },
+    { id: T.id(19), org_id: ORG_ID, story_id: sRobot.id, subject_type: "participant", subject_id: null, display_label: "Ana R.", is_minor: true, created_at: sRobot.created_at },
+    { id: T.id(19), org_id: ORG_ID, story_id: sMentor.id, subject_type: "participant", subject_id: null, display_label: "Leo T.", is_minor: true, created_at: sMentor.created_at },
+  ]);
+  add("story_consents", [
+    { id: T.id(19), org_id: ORG_ID, story_subject_id: subj[0].id, scope: ["first_name", "quote", "outcome_details"], requested_at: ymd(daysAgo(5)), granted_by: "Parent on file (example)", granted_at: ymd(daysAgo(3)), expires_at: ymd(daysFromNow(365)), revoked_at: null, evidence_document_id: null, notes: null, created_at: iso(daysAgo(3)) },
+    { id: T.id(19), org_id: ORG_ID, story_subject_id: subj[3].id, scope: ["first_name"], requested_at: ymd(daysAgo(2)), granted_by: null, granted_at: null, expires_at: null, revoked_at: null, evidence_document_id: null, notes: "Asked at pickup.", created_at: iso(daysAgo(2)) },
+  ]);
+  const quarterly = { id: T.id(19), org_id: ORG_ID, name: "Quarterly newsletter", cadence: "quarterly", is_archived: false, created_at: iso(daysAgo(30)), updated_at: iso(daysAgo(30)), slots: [
+    { key: "letter", label: "Letter from the leader", kind: "letter", required: true, hint: "One piece of your model, personal, signed." },
+    { key: "person", label: "Person spotlight", kind: "story", required: true, hint: "A named person doing something. Needs current consent." },
+    { key: "work", label: "The work", kind: "story", required: true, hint: "Something that happened since last time. Outcome, not output." },
+    { key: "ask", label: "Support the work", kind: "ask", required: true, hint: "Always present, never a hard ask." },
+  ] };
+  add("comms_formats", [quarterly, { id: T.id(19), org_id: ORG_ID, name: "News flash", cadence: "adhoc", is_archived: false, created_at: iso(daysAgo(30)), updated_at: iso(daysAgo(30)), slots: [{ key: "flash", label: "What happened", kind: "story", required: true }, { key: "ask", label: "Support the work", kind: "ask", required: false }] }]);
+  const yearEnd = ecs.find((c) => c.status === "draft");
+  const editions = add("comms_editions", [
+    { id: T.id(19), org_id: ORG_ID, format_id: quarterly.id, title: "Winter 2026 newsletter", subject: "What your gift did this fall", status: "drafting", target_date: ymd(daysFromNow(10)), email_campaign_id: null, sent_at: null, created_at: iso(daysAgo(8)), updated_at: iso(daysAgo(1)) },
+    { id: T.id(19), org_id: ORG_ID, format_id: quarterly.id, title: "Year-end appeal", subject: "Your gift, doubled until Dec 31", status: "compiled", target_date: ymd(daysFromNow(30)), email_campaign_id: yearEnd ? yearEnd.id : null, sent_at: null, created_at: iso(daysAgo(12)), updated_at: iso(daysAgo(2)) },
+  ]);
+  const slot = (ed, s, i, o = {}) => ({ id: T.id(19), org_id: ORG_ID, edition_id: ed.id, slot_key: s.key, slot_def: s, story_id: null, metric_ids: null, content: null, position: i, created_at: ed.created_at, updated_at: ed.updated_at, ...o });
+  add("comms_edition_slots", [
+    slot(editions[0], quarterly.slots[0], 0, { content: "This fall our teens walked into workplaces for the first time. Here is one of them." }),
+    slot(editions[0], quarterly.slots[1], 1, { story_id: sJob.id }),
+    slot(editions[0], quarterly.slots[2], 2),
+    slot(editions[0], quarterly.slots[3], 3, { content: "A gift of any size keeps a Career Lab open for one more teen." }),
+    slot(editions[1], quarterly.slots[0], 0, { content: "Every year-end gift is matched until December 31." }),
+    slot(editions[1], quarterly.slots[1], 1, { story_id: sJob.id }),
+    slot(editions[1], quarterly.slots[2], 2, { story_id: sShow.id }),
+    slot(editions[1], quarterly.slots[3], 3, { content: "Double your gift today." }),
+  ]);
+  void validSegs;
+  // The connected Gmail sender (G1). No token: the mock never sends.
+  add("connections", [{ id: T.id(19), org_id: ORG_ID, provider: "google_gmail", external_id: "sender", status: "active", meta: { account_email: "hello@demo-angels.example", connected_by_email: "dana@demo-angels.example", connected_at: iso(daysAgo(20)) }, created_at: iso(daysAgo(20)), updated_at: iso(daysAgo(20)) }]);
+
   // ── partners, students, cohorts ──────────────────────────────────────────
   const partners = add("partners", [...SCHOOLS, ...NONPROFITS.slice(0, 4), ...COMPANIES.slice(0, 6)].map((n, i) => {
     const kind = i < SCHOOLS.length ? (n.includes("District") ? "district" : "school") : i < SCHOOLS.length + 4 ? "nonprofit" : "company";
@@ -474,7 +572,7 @@ function populate(T, add, tables, team) {
     { name: "Summer 2026 Internships", status: "completed", start: -160, end: -110, p: 3 },
     { name: "Spring 2026 Career Lab: Westbrook", status: "completed", start: -260, end: -180, p: 3 },
     { name: "Winter 2027 Career Lab: Del Sol", status: "planning", start: 50, end: 140, p: 4 },
-  ].map((c, i) => ({ id: T.id(23), org_id: ORG_ID, name: c.name, program: i === 3 ? "Summer Internships" : "Career Labs", program_id: programs[i === 3 ? 1 : 0].id, term: c.name.split(" ").slice(0, 2).join(" "), location: schoolPartners[c.p].name, partner_id: schoolPartners[c.p].id, capacity: 20, start_date: ymd(daysFromNow(c.start)), end_date: ymd(daysFromNow(c.end)), status: c.status, accepting_applications: c.status === "planning", owner_id: i % 2 ? team[2].id : null, created_at: iso(daysAgo(200)) })));
+  ].map((c, i) => ({ id: T.id(23), org_id: ORG_ID, name: c.name, program: i === 3 ? "Summer Internships" : "Career Labs", program_id: programs[i === 3 ? 1 : 0].id, term: c.name.split(" ").slice(0, 2).join(" "), location: schoolPartners[c.p].name, partner_id: schoolPartners[c.p].id, capacity: 20, start_date: ymd(daysFromNow(c.start)), end_date: ymd(daysFromNow(c.end)), status: c.status, accepting_applications: c.status === "planning", owner_id: i % 2 ? team[2].id : i === 0 ? team[0].id : null, created_at: iso(daysAgo(200)) })));
   const members = [];
   cohorts.slice(0, 5).forEach((c, ci) => {
     for (let k = 0; k < 15; k++) {
@@ -491,6 +589,9 @@ function populate(T, add, tables, team) {
       sessions.push({ id: T.id(25), org_id: ORG_ID, cohort_id: c.id, session_date: ymd(d), title: `Week ${w + 1}: ${["Kickoff", "Healthcare", "Engineering", "Design", "Finance", "Trades", "Media", "Public service", "Tech", "Showcase"][w]}`, starts_at: "15:30:00", ends_at: "17:00:00", location: c.location, status: d < now ? (w === 4 && c.status === "active" ? "canceled" : "held") : "scheduled", created_at: iso(daysAgo(150)) });
     }
   });
+  // V4 Stage E: a session today on the first cohort (owned by the signed-in
+  // user), so Today and Attendance can open a live phone roster.
+  sessions.push({ id: T.id(25), org_id: ORG_ID, cohort_id: cohorts[0].id, session_date: NOW.toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" }), title: "Week 11: Mock interviews", starts_at: "15:30:00", ends_at: "17:00:00", location: cohorts[0].location, status: "scheduled", created_at: iso(daysAgo(150)) });
   add("cohort_sessions", sessions);
   const att = [];
   for (const s of sessions.filter((x) => x.status === "held")) {
@@ -503,7 +604,9 @@ function populate(T, add, tables, team) {
 
   // coach
   const coachPeople = add("coach_people", Array.from({ length: 14 }, (_, i) => ({ id: T.id(28), org_id: ORG_ID, kind: i < 7 ? "coach" : "student", status: T.pick(enums.coach_people.status), first_name: i < 7 ? FIRST[(i * 9 + 4) % FIRST.length] : STUDENT_FIRST[i], last_name: i < 7 ? LAST[(i * 5 + 9) % LAST.length] : STUDENT_LAST[i], company: i < 7 ? T.pick(COMPANIES) : null, school: i >= 7 ? T.pick(SCHOOLS) : null, field: T.pick(["Healthcare", "Software", "Finance", "Design", "Trades"]), email: `coach${i}@example.com`, created_at: iso(daysAgo(T.int(1, 90))) })));
-  add("coach_matches", [0, 1, 2].map((k) => ({ id: T.id(28), org_id: ORG_ID, coach_id: coachPeople[k].id, student_id: coachPeople[7 + k].id, status: ["active", "intro_sent", "proposed"][k], created_at: iso(daysAgo(10 + k)) })));
+  const coachMatches = add("coach_matches", [0, 1, 2].map((k) => ({ id: T.id(28), org_id: ORG_ID, coach_id: coachPeople[k].id, student_id: coachPeople[7 + k].id, status: ["active", "intro_sent", "proposed"][k], intro_sent_at: k < 2 ? iso(daysAgo(30 + k)) : null, created_at: iso(daysAgo(10 + k)) })));
+  // V4 Stage E: the four sessions of each match (two met, one past its date, one ahead on the first).
+  add("coach_sessions", coachMatches.flatMap((m, k) => [1, 2, 3, 4].map((n) => ({ id: T.id(28), org_id: ORG_ID, match_id: m.id, n, scheduled_on: k === 0 ? ymd(daysFromNow([-21, -14, -3, 7][n - 1])) : null, done_at: k === 0 && n <= 2 ? iso(daysAgo([21, 14][n - 1])) : null, created_at: m.created_at }))));
 
   // ── work: projects, tasks, meetings, calendar, documents ──────────────────
   const objectives = add("plan_objectives", [
@@ -662,5 +765,108 @@ function populate(T, add, tables, team) {
   // a Gmail-connected-ish backlog for Meetings → connection candidates
   add("connection_candidates", people.slice(40, 44).map((p, i) => ({ id: T.id(83), org_id: ORG_ID, thread_id: `thr${i}`, constituent_id: p.id, subject: ["Coffee next week?", "Re: internship hosting", "Intro from a friend", "Spring panel"][i], status: "pending", created_at: iso(daysAgo(i + 1)) })));
 
-  // ygb registrations (aa.ygb) left empty on purpose; captures empty.
+  // ygb registrations (aa.ygb) left empty on purpose.
+
+  // V4 Stage C: one Talk to log recording with the four card kinds, waiting
+  // to be confirmed (the parse needs a model, so the harness seeds its result).
+  const capId = "c4c4c4c4-0000-4000-8000-000000000001";
+  const donor = people[0];
+  const donorName = `${donor.first_name} ${donor.last_name}`;
+  const recordedAt = iso(new Date(now.getTime() - 40 * 60 * 1000));
+  add("captures", [{
+    id: capId, org_id: ORG_ID, created_by: team[0].id, source_surface: "mobile_plus", context_type: null, context_id: null,
+    transcript: `Had coffee with ${donor.first_name} this morning. She wants to see the spring cohort first. Put her down for fifteen thousand, probably December. I owe her the site-visit dates by Friday. And her tour guide Jaylen went on to start a robotics club.`,
+    duration_seconds: 40, status: "ready", parse_error: null, model_used: "fixture", ai_call_id: null, snoozed_until: null, created_at: recordedAt, updated_at: recordedAt,
+  }]);
+  const card = (n, dest, status, payload, entity) => ({
+    id: `c4c4c4c4-0000-4000-8000-00000000010${n}`, org_id: ORG_ID, capture_id: capId, created_by: team[0].id, position: n, dest, status,
+    entity_type: entity ? "constituent" : null, entity_id: entity ? donor.id : null, heard_name: entity ? donor.first_name : null,
+    match_confidence: entity ? 0.92 : null, match_candidates: entity ? [{ kind: "constituent", id: donor.id, name: donorName, org_name: null, meta: "person", sim: 0.95 }] : [],
+    payload: { ai_drafted: true, ...payload, ...(entity ? { entity_name: donorName } : {}) }, decided_by: null, decided_at: null, applied_table: null, applied_id: null,
+    created_at: recordedAt, updated_at: recordedAt,
+  });
+  add("capture_cards", [
+    card(1, "interaction", "proposed", { kind: "meeting", notes: "Coffee. Wants to see the spring cohort first.", occurred_at: ymd(now), uncertain: [], source_sentence: `Had coffee with ${donor.first_name} this morning.` }, true),
+    card(2, "task", "proposed", { title: `Send ${donor.first_name} the spring site-visit dates`, category: "fundraising", due_date: ymd(daysFromNow(3)), assignee: { handle: "dana", user_id: team[0].id, name: team[0].displayName }, notes: null, uncertain: [] }, true),
+    card(3, "thought", "held", { card_kind: "gift", gift_type: "pledge", amount: 15000, amount_heard: "fifteen thousand", expected: "December", gift_date: null, notes: null, uncertain: ["amount", "date"], source_sentence: "Put her down for fifteen thousand, probably December." }, true),
+    card(4, "thought", "held", { card_kind: "story", title: "The tour guide who started a club", text: "Her student tour guide went on to start a robotics club.", about: "Jaylen M.", identifiable: true, consent: "needed", uncertain: [] }, false),
+    // A Stage C draft that was KEPT before the story bank existed (Stage D moves it in).
+    { ...card(6, "thought", "confirmed", { card_kind: "story", title: "Coach notes on a first paycheck", text: "Marisol K. brought her first pay stub to Career Lab and walked the group through it.", about: "Marisol K.", identifiable: true, consent: "needed", uncertain: [], filed: { table: "capture_cards", kept: true } }, false), decided_at: recordedAt },
+    card(5, "thought", "held", { card_kind: "gift", gift_type: "gift", amount: 500, amount_heard: "500", gift_date: ymd(now), notes: null, uncertain: [] }, true),
+  ]);
+}
+
+// ── V4 Stage P: a second org, for two-org checks ─────────────────────────────
+// "Lanternfield Youth Alliance (demo)" is a copy of the demo org with every id
+// moved to its own prefix and every surname, foundation, company, school and
+// team name swapped for a separate invented pool, so any string from one org
+// showing up while signed in to the other is a cross-org leak. It holds the
+// Pilot plan (no Ambition Angels-only modules), like a real second tenant.
+const ORG_B_ID = "b5b5b5b5-0000-4000-8000-000000000001";
+const B_LAST = ["Achterberg", "Blackwoodrhee", "Cinderford", "Dovecote", "Embervale", "Foxglove", "Gildersleeve", "Hollowell", "Ironmonger", "Juniperson", "Kittredge", "Lambrecht", "Moorcroft", "Nettleship", "Oakenshaw", "Pellingham", "Quarrington", "Rookwood", "Saltonstall", "Tillinghast", "Upthegrove", "Vexley", "Wintergreen", "Yellowhammer", "Zanderbeck", "Amberley", "Briarcliff", "Coldharbour", "Dewhurst", "Elderberry", "Fernsby", "Glenmorrow", "Heathcote", "Ivybridge", "Kestrelholm", "Lockerbie", "Marblehead", "Nightjar", "Orchardson", "Penhallow", "Ravensworth", "Silverthorn", "Thornbury", "Valemont", "Winterbourne"];
+const B_FOUNDATIONS = ["Gullwing Community Foundation", "Ostrander Family Fund", "Kelpie Youth Futures Trust", "Moonrake Foundation", "Quillon Opportunity Fund", "Tamarack Charitable Trust", "Brackenridge Foundation", "Starling Education Fund", "Fogbound Valley Giving Circle", "Pike & Hollis Family Foundation", "Saltmarsh Workforce Initiative", "Granitefall Foundation"];
+const B_COMPANIES = ["Vantor Robotics", "Corvid Analytics", "Mossgate Health", "Pelican Freight", "Emberline Energy", "Zenith Hollow Software", "Basalt Ridge Bank", "Wick & Wren Design", "Larchmont Builders", "Kiteworks Labs", "Spindle Biotech", "Driftline Mobility", "Lowtide Media", "Obsidian Chips", "Fernhill Credit Union", "Compass Rose Field Services"];
+const B_SCHOOLS = ["Northfield High School", "Creekside Middle School", "Mesa Verde Academy", "Eastbrook High School", "Del Mar Middle School", "Gull Point Charter", "Valley Ash High School", "Sunridge Middle School", "Seabright Unified School District", "Northgate Prep", "Lakeview Community School", "Birch Creek High School"];
+const B_PEOPLE = {
+  "Dana Whitfield": "Corinne Hazelwood", "Marcus Okafor": "Ellis Banerjee", "Priya Raman": "Joaquin Ferrante", "Lena Ortiz": "Mirela Sokolova", "Theo Brandt": "Augustin Delorme",
+  "Rosalind Achebe": "Philippa Mortlake", "Kenji Morales": "Benedikt Asante", "Harriet Lindgren": "Octavia Strand", "Samuel Oduya": "Leopold Iyer", "Beatrix Castellanos": "Clementine Roux", "Gareth Pennington": "Barnaby Quist", "Imogen Nakagawa": "Seraphina Oduro",
+  Whitfield: "Hazelwood", Okafor: "Banerjee", Raman: "Ferrante", Ortiz: "Sokolova", Brandt: "Delorme",
+};
+const B_ORG = { id: ORG_B_ID, name: "Lanternfield Youth Alliance (demo)", slug: "lanternfield-demo" };
+
+export const ORG_B = B_ORG;
+export const TEAM_B = TEAM.map((p) => ({ ...p, id: p.id.replace("a4a4a4a4-", "b5b5b5b5-"), displayName: B_PEOPLE[p.displayName], email: p.email.replace("demo-angels.example", "demo-lanternfield.example") }));
+
+// Strings that belong to one org only: seeing any of them while signed in to
+// the other org is a leak. Surnames and org-level names, never first names.
+export const CANARIES = {
+  a: [DEMO.org.name, ...LAST, ...FOUNDATIONS, ...COMPANIES, ...Object.keys(B_PEOPLE).filter((k) => k.includes(" "))],
+  b: [B_ORG.name, ...B_LAST, ...B_FOUNDATIONS, ...B_COMPANIES, ...Object.values(B_PEOPLE).filter((k) => k.includes(" "))],
+};
+
+const B_SWAPS = (() => {
+  const pairs = [
+    [DEMO.org.name, B_ORG.name], ["Ambition Angels", "Lanternfield Youth Alliance"], [DEMO.org.slug, B_ORG.slug], ["demo-angels.example", "demo-lanternfield.example"],
+    ...Object.entries(B_PEOPLE),
+    ...LAST.map((x, i) => [x, B_LAST[i]]), ...FOUNDATIONS.map((x, i) => [x, B_FOUNDATIONS[i]]), ...COMPANIES.map((x, i) => [x, B_COMPANIES[i]]), ...SCHOOLS.map((x, i) => [x, B_SCHOOLS[i]]),
+  ];
+  pairs.sort((x, y) => y[0].length - x[0].length);
+  const map = new Map(pairs);
+  const re = new RegExp(pairs.map(([k]) => k.replace(/[.*+?^${}()|[\]\\&]/g, "\\$&")).join("|"), "g");
+  return (s) => s.replace(/a4a4a4a4-/g, "b5b5b5b5-").replace(/c4c4c4c4-/g, "d5d5d5d5-").replace(re, (m) => map.get(m));
+})();
+function toB(v, key) {
+  if (typeof v === "string") return B_SWAPS(v);
+  if (typeof v === "number" && key === "id") return v + 1_000_000; // serial ids stay unique
+  if (Array.isArray(v)) return v.map((x) => toB(x));
+  if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, toB(x, k)]));
+  return v;
+}
+const B_PILOT = ["modules.fundraising", "modules.finance", "modules.program", "modules.comms", "modules.ops", "modules.meetings", "modules.messages", "modules.documents", "ai.capture", "modules.strategy", "modules.board", "modules.compliance", "modules.staff", "modules.metrics"];
+
+/**
+ * Both orgs in one store (the mock's two-org mode). The signed-in user is the
+ * first team member of `org` ("a" = the demo org, "b" = Lanternfield), and
+ * holds `role` there; the other org's people keep their fixture roles. Rows
+ * that belong to an org (an org_id, or ids under the org's prefix) are copied;
+ * platform rows (role_permissions, reference data) are shared.
+ */
+export function buildTwoOrgFixtures({ profile = "populated", role = "owner", org = "a" } = {}) {
+  const a = buildFixtures({ profile, role: org === "a" ? role : "owner" });
+  const roleB = org === "b" ? role : "owner";
+  const tables = {};
+  for (const [t, rows] of Object.entries(a.tables)) {
+    const copies = [];
+    for (const r of rows) {
+      const owned = ("org_id" in r && r.org_id === ORG_ID) || (!("org_id" in r) && /"(a4a4a4a4|c4c4c4c4)-/.test(JSON.stringify(r)));
+      if (!owned) continue;
+      if (t === "org_entitlements") continue; // Lanternfield gets the Pilot plan below
+      const b = toB(r);
+      if (t === "memberships" && b.user_id === TEAM_B[0].id) b.role = roleB;
+      copies.push(b);
+    }
+    tables[t] = [...rows, ...copies];
+  }
+  tables.org_entitlements = [...(tables.org_entitlements || []), ...B_PILOT.map((k) => ({ org_id: ORG_B_ID, feature_key: k, enabled: true, source: "setup-org", updated_at: "2026-01-02T00:00:00Z" }))];
+  return { tables, rpcs: a.rpcs, user: org === "b" ? TEAM_B[0] : TEAM[0], team: org === "b" ? TEAM_B : TEAM, orgId: org === "b" ? ORG_B_ID : ORG_ID };
 }

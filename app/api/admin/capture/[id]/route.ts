@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { requireEntitlement } from "@/lib/admin/entitlements";
+import { ctxHasPermission } from "@/lib/admin/auth";
+import { filingPermissionsHeld } from "@/lib/capture/handoff";
 
 export const dynamic = "force-dynamic";
 
@@ -33,5 +35,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     .eq("capture_id", params.id)
     .order("position", { ascending: true });
 
-  return NextResponse.json({ capture, cards: cards ?? [] });
+  // Which destinations the caller may file to, so a card they cannot file
+  // says so and offers "Send to a teammate" instead of a Confirm that 403s.
+  const filing_permissions = await filingPermissionsHeld((p) => ctxHasPermission(ent.ctx, p));
+  return NextResponse.json({ capture, cards: cards ?? [], filing_permissions });
 }

@@ -1,57 +1,28 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import FlagToggle from "./FlagToggle";
 
-type Props = {
+// Inline "exclude from runway" toggle. Takes a one-off outlay, pass-through or
+// reimbursement out of month-to-date spend and the burn baseline. The dollar
+// still counts in year-to-date totals and the cash chart; only runway ignores it.
+export default function ExcludeFromRunwayToggle({
+  transactionId,
+  initial,
+  rowLabel,
+}: {
   transactionId: string;
   initial: boolean;
-};
-
-// Inline "exclude from runway" toggle. Flips a transaction out of (or back into)
-// month-to-date spend and the burn baseline — useful for one-off capital
-// outlays, pass-throughs, or reimbursements that would otherwise distort the
-// runway. The dollar still counts in YTD totals and the cash-flow chart; only
-// the runway math ignores it. Refreshes so the dashboard tiers re-read.
-export default function ExcludeFromRunwayToggle({ transactionId, initial }: Props) {
-  const router = useRouter();
-  const [value, setValue] = useState(initial);
-  const [busy, setBusy] = useState(false);
-
-  async function toggle() {
-    const next = !value;
-    setBusy(true);
-    setValue(next);
-    const r = await fetch(`/api/admin/finance/transactions/${transactionId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ exclude_from_runway: next }),
-    });
-    if (!r.ok) {
-      setValue(!next); // roll back
-    } else {
-      router.refresh();
-    }
-    setBusy(false);
-  }
-
+  rowLabel: string;
+}) {
   return (
-    <button
-      type="button"
-      onClick={toggle}
-      disabled={busy}
-      className={`text-xs px-1.5 py-0.5 rounded border ${
-        value
-          ? "border-status-watch/60 bg-status-watch-bg text-status-watch-text"
-          : "border-hairline text-ink-2 hover:text-ink-1"
-      } ${busy ? "opacity-50" : ""}`}
-      title={
-        value
-          ? "Excluded from runway/burn. Still counts in YTD and the cash-flow chart"
-          : "Counted in runway/burn"
-      }
-    >
-      {value ? "off-runway" : "in runway"}
-    </button>
+    <FlagToggle
+      transactionId={transactionId}
+      field="exclude_from_runway"
+      initial={initial}
+      onLabel="Left out of runway"
+      offLabel="In runway"
+      title="Left out of runway and burn. Still counts in year-to-date totals and the cash chart."
+      rowLabel={rowLabel}
+    />
   );
 }

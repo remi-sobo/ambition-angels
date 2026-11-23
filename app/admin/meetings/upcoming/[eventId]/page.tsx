@@ -4,7 +4,7 @@ import { getUpcomingMeetingDetail, type UpcomingMeetingDetail } from "@/lib/meet
 import type { ConstituentDossier, PartnerDossier } from "@/lib/meetings/dossier";
 import { SectionTitle } from "../../_ui";
 import MeetingAgendaButton from "../../_components/MeetingAgendaButton";
-import PageHeader from "../../../_components/PageHeader";
+import PageHeader, { IdentityChip } from "../../../_components/PageHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -131,15 +131,19 @@ export default async function UpcomingMeetingDetailPage({ params }: { params: { 
   const partById = new Map(partners.map((d) => [d.id, d]));
 
   return (
-    <div className="max-w-4xl px-4 lg:px-8 py-6 lg:py-8 space-y-6">
+    <div className="max-w-reading px-4 lg:px-8 py-6 lg:py-8 space-y-6">
       <header>
-        <Link href="/admin/meetings" className="text-xs text-ink-2 hover:text-ink-1 inline-flex items-center gap-1 mb-3">
-          ← Meetings
-        </Link>
         <PageHeader
+          breadcrumb={[{ label: "Meetings", href: "/admin/work/meetings" }]}
           title={brief.title ?? "Untitled meeting"}
-          subtitle={<>{fmtDateTime(brief.start)} · Upcoming</>}
-          actions={
+          chips={
+            <>
+              <IdentityChip>{fmtDateTime(brief.start)}</IdentityChip>
+              <IdentityChip>Upcoming</IdentityChip>
+            </>
+          }
+          moreActions={[{ label: "All meetings", href: "/admin/work/meetings" }]}
+          primaryAction={
             <MeetingAgendaButton
               eventId={brief.event_id}
               title={brief.title}
@@ -186,7 +190,7 @@ export default async function UpcomingMeetingDetailPage({ params }: { params: { 
           <p className="text-sm text-ink-1 leading-relaxed whitespace-pre-wrap">{agenda.agenda}</p>
         ) : (
           <p className="text-sm text-ink-2 italic">
-            No agenda yet. Hit{" "}
+            No agenda yet. Choose{" "}
             <span className="font-medium text-ink-1">Prep with Reed</span>. He&apos;ll research who you&apos;re meeting,
             review your history, and draft a tailored agenda for {brief.entities.some((e) => e.is_first_meeting) ? "this first meeting" : "the next touchpoint"}.
           </p>

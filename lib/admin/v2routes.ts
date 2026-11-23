@@ -166,7 +166,7 @@ const ACTIVE: V2RouteRow[] = [
   { v1: "/admin/fundraising/settings", v2: "/admin/settings/fundraising/general", kind: "exact", activation: "now", disposition: "settings" },
   { v1: "/admin/fundraising/settings/stages", v2: "/admin/settings/fundraising/stages", kind: "exact", activation: "now", disposition: "settings" },
   { v1: "/admin/fundraising/duplicates", v2: "/admin/settings/fundraising/duplicates", kind: "exact", activation: "now", disposition: "settings" },
-  { v1: "/admin/fundraising/import", v2: "/admin/settings/imports/donors", kind: "exact", activation: "now", disposition: "settings", note: "merging into the one import wizard is Stage F" },
+  { v1: "/admin/fundraising/import", v2: "/admin/settings/imports/donors", kind: "exact", activation: "now", disposition: "settings", note: "Stage F: the seat redirects into the one import wizard (target gift)" },
   { v1: "/admin/finance/rules", v2: "/admin/settings/finance/rules", kind: "exact", activation: "now", disposition: "settings" },
   { v1: "/admin/finance/config", v2: "/admin/settings/finance/config", kind: "exact", activation: "now", disposition: "settings" },
   { v1: "/admin/finance/upload", v2: "/admin/settings/finance/upload", kind: "exact", activation: "now", disposition: "settings" },
@@ -291,6 +291,12 @@ export const KEPT_IN_PLACE: readonly string[] = [
   "/admin/impact/outcomes",     // Spec Impact I1: the provenance-first outcomes surface
   "/admin/impact/reports",      // Spec Impact I2: the gated report builder (Contract 7's third exit)
   "/admin/programs/coach",      // Ambition Coach sign-ups, matches and plans (aa.coach, AA-only)
+  // V4 Stage D: the Comms tabs that now have pages. Automations stays
+  // seatless (journeys are unscheduled), so the shell keeps it hidden.
+  "/admin/comms/home",
+  "/admin/comms/stories",
+  "/admin/comms/editions",
+  "/admin/comms/settings",
 ];
 
 /** The live screen for a canonical V2 path today, or null when none exists

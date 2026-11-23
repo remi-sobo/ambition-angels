@@ -4,6 +4,7 @@ import { RailEntityProvider } from "./_components/rail/RailEntityContext";
 import GlobalSearch from "./_components/search/GlobalSearch";
 import { ReedLauncherProvider } from "./_components/reed/ReedLauncherProvider";
 import AdminPWA from "./_components/AdminPWA";
+import AttendanceSync from "./_components/AttendanceSync";
 import { AdminUserProvider } from "./_components/AdminUserContext";
 import { AdminBadgesProvider } from "./_components/AdminBadges";
 import ToastProvider from "./_components/feedback/ToastProvider";
@@ -13,6 +14,7 @@ import V2TabZone from "./_components/v2/V2TabZone";
 import V2ReedEdge from "./_components/v2/V2ReedEdge";
 import V2MobileBar from "./_components/v2/V2MobileBar";
 import V2QuickAdd from "./_components/v2/V2QuickAdd";
+import CaptureLauncher from "./capture/_components/CaptureLauncher";
 import { getAdminUser, getOrgContext, getUserOrgs } from "@/lib/admin/auth";
 import { getMyDisplayName } from "@/lib/admin/profile";
 import { getEntitlements, hasFeature } from "@/lib/admin/entitlements";
@@ -113,6 +115,15 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     // V4 A2: the nav also hides what the ROLE cannot open (matching the
     // #593 server guard), e.g. Finance for staff without finance.read.
     const perms = ctx ? await getRolePermissions(ctx.role) : null;
+    // Voice for every role: a recording is saved to captures, whose RLS needs
+    // capture.use (capture_use_permission.sql: all five roles), so finance
+    // and board viewers get Talk to log too. Filing each card still checks
+    // its destination's permission. The entitlement is still the gate; the
+    // API is the boundary (402/403).
+    const canCapture = captureEnabled && !!perms?.includes("capture.use");
+    // V4 Stage D: "Capture a story" (StoryPhone) for roles that can write
+    // the story bank in an org with Comms.
+    const canStory = !!features?.includes("modules.comms") && !!perms?.includes("comms.manage");
     const nav = resolveShellNav(features, await getShellTermLabels(), perms);
     // V4 A2: global search's page list is generated from the same nav (and
     // the Settings sections this person can see), never a hand-kept list.
@@ -130,6 +141,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           is the inset rounded panel below. Phones keep the plain app bg. */}
       <div className="admin-shell min-h-screen lg:flex bg-ink lg:bg-navy text-ink-1">
         <AdminPWA />
+        {/* V4 Stage E: sends attendance marks a phone queued while offline. */}
+        {perms?.includes("program.write") ? <AttendanceSync /> : null}
         <V2Sidebar
           nav={nav}
           displayName={displayName}
@@ -137,6 +150,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           orgName={ctx?.orgName ?? null}
           orgs={orgs}
           activeOrgId={orgId}
+          captureEnabled={canCapture}
         />
         <ReedLauncherProvider enabled={reedEnabled}>
           <RailEntityProvider>
@@ -165,10 +179,13 @@ export default async function AdminLayout({ children }: { children: ReactNode })
               More, derived from the same resolved nav as the sidebar. The
               centre is voice Capture behind ai.capture (V4 §8), else the ＋
               quick-add sheet. */}
-          <V2MobileBar nav={nav} currentUser={user} reedEnabled={reedEnabled} captureEnabled={captureEnabled} />
+          <V2MobileBar nav={nav} currentUser={user} reedEnabled={reedEnabled} captureEnabled={canCapture} storyEnabled={canStory} />
           {/* B6: the shell-level Quick Add — capture, report-an-issue, and
               the search overlay, at every desktop width (V2 has no rail). */}
-          <V2QuickAdd currentUser={user} reedEnabled={reedEnabled} captureEnabled={captureEnabled} />
+          <V2QuickAdd currentUser={user} reedEnabled={reedEnabled} captureEnabled={canCapture} storyEnabled={canStory} />
+          {/* V4 §8: the one desktop Capture modal, opened by the sidebar's
+              Talk to log button, Today, and record pages. */}
+          <CaptureLauncher enabled={canCapture} />
         </ReedLauncherProvider>
         <GlobalSearch pages={searchPages} />
       </div>

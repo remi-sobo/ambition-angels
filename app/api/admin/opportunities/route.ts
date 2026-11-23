@@ -5,6 +5,7 @@ import { audit } from "@/lib/audit";
 import { pushOpportunityToHubSpot } from "@/lib/hubspot/sync-out";
 import { resolveConstituent } from "@/lib/fundraising/constituent-resolve";
 import { createOpportunity } from "@/lib/fundraising/create-opportunity";
+import { createOwnerFor } from "@/lib/admin/owners-server";
 
 const isISODate = (v: unknown): v is string =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -24,6 +25,11 @@ export async function POST(req: NextRequest) {
   }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+
+  // The board card's owner: the creator unless the request names a member
+  // of the active org (or null, "unassigned").
+  const owner = await createOwnerFor(body, ctx);
+  if (!owner.ok) return NextResponse.json({ error: owner.error }, { status: 400 });
 
   const supabase = createServerSupabase();
   const resolved = await resolveConstituent(supabase, ctx.orgId, {
@@ -49,6 +55,7 @@ export async function POST(req: NextRequest) {
     nextStep: typeof body.next_step === "string" ? body.next_step : null,
     nextStepDue: isISODate(body.next_step_due) ? body.next_step_due : null,
     owner: (await getAdminUser()) ?? null,
+    ownerId: owner.ownerId,
   });
   if ("error" in created) {
     return NextResponse.json({ error: created.error }, { status: created.status });

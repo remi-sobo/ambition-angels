@@ -3,12 +3,38 @@
 // Manual trigger for the Gmail → interactions sync (Phase 1C.b). Mirrors the
 // HubSpot sync in the sidebar: POST advances one chunk and returns job state;
 // poll every 2s while running. The first run backfills all history; later runs
-// (and the hourly cron) are incremental. A failed run usually means the
-// gmail.readonly scope is missing from the Google token — surfaced as a hint.
+// (and the hourly cron) are incremental. The mailbox is read through the
+// separate Internal OAuth client; a failed run usually means it needs
+// reconnecting — surfaced as a hint.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { userMessage } from "@/lib/admin/errors";
+import { GMAIL_SYNC_PAUSED } from "@/lib/fundraising/gmail-sync-flag";
+import type { GmailSyncConnectionStatus } from "@/lib/google/gmail-sync-connection";
+
+const CONNECT_HREF = "/api/admin/fundraising/gmail-sync/connect/start";
+
+type Props = { connection: GmailSyncConnectionStatus; notice?: string | null };
+
+// The mailbox line under the button: whether the internal Gmail app has a
+// mailbox, with a connect link when it doesn't.
+function MailboxLine({ connection, notice }: Props) {
+  if (notice) return <span className="text-xs text-ink-3 max-w-[230px] text-right leading-tight">{notice}</span>;
+  if (connection.state === "unconfigured") return null;
+  if (connection.state === "active") {
+    return (
+      <span className="text-xs text-ink-3 max-w-[230px] text-right leading-tight">
+        Mailbox: {connection.accountEmail}
+      </span>
+    );
+  }
+  return (
+    <a href={CONNECT_HREF} className="text-xs font-semibold text-ink-2 hover:text-ink-1 underline">
+      {connection.state === "error" ? "Reconnect mailbox" : "Connect mailbox"}
+    </a>
+  );
+}
 
 type Status = "running" | "completed" | "failed" | "partial";
 type Job = {
@@ -35,7 +61,43 @@ function looksLikeScopeError(msg: string): boolean {
   return m.includes("scope") || m.includes("insufficient") || m.includes("permission") || m.includes("403");
 }
 
-export default function GmailSyncButton() {
+// While the sync is paused (lib/fundraising/gmail-sync-flag.ts) the button is a
+// disabled label: no fetches, nothing to click.
+export default function GmailSyncButton(props: Props) {
+  if (GMAIL_SYNC_PAUSED) return <GmailSyncPaused {...props} />;
+  // Not paused but no mailbox on the internal app: nothing to sync yet.
+  if (props.connection.state !== "active") {
+    return (
+      <div className="flex flex-col items-end gap-0.5">
+        <span className="text-xs font-semibold px-4 py-2 rounded-full border-hairline bg-tile text-ink-3">
+          Email sync not connected
+        </span>
+        <MailboxLine {...props} />
+      </div>
+    );
+  }
+  return <GmailSyncActive />;
+}
+
+function GmailSyncPaused(props: Props) {
+  return (
+    <div className="flex flex-col items-end gap-0.5">
+      <button
+        type="button"
+        disabled
+        className="text-xs font-semibold px-4 py-2 rounded-full border-hairline bg-tile text-ink-3 opacity-60 cursor-not-allowed"
+      >
+        Email sync paused
+      </button>
+      <span className="text-xs text-ink-3 max-w-[230px] text-right leading-tight">
+        BloomOS isn&apos;t reading the mailbox right now. Log emails by hand for now.
+      </span>
+      <MailboxLine {...props} />
+    </div>
+  );
+}
+
+function GmailSyncActive() {
   const router = useRouter();
   const [job, setJob] = useState<Job | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -105,7 +167,7 @@ export default function GmailSyncButton() {
   let hint: string | null = null;
   if (failed) {
     hint = looksLikeScopeError(firstErr)
-      ? "Add the gmail.readonly scope to the Google token, then retry."
+      ? "Reconnect the mailbox through the internal Gmail app, then retry."
       : firstErr || "Try again.";
   } else if (job && !running && job.counts && job.counts.logged === 0 && job.counts.scanned > 0) {
     hint = "Scanned mail but matched no constituents on file.";

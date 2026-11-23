@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getOrgContext, ctxHasPermission } from "@/lib/admin/auth";
 import {
   BlockNotFound,
+  GoogleCalendarWriteFailed,
   deleteWorkBlock,
   moveWorkBlock,
   parseWindow,
   retitleWorkBlock,
 } from "@/lib/agenda/work-blocks";
+import { googleErrorSummary } from "@/lib/google/log-safe";
 
 // Move/resize/retitle and delete for one work block. Ownership is enforced in
 // the service (owner_user_id = session user), so a foreign id 404s.
@@ -48,7 +50,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (e instanceof BlockNotFound) {
       return NextResponse.json({ error: "Block not found" }, { status: 404 });
     }
-    console.error("[calendar/blocks PATCH] failed:", e);
+    console.error("[calendar/blocks PATCH] failed:", googleErrorSummary(e));
     return NextResponse.json({ error: "Couldn't update the block" }, { status: 502 });
   }
 }
@@ -66,7 +68,10 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     if (e instanceof BlockNotFound) {
       return NextResponse.json({ error: "Block not found" }, { status: 404 });
     }
-    console.error("[calendar/blocks DELETE] failed:", e);
+    if (e instanceof GoogleCalendarWriteFailed) {
+      return NextResponse.json({ error: e.message, code: "google_calendar_write_failed" }, { status: 409 });
+    }
+    console.error("[calendar/blocks DELETE] failed:", googleErrorSummary(e));
     return NextResponse.json({ error: "Couldn't delete the block" }, { status: 502 });
   }
 }

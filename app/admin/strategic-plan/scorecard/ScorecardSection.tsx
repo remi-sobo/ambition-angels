@@ -168,7 +168,7 @@ export default async function ScorecardSection({ embedded = false }: { embedded?
         <p className="text-xs text-ink-3 mb-4 max-w-2xl">
           Every measure, by who owns it. Update manual values, status, owner, and notes right
           here. Structural editing (add/delete measures, targets) stays on the{" "}
-          <Link href="/admin/strategic-plan" className="text-orange hover:underline">plan</Link>.
+          <Link href="/admin/organization/strategy" className="text-orange underline underline-offset-2">plan</Link>.
         </p>
         {body}
       </section>
@@ -177,18 +177,16 @@ export default async function ScorecardSection({ embedded = false }: { embedded?
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-workspace">
+      {/* PageHeader v2 (V4 P1). */}
       <PageHeader
+        breadcrumb={[{ label: "Strategic Plan", href: "/admin/organization/strategy" }]}
         title="KPI Scorecard"
-        subtitle={
-          <>
-            Every measure, by who owns it. Progress, pacing, and where each number comes from. Update
-            manual values, status, owner, and notes right here; changes flow to the{" "}
-            <Link href="/admin/strategic-plan/narrative" className="text-orange hover:underline">narrative</Link>{" "}
-            · back to the{" "}
-            <Link href="/admin/strategic-plan" className="text-orange hover:underline">full plan</Link>
-          </>
-        }
-        actions={<RefreshMetricsButton />}
+        subtitle="Every measure, by who owns it: progress, pacing, and where each number comes from. Update manual values, status, owner, and notes right here; changes flow to the narrative."
+        secondaryActions={<RefreshMetricsButton />}
+        moreActions={[
+          { label: "Whole plan", href: "/admin/organization/strategy" },
+          { label: "Narrative", href: "/admin/strategic-plan/narrative" },
+        ]}
       />
 
       {body}

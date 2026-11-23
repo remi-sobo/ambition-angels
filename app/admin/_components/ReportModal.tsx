@@ -6,6 +6,7 @@ import { userMessage } from "@/lib/admin/errors";
 import { useSpeechRecognition } from "@/lib/hooks/useSpeechRecognition";
 import { useIsOwner } from "./AdminUserContext";
 import { TYPE } from "@/lib/admin/typeScale";
+import Drawer from "./ui/Drawer";
 
 /**
  * Report-an-issue sheet, opened from the + FAB / rail dock.
@@ -206,25 +207,15 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:px-4">
-      <div
-        className="w-full sm:max-w-md rounded-t-2xl sm:rounded-panel border-hairline bg-ink shadow-2xl max-h-[92vh] overflow-y-auto"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-      >
-        <div className="sm:hidden flex justify-center pt-2.5 pb-1" aria-hidden>
-          <div className="w-10 h-1 rounded-full bg-tile" />
-        </div>
-
-        <div className="p-5 sm:p-6 space-y-4">
-          <div>
-            <h2 className={TYPE.modalTitle}>
-              Report an issue
-            </h2>
-            <p className="text-xs text-ink-2 mt-0.5">
-              Tell me what&apos;s going on. I&apos;ll ask a couple of quick questions to get the details.
-            </p>
-          </div>
-
+    // The kit Drawer: a right panel on desktop, a bottom sheet on phones, with
+    // the shared focus trap and Escape (held while a send is in flight).
+    <Drawer
+      open
+      onClose={() => !saving && onClose()}
+      title="Report an issue"
+      description="Tell me what's going on. I'll ask a couple of quick questions to get the details."
+    >
+        <div className="space-y-4">
           {/* Type selector — hidden once the interview is underway. */}
           {phase === "describe" && (
             <div>
@@ -281,12 +272,13 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
           {phase === "describe" && (
             <form onSubmit={start} className="space-y-4">
               <div>
-                <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">
+                <label htmlFor="report-description" className="block text-xs uppercase tracking-wider text-ink-2 mb-1">
                   What&apos;s going on?
-                </div>
+                </label>
                 <div className="relative">
                   <textarea
-                    autoFocus
+                    id="report-description"
+                    data-autofocus
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={4}
@@ -334,7 +326,8 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
               <form onSubmit={sendAnswer} className="space-y-3">
                 <div className="relative">
                   <textarea
-                    autoFocus
+                    aria-label="Your answer"
+                    data-autofocus
                     value={answer}
                     onChange={(e) => setAnswer(e.target.value)}
                     onKeyDown={(e) => {
@@ -419,8 +412,7 @@ export default function ReportModal({ onClose }: { onClose: () => void }) {
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </Drawer>
   );
 }
 
@@ -463,6 +455,7 @@ function PhotoPicker({
       <div className="text-xs uppercase tracking-wider text-ink-2 mb-1">Photo (optional)</div>
       <input
         ref={fileRef}
+        aria-label="Photo (optional)"
         type="file"
         accept="image/*"
         onChange={(e) => onPick(e.target.files?.[0] ?? null)}

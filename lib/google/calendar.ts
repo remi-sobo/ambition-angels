@@ -1,4 +1,4 @@
-import { getCalendarClient } from "./auth";
+import { getCalendarClient, withSchedulerToken } from "./auth";
 
 const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || "primary";
 
@@ -25,15 +25,15 @@ export async function listUpcomingEvents(
   timeMax: Date,
   maxResults = 12
 ): Promise<{ events: UpcomingEvent[]; timeZone: string }> {
-  const calendar = getCalendarClient();
-  const res = await calendar.events.list({
+  const { client: calendar, token } = await getCalendarClient();
+  const res = await withSchedulerToken(token, () => calendar.events.list({
     calendarId: CALENDAR_ID,
     timeMin: timeMin.toISOString(),
     timeMax: timeMax.toISOString(),
     singleEvents: true,
     orderBy: "startTime",
     maxResults,
-  });
+  }));
   // The calendar's own time zone — callers format times in it so a 3pm Pacific
   // event doesn't render as 10pm when the server runs in UTC. Falls back to
   // Pacific (Ambition Angels' zone) when the API doesn't return one.
@@ -76,14 +76,14 @@ export async function getFreeBusy(
   timeMin: Date,
   timeMax: Date
 ): Promise<BusyBlock[]> {
-  const calendar = getCalendarClient();
-  const res = await calendar.freebusy.query({
+  const { client: calendar, token } = await getCalendarClient();
+  const res = await withSchedulerToken(token, () => calendar.freebusy.query({
     requestBody: {
       timeMin: timeMin.toISOString(),
       timeMax: timeMax.toISOString(),
       items: [{ id: CALENDAR_ID }],
     },
-  });
+  }));
   const busy = res.data.calendars?.[CALENDAR_ID]?.busy ?? [];
   return busy
     .filter((b) => b.start && b.end)
@@ -103,8 +103,8 @@ export async function getFreeBusy(
 export async function createEvent(
   params: CreateEventParams
 ): Promise<{ eventId: string }> {
-  const calendar = getCalendarClient();
-  const res = await calendar.events.insert({
+  const { client: calendar, token } = await getCalendarClient();
+  const res = await withSchedulerToken(token, () => calendar.events.insert({
     calendarId: CALENDAR_ID,
     sendUpdates: "all",
     requestBody: {
@@ -115,7 +115,7 @@ export async function createEvent(
       end: { dateTime: params.end.toISOString(), timeZone: params.timeZone },
       attendees: params.attendees,
     },
-  });
+  }));
   const eventId = res.data.id;
   if (!eventId) {
     throw new Error("Google Calendar: event created but no event ID returned");
@@ -129,13 +129,13 @@ export async function createEvent(
  * 410 Gone in that case, which we treat as success.
  */
 export async function cancelEvent(eventId: string): Promise<void> {
-  const calendar = getCalendarClient();
+  const { client: calendar, token } = await getCalendarClient();
   try {
-    await calendar.events.delete({
+    await withSchedulerToken(token, () => calendar.events.delete({
       calendarId: CALENDAR_ID,
       eventId,
       sendUpdates: "all",
-    });
+    }));
   } catch (err: unknown) {
     const status = (err as { code?: number; status?: number }).code
       ?? (err as { code?: number; status?: number }).status;
@@ -156,8 +156,8 @@ export async function updateEvent(
   newEnd: Date,
   timeZone: string
 ): Promise<void> {
-  const calendar = getCalendarClient();
-  await calendar.events.patch({
+  const { client: calendar, token } = await getCalendarClient();
+  await withSchedulerToken(token, () => calendar.events.patch({
     calendarId: CALENDAR_ID,
     eventId,
     sendUpdates: "all",
@@ -165,5 +165,5 @@ export async function updateEvent(
       start: { dateTime: newStart.toISOString(), timeZone },
       end: { dateTime: newEnd.toISOString(), timeZone },
     },
-  });
+  }));
 }

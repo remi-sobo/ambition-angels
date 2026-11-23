@@ -71,7 +71,7 @@ export default function ProspectAngles({
 
       {available.length > 0 && (
         <div className="flex items-center gap-2">
-          <select
+          <select aria-label="Add an angle"
             value={sel}
             onChange={(e) => setSel(e.target.value)}
             className="bg-tile border-hairline rounded-control px-2.5 py-1.5 text-xs text-ink-1 focus:outline-none focus:border-orange/50"

@@ -15,6 +15,7 @@ import {
   MAX_CARDS,
   NEAR_TIE_DELTA,
 } from "./constants";
+import { V4_KINDS, buildGiftFields, buildStoryFields, cardKindOf, uncertainFields, type V4Kind } from "./cardKind";
 import {
   CAPTURE_DESTS,
   DRAFT_CHANNELS,
@@ -179,7 +180,11 @@ export function parseCaptureCards(input: unknown, ctx: ValidateContext): ParseRe
       return;
     }
     const r = (rawItem && typeof rawItem === "object" ? rawItem : {}) as Raw;
-    let dest = str(r.dest) as CaptureDest | null;
+    const rawDest = str(r.dest);
+    // V4 §8: gift and story are model-side kinds stored on a held 'thought'
+    // row (lib/capture/cardKind.ts explains why), never filed by an applier.
+    const v4Kind = V4_KINDS.includes(rawDest as V4Kind) ? (rawDest as V4Kind) : null;
+    let dest = (v4Kind ? "thought" : rawDest) as CaptureDest | null;
     if (!dest || !CAPTURE_DESTS.includes(dest)) {
       dropped.push({ index, reason: "unknown_dest" });
       return;
@@ -239,12 +244,32 @@ export function parseCaptureCards(input: unknown, ctx: ValidateContext): ParseRe
     if (orgMatch) payload.org_match = orgMatch;
     if (prospectName) payload.prospect_name = prospectName;
 
-    const fields = buildDestFields(dest, r, {
-      todayIso: ctx.todayIso,
-      staffByRef,
-      sourceSentence,
-      recipientName: picked?.name ?? effectiveHeard ?? null,
-    });
+    if (v4Kind === "story") {
+      // A story never lands on a record and never names a match: the subject
+      // is a participant, and participants are not in the candidate set.
+      entityType = null;
+      entityId = null;
+      matchCandidates = [];
+      effectiveHeard = null;
+      delete payload.org_match;
+    }
+    if (v4Kind === "gift" && entityType === "partner") {
+      // A gift is from a donor (constituent); a partner match is not one.
+      entityType = null;
+      entityId = null;
+    }
+
+    const fields =
+      v4Kind === "gift"
+        ? buildGiftFields(r, { todayIso: ctx.todayIso, sourceSentence })
+        : v4Kind === "story"
+          ? buildStoryFields(r, { sourceSentence })
+          : buildDestFields(dest, r, {
+              todayIso: ctx.todayIso,
+              staffByRef,
+              sourceSentence,
+              recipientName: picked?.name ?? effectiveHeard ?? null,
+            });
     if (!fields) {
       dropped.push({ index, reason: "empty" });
       return;
@@ -253,6 +278,17 @@ export function parseCaptureCards(input: unknown, ctx: ValidateContext): ParseRe
     if (entityId && picked) payload.entity_name = picked.name;
     // An interaction needs a record to land on; without one it waits for a pick.
     if (dest === "interaction" && !entityId) status = "held";
+    // Gift and story cards are always held: Capture never files them itself.
+    if (v4Kind) status = "held";
+
+    // Every parsed card is AI-drafted; fields the model was unsure of, plus
+    // "who" when the match is held or missing, are marked for a person.
+    const kind = cardKindOf({ dest, payload });
+    const unsure = new Set([...(Array.isArray(payload.uncertain) ? (payload.uncertain as string[]) : []), ...uncertainFields(kind, r.uncertain)]);
+    if (kind !== "story" && kind !== "note" && (status === "held" || (kind !== "todo" && !entityId)) && (effectiveHeard || picked)) unsure.add("who");
+    if (kind === "gift" && !entityId) unsure.add("who");
+    payload.uncertain = Array.from(unsure);
+    payload.ai_drafted = true;
 
     cards.push({
       position: cards.length + 1,

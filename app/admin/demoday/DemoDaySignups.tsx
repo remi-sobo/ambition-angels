@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { userMessage } from "@/lib/admin/errors";
 import { TYPE } from "@/lib/admin/typeScale";
+import { StaticTable } from "../_components/ui/DataTable";
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -145,6 +146,7 @@ export default function DemoDaySignups() {
         </span>
         <input
           type="search"
+          aria-label="Search signups"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search name, email, company…"
@@ -160,104 +162,53 @@ export default function DemoDaySignups() {
           {signups.length === 0 ? "No signups yet." : "No signups match your search."}
         </div>
       ) : (
-        <>
-          {/* Mobile: stacked cards */}
-          <div className="mt-5 space-y-3 lg:hidden">
-            {filtered.map((s) => (
-              <div key={s.id} className="rounded-panel border-hairline bg-surface p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <span className="font-semibold text-ink-1">
-                    {s.first_name} {s.last_name}
-                  </span>
-                  <span className="text-xs text-ink-2 whitespace-nowrap">
-                    {fmtDate(s.created_at)}
-                  </span>
-                </div>
-                <a
-                  href={`mailto:${s.email}`}
-                  className="mt-1 block text-sm text-orange hover:underline break-all"
-                >
-                  {s.email}
-                </a>
-                {(s.phone || s.company || s.title) && (
-                  <div className="mt-1 text-sm text-ink-2">
-                    {[s.title, s.company, s.phone].filter(Boolean).join(" · ")}
-                  </div>
-                )}
-                {s.engagement && s.engagement.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {s.engagement.map((e) => (
-                      <span
-                        key={e}
-                        className="rounded-full bg-orange/10 border border-orange/30 px-2 py-0.5 text-xs text-orange"
-                      >
-                        {e}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                {s.note && (
-                  <p className="mt-2 text-sm text-ink-1 whitespace-pre-wrap">{s.note}</p>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Desktop: table */}
-          <div className="mt-5 hidden lg:block overflow-x-auto rounded-panel border-hairline">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-hairline text-left text-xs text-ink-2">
-                  <th className="px-4 py-3 font-medium">When</th>
-                  <th className="px-4 py-3 font-medium">Name</th>
-                  <th className="px-4 py-3 font-medium">Email</th>
-                  <th className="px-4 py-3 font-medium">Phone</th>
-                  <th className="px-4 py-3 font-medium">Company / role</th>
-                  <th className="px-4 py-3 font-medium">Interested in</th>
-                  <th className="px-4 py-3 font-medium">Note</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((s) => (
-                  <tr key={s.id} className="border-b border-hairline align-top hover:bg-surface">
-                    <td className="px-4 py-3 text-ink-2 whitespace-nowrap">{fmtDate(s.created_at)}</td>
-                    <td className="px-4 py-3 font-medium text-ink-1 whitespace-nowrap">
-                      {s.first_name} {s.last_name}
-                    </td>
-                    <td className="px-4 py-3">
-                      <a href={`mailto:${s.email}`} className="text-orange hover:underline">
-                        {s.email}
-                      </a>
-                    </td>
-                    <td className="px-4 py-3 text-ink-2 whitespace-nowrap">{s.phone || "—"}</td>
-                    <td className="px-4 py-3 text-ink-2">
-                      {[s.company, s.title].filter(Boolean).join(" · ") || "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      {s.engagement && s.engagement.length > 0 ? (
-                        <div className="flex flex-wrap gap-1.5">
-                          {s.engagement.map((e) => (
-                            <span
-                              key={e}
-                              className="rounded-full bg-orange/10 border border-orange/30 px-2 py-0.5 text-xs text-orange"
-                            >
-                              {e}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-ink-2">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-ink-1 max-w-xs whitespace-pre-wrap">
-                      {s.note || <span className="text-ink-2">—</span>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
+        // The kit table (V4 P1): cards under 640px.
+        <div className="mt-5">
+          <StaticTable
+            label="Demo Day signups"
+            noun={{ one: "signup", many: "signups" }}
+            rows={filtered}
+            getRowId={(s) => s.id}
+            getRowLabel={(s) => `${s.first_name} ${s.last_name}`}
+            columns={[
+              { key: "name", header: "Name", card: "title", render: (s) => <span className="font-medium text-ink-1 whitespace-nowrap">{s.first_name} {s.last_name}</span> },
+              { key: "when", header: "When", render: (s) => <span className="text-ink-2 whitespace-nowrap">{fmtDate(s.created_at)}</span> },
+              {
+                key: "email",
+                header: "Email",
+                render: (s) => (
+                  <a href={`mailto:${s.email}`} className="text-orange hover:underline break-all">
+                    {s.email}
+                  </a>
+                ),
+              },
+              { key: "phone", header: "Phone", render: (s) => <span className="text-ink-2 whitespace-nowrap">{s.phone || "—"}</span> },
+              { key: "company", header: "Company / role", render: (s) => <span className="text-ink-2">{[s.company, s.title].filter(Boolean).join(" · ") || "—"}</span> },
+              {
+                key: "engagement",
+                header: "Interested in",
+                render: (s) =>
+                  s.engagement && s.engagement.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {s.engagement.map((e) => (
+                        <span key={e} className="rounded-full bg-orange/10 border border-orange/30 px-2 py-0.5 text-xs text-orange">
+                          {e}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-ink-2">—</span>
+                  ),
+              },
+              {
+                key: "note",
+                header: "Note",
+                className: "max-w-xs",
+                render: (s) => <span className="text-ink-1 whitespace-pre-wrap">{s.note || <span className="text-ink-2">—</span>}</span>,
+              },
+            ]}
+          />
+        </div>
       )}
     </div>
   );

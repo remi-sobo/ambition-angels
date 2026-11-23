@@ -10,6 +10,7 @@ import GmailSyncButton from "../_components/GmailSyncButton";
 import SuggestedMoves from "../_components/SuggestedMoves";
 import { hasEntitlement } from "@/lib/admin/entitlements";
 import { isEnvIntegrationOwner } from "@/lib/integrations/env-owner";
+import { getGmailSyncConnectionStatus } from "@/lib/google/gmail-sync-connection";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 import { TYPE } from "@/lib/admin/typeScale";
 import { OPEN_STAGE_LIST } from "@/lib/fundraising/stage-sets";
@@ -83,7 +84,11 @@ type GiftTableMoveRow = {
 const oppName = (o: OppRow) => o.name ?? (o.constituent ? constituentName(o.constituent) : "Unknown");
 const profileHref = (c: ConstituentLite) => (c ? `/admin/fundraising/donors/${c.id}` : "/admin/fundraising");
 
-export default async function TodaysMovesPage() {
+export default async function TodaysMovesPage({
+  searchParams,
+}: {
+  searchParams?: { gmail_sync?: string; reason?: string };
+}) {
   // Every queue read is pinned to the ACTIVE org — RLS alone would merge rows
   // from every org the user belongs to.
   const ctx = await getOrgContext();
@@ -100,6 +105,13 @@ export default async function TodaysMovesPage() {
   const reedEnabled = await hasEntitlement("ai.reed");
   // The synced mailbox belongs to one org; hide the button everywhere else.
   const gmailSyncAvailable = await isEnvIntegrationOwner("gmail_sync", ctx.orgId);
+  const gmailSyncConnection = gmailSyncAvailable ? await getGmailSyncConnectionStatus(ctx.orgId) : null;
+  const gmailSyncNotice =
+    searchParams?.gmail_sync === "connected"
+      ? "Mailbox connected."
+      : searchParams?.gmail_sync === "error"
+      ? (searchParams.reason ?? "Couldn't connect the mailbox.").slice(0, 200)
+      : null;
   const today = todayISO();
   const soon = addDays(today, 30);
   const recentSince = addDays(today, -14);
@@ -206,7 +218,7 @@ export default async function TodaysMovesPage() {
         subtitle="Who needs you today. Across asks, acknowledgments, and recent gifts"
         actions={
           <div className="flex items-center gap-3">
-            {gmailSyncAvailable && <GmailSyncButton />}
+            {gmailSyncConnection && <GmailSyncButton connection={gmailSyncConnection} notice={gmailSyncNotice} />}
             <Link
               href="/admin/fundraising"
               className="text-xs font-semibold text-ink-2 hover:text-ink-1 bg-tile hover:bg-tile border-hairline px-4 py-2 rounded-full transition-colors"

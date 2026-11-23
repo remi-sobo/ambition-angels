@@ -1,5 +1,6 @@
 "use client";
 
+import { saveAction } from "@/lib/admin/saveAction";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
@@ -180,154 +181,118 @@ export default function WeekGrid({
 
   const refresh = useCallback(() => router.refresh(), [router]);
 
+  // Every write goes through saveAction: a failure rolls the optimistic
+  // change back (or re-reads the server, which is the truth) and says so.
   const apiCreateBlock = useCallback(
     async (day: string, startMin: number, durationMin: number) => {
-      try {
-        const r = await fetch("/api/admin/calendar/blocks", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ day, start_minute: startMin, duration_minute: durationMin }),
-        });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const body = (await r.json()) as {
-          block: { id: string; title: string; google_event_id: string | null };
-          synced: boolean;
-        };
+      const r = await saveAction<{ block: { id: string; title: string; google_event_id: string | null }; synced: boolean }>({
+        request: { url: "/api/admin/calendar/blocks", method: "POST", body: { day, start_minute: startMin, duration_minute: durationMin } },
+        failure: "Couldn't create the block. Try again.",
+        toast,
+      });
+      if (r.ok) {
+        const body = r.data;
         setBlocks((prev) => [
           ...prev,
-          {
-            id: body.block.id,
-            day,
-            startMin,
-            endMin: startMin + durationMin,
-            title: body.block.title,
-            synced: body.synced,
-          },
+          { id: body.block.id, day, startMin, endMin: startMin + durationMin, title: body.block.title, synced: body.synced },
         ]);
         setSelectedId(body.block.id);
-        refresh();
-      } catch (e) {
-        console.error("Create block failed:", e);
-        toast.error("Couldn't create the block. Try again.");
-        refresh();
       }
+      refresh();
     },
     [refresh, toast]
   );
 
   const apiMoveBlock = useCallback(
     async (id: string, day: string, startMin: number, durationMin: number) => {
-      setBlocks((prev) =>
-        prev.map((b) =>
-          b.id === id ? { ...b, day, startMin, endMin: startMin + durationMin } : b
-        )
-      );
-      try {
-        const r = await fetch(`/api/admin/calendar/blocks/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ day, start_minute: startMin, duration_minute: durationMin }),
-        });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        refresh();
-      } catch (e) {
-        console.error("Move block failed:", e);
-        toast.error("Couldn't move the block. Try again.");
-        refresh();
-      }
+      await saveAction({
+        request: { url: `/api/admin/calendar/blocks/${id}`, method: "PATCH", body: { day, start_minute: startMin, duration_minute: durationMin } },
+        optimistic: () =>
+          setBlocks((prev) => prev.map((b) => (b.id === id ? { ...b, day, startMin, endMin: startMin + durationMin } : b))),
+        failure: "Couldn't move the block. It is back where it was.",
+        toast,
+      });
+      refresh();
     },
     [refresh, toast]
   );
 
   const apiDeleteBlock = useCallback(
     async (id: string) => {
-      setBlocks((prev) => prev.filter((b) => b.id !== id));
-      setSelectedId(null);
-      try {
-        const r = await fetch(`/api/admin/calendar/blocks/${id}`, { method: "DELETE" });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        refresh();
-      } catch (e) {
-        console.error("Delete block failed:", e);
-        toast.error("Couldn't delete the block. Try again.");
-        refresh();
-      }
+      // #609: if Google refuses the delete, the server keeps the block and
+      // answers 409 with "Reconnect it in Settings, then try again".
+      // saveAction shows that server message (no fixed failure text here)
+      // and the rollback re-reads the week so the kept block reappears.
+      await saveAction({
+        request: { url: `/api/admin/calendar/blocks/${id}`, method: "DELETE" },
+        optimistic: () => {
+          setBlocks((prev) => prev.filter((b) => b.id !== id));
+          setSelectedId(null);
+        },
+        rollback: () => refresh(),
+        toast,
+      });
+      refresh();
     },
     [refresh, toast]
   );
 
   const apiRetitleBlock = useCallback(
     async (id: string, title: string) => {
-      setBlocks((prev) => prev.map((b) => (b.id === id ? { ...b, title } : b)));
-      try {
-        const r = await fetch(`/api/admin/calendar/blocks/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title }),
-        });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        refresh();
-      } catch (e) {
-        console.error("Retitle block failed:", e);
-        refresh();
-      }
+      await saveAction({
+        request: { url: `/api/admin/calendar/blocks/${id}`, method: "PATCH", body: { title } },
+        optimistic: () => setBlocks((prev) => prev.map((b) => (b.id === id ? { ...b, title } : b))),
+        failure: "Couldn't rename the block. Try again.",
+        toast,
+      });
+      refresh();
     },
-    [refresh]
+    [refresh, toast]
   );
 
   const apiToggleTask = useCallback(
     async (taskId: string, done: boolean) => {
-      setStatusOverride((prev) => ({ ...prev, [taskId]: done ? "done" : "todo" }));
-      try {
-        const r = await fetch(`/api/admin/ops/tasks/${taskId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: done ? "done" : "todo" }),
-        });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        refresh();
-      } catch (e) {
-        console.error("Toggle task failed:", e);
-        setStatusOverride((prev) => ({ ...prev, [taskId]: done ? "todo" : "done" }));
-      }
+      const r = await saveAction({
+        request: { url: `/api/admin/ops/tasks/${taskId}`, method: "PATCH", body: { status: done ? "done" : "todo" } },
+        optimistic: () => setStatusOverride((prev) => ({ ...prev, [taskId]: done ? "done" : "todo" })),
+        rollback: () => setStatusOverride((prev) => ({ ...prev, [taskId]: done ? "todo" : "done" })),
+        failure: "Couldn't save the task. It is back the way it was.",
+        toast,
+      });
+      if (r.ok) refresh();
     },
-    [refresh]
+    [refresh, toast]
   );
 
   const apiAddTask = useCallback(
     async (blockId: string, taskId: string) => {
-      try {
-        const r = await fetch(`/api/admin/calendar/blocks/${blockId}/tasks`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ task_id: taskId }),
-        });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        refresh();
-      } catch (e) {
-        console.error("Add task failed:", e);
-        toast.error("Couldn't add the task. Try again.");
-      }
+      const r = await saveAction({
+        request: { url: `/api/admin/calendar/blocks/${blockId}/tasks`, method: "POST", body: { task_id: taskId } },
+        failure: "Couldn't add the task. Try again.",
+        toast,
+      });
+      if (r.ok) refresh();
     },
     [refresh, toast]
   );
 
   const apiRemoveTask = useCallback(
     async (blockId: string, taskId: string, linkId: string) => {
-      setRemovedLinks((prev) => new Set(prev).add(linkId));
-      try {
-        const r = await fetch(
-          `/api/admin/calendar/blocks/${blockId}/tasks?task_id=${encodeURIComponent(taskId)}`,
-          { method: "DELETE" }
-        );
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        refresh();
-      } catch (e) {
-        console.error("Remove task failed:", e);
-        refresh();
-      }
+      await saveAction({
+        request: { url: `/api/admin/calendar/blocks/${blockId}/tasks?task_id=${encodeURIComponent(taskId)}`, method: "DELETE" },
+        optimistic: () => setRemovedLinks((prev) => new Set(prev).add(linkId)),
+        rollback: () =>
+          setRemovedLinks((prev) => {
+            const next = new Set(prev);
+            next.delete(linkId);
+            return next;
+          }),
+        failure: "Couldn't take the task out of the block. Try again.",
+        toast,
+      });
+      refresh();
     },
-    [refresh]
+    [refresh, toast]
   );
 
   // ── Pointer machinery (own week only) ────────────────────────────────────
@@ -830,16 +795,13 @@ export default function WeekGrid({
           <button
             onClick={async () => {
               setRefreshing(true);
-              try {
-                await fetch("/api/admin/agenda/sync", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: "{}",
-                });
-                router.refresh();
-              } finally {
-                setRefreshing(false);
-              }
+              const r = await saveAction({
+                request: { url: "/api/admin/agenda/sync", method: "POST", body: {} },
+                failure: "Couldn't refresh from Google. Try again.",
+                toast,
+              });
+              setRefreshing(false);
+              if (r.ok) router.refresh();
             }}
             disabled={refreshing}
             className="text-xs font-semibold text-ink-2 hover:text-ink-1 disabled:opacity-50"

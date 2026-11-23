@@ -51,6 +51,7 @@ export function StageControls({ student, stages }: { student: Student; stages: S
   return (
     <div className="flex flex-wrap items-center gap-2">
       <select
+        aria-label="Stage"
         value={student.stage}
         disabled={busy}
         onChange={(e) => patch({ stage: e.target.value })}

@@ -139,6 +139,16 @@ export default function DataTableFrame({
       }
       return;
     }
+    if (action.kind === "run") {
+      setBusy(action.key);
+      try {
+        await action.run(ids);
+      } finally {
+        setBusy(null);
+      }
+      setSelected(new Set());
+      return;
+    }
     if (action.kind === "link") {
       const [path, hash] = action.href.split("#");
       const sep = path.includes("?") ? "&" : "?";
@@ -281,6 +291,19 @@ export default function DataTableFrame({
                   </Link>
                 ))}
               </nav>
+            ) : null}
+            {/* V4 Stage P: the phone list gets the same select-all the table
+                header has, so a bulk action never needs one tap per row. */}
+            {selectable ? (
+              <label className="flex items-center justify-end gap-2 px-4 pt-3 min-h-[44px] text-xs font-semibold text-ink-2">
+                Select all on this page
+                <input
+                  type="checkbox"
+                  checked={allOn}
+                  onChange={toggleAll}
+                  className="w-5 h-5 accent-orange shrink-0"
+                />
+              </label>
             ) : null}
             <ul className="divide-y divide-outline">
               {rows.map((r) => {

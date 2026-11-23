@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { userMessage } from "@/lib/admin/errors";
+import { TextField, TextareaField } from "@/app/admin/_components/ui/Field";
 
 const inputCls =
   "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
@@ -188,24 +189,24 @@ export function EditDonorButton({ donor }: { donor: EditDonorValues }) {
     <form onSubmit={submit} className="space-y-3 mt-1 w-full">
       {donor.type === "person" ? (
         <div className="flex gap-2">
-          <input value={first} onChange={(e) => setFirst(e.target.value)} placeholder="First" className={inputCls + " w-full"} />
-          <input value={last} onChange={(e) => setLast(e.target.value)} placeholder="Last" className={inputCls + " w-full"} />
+          <TextField label="First" controlSize="md" className="w-full" value={first} onChange={(e) => setFirst(e.target.value)} />
+          <TextField label="Last" controlSize="md" className="w-full" value={last} onChange={(e) => setLast(e.target.value)} />
         </div>
       ) : (
-        <input value={orgName} onChange={(e) => setOrgName(e.target.value)} placeholder="Organization" className={inputCls + " w-full"} />
+        <TextField label="Organization" controlSize="md" className="w-full" value={orgName} onChange={(e) => setOrgName(e.target.value)} />
       )}
-      <input value={emails} onChange={(e) => setEmails(e.target.value)} placeholder="Emails (comma-separated)" className={inputCls + " w-full"} />
-      <input value={phones} onChange={(e) => setPhones(e.target.value)} placeholder="Phones (comma-separated)" className={inputCls + " w-full"} />
+      <TextField label="Emails (comma-separated)" controlSize="md" className="w-full" value={emails} onChange={(e) => setEmails(e.target.value)} />
+      <TextField label="Phones (comma-separated)" controlSize="md" className="w-full" value={phones} onChange={(e) => setPhones(e.target.value)} />
       <div className="flex gap-2">
-        <input value={street} onChange={(e) => setStreet(e.target.value)} placeholder="Street" className={inputCls + " w-full"} />
+        <TextField label="Street" controlSize="md" className="w-full" value={street} onChange={(e) => setStreet(e.target.value)} />
       </div>
       <div className="flex gap-2">
-        <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" className={inputCls + " w-full"} />
-        <input value={stateV} onChange={(e) => setStateV(e.target.value)} placeholder="State" className={inputCls + " w-20"} />
-        <input value={postal} onChange={(e) => setPostal(e.target.value)} placeholder="ZIP" className={inputCls + " w-24"} />
+        <TextField label="City" controlSize="md" className="w-full" value={city} onChange={(e) => setCity(e.target.value)} />
+        <TextField label="State" controlSize="md" className="w-20" value={stateV} onChange={(e) => setStateV(e.target.value)} />
+        <TextField label="ZIP" controlSize="md" className="w-24" value={postal} onChange={(e) => setPostal(e.target.value)} />
       </div>
-      <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="Tags (comma-separated)" className={inputCls + " w-full"} />
-      <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notes" rows={2} className={inputCls + " w-full resize-y"} />
+      <TextField label="Tags (comma-separated)" controlSize="md" className="w-full" value={tags} onChange={(e) => setTags(e.target.value)} />
+      <TextareaField label="Notes" className="w-full" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
       <label className="flex items-center gap-2 text-xs text-ink-2">
         <input type="checkbox" checked={dnc} onChange={(e) => setDnc(e.target.checked)} className="accent-orange" />
         Do not contact

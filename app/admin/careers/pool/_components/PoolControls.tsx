@@ -111,6 +111,7 @@ function RowEditor({ occ, row }: { occ: PoolOccupation; row: PoolRow | undefined
             </p>
             <input
               type="text"
+              aria-label="Reveal line"
               maxLength={REVEAL_LINE_MAX}
               value={reveal}
               onChange={(e) => setReveal(e.target.value)}
@@ -226,6 +227,7 @@ export function PoolControls({
         ))}
         <input
           type="search"
+          aria-label="Search the pool"
           placeholder="Search title or SOC…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}

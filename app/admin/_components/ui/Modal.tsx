@@ -29,14 +29,24 @@ export default function Modal({
   footer,
   children,
   size = "md",
+  layer = "base",
+  bare = false,
 }: {
   open: boolean;
   onClose: () => void;
   title: ReactNode;
   description?: ReactNode;
   footer?: ReactNode;
+  /** The body. A bare confirm (title, description, footer) can pass null. */
   children: ReactNode;
   size?: "sm" | "md" | "lg";
+  /** "top" stacks above drawers and other modals (the shared confirm). */
+  layer?: "base" | "top";
+  /** No header, padding or footer: the children fill the panel, which sits
+   *  near the top of the screen on desktop. For a command surface (global
+   *  search) that draws its own field. The title stays as the accessible
+   *  name, visually hidden. */
+  bare?: boolean;
 }) {
   const panelRef = useFocusTrap<HTMLDivElement>(open, onClose);
   const uid = useId();
@@ -48,7 +58,11 @@ export default function Modal({
   const width = size === "sm" ? "sm:max-w-sm" : size === "lg" ? "sm:max-w-2xl" : "sm:max-w-md";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
+    <div
+      className={`fixed inset-0 ${layer === "top" ? "z-[80]" : "z-50"} flex items-end justify-center sm:p-4 ${
+        bare ? "sm:items-start sm:pt-[12vh]" : "sm:items-center"
+      }`}
+    >
       {/* Same scrim as Drawer: sidebar espresso at 56%. */}
       <div aria-hidden onClick={onClose} className="absolute inset-0 bg-navy/[0.56]" />
       <div
@@ -58,8 +72,19 @@ export default function Modal({
         aria-labelledby={titleId}
         aria-describedby={description ? descId : undefined}
         tabIndex={-1}
-        className={`elevate-modal relative w-full ${width} bg-surface border border-outline rounded-t-modal sm:rounded-modal max-h-[92vh] flex flex-col focus:outline-none`}
+        className={`elevate-modal relative w-full ${width} bg-surface border border-outline rounded-t-modal sm:rounded-modal ${
+          bare ? "max-h-[85vh] sm:max-h-[70vh] overflow-hidden" : "max-h-[92vh]"
+        } flex flex-col focus:outline-none`}
       >
+        {bare ? (
+          <>
+            <h2 id={titleId} className="sr-only">
+              {title}
+            </h2>
+            {children}
+          </>
+        ) : (
+          <>
         <div className="flex items-start justify-between gap-4 px-5 pt-4 pb-3 border-b border-hairline">
           <div className="min-w-0">
             <h2 id={titleId} className={TYPE.modalTitle}>
@@ -74,11 +99,13 @@ export default function Modal({
           <CloseButton onClose={onClose} label="Close dialog" />
         </div>
 
-        <div className="px-5 py-4 overflow-y-auto flex-1">{children}</div>
+        {children ? <div className="px-5 py-4 overflow-y-auto flex-1">{children}</div> : null}
 
         {footer ? (
           <div className="flex flex-wrap items-center justify-end gap-2 px-5 py-4 border-t border-hairline">{footer}</div>
         ) : null}
+          </>
+        )}
       </div>
     </div>
   );

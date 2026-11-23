@@ -9,6 +9,10 @@ import StatCard from "../../_components/StatCard";
 import { NewCampaignForm, CampaignActions } from "./_components/CommsControls";
 import { SettingsCard, type CommsSettings } from "./_components/SettingsCard";
 import { TYPE } from "@/lib/admin/typeScale";
+import DraftAudience from "@/app/admin/comms/_components/DraftAudience";
+import Notice from "../../_components/ui/Notice";
+import type { SegmentOption } from "@/app/admin/comms/_components/AudienceBuilder";
+import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 // Epic I — donor communications: compose campaigns against saved segments,
 // test, and send (DNC/unsubscribe honored by the send path).
@@ -71,6 +75,10 @@ export default async function CommsPage({
 }: {
   searchParams?: Record<string, string | string[] | undefined>;
 }) {
+  // V4 Stage P role pass: a role without fundraising.read gets the not-authorized
+  // panel, not an empty page with write controls.
+  const roleGate = await requirePagePermission("fundraising.read", "Comms");
+  if (!roleGate.ok) return roleGate.page;
   // Every read is pinned to the ACTIVE org — RLS alone would merge rows from
   // every org the user belongs to.
   const ctx = await getOrgContext();
@@ -89,7 +97,7 @@ export default async function CommsPage({
       .eq("org_id", ctx.orgId)
       .order("created_at", { ascending: false })
       .limit(200),
-    supabase.from("segments").select("id, name").eq("org_id", ctx.orgId).order("created_at", { ascending: false }).limit(100),
+    supabase.from("segments").select("id, name, definition").eq("org_id", ctx.orgId).order("created_at", { ascending: false }).limit(100),
     supabase
       .from("org_comms_settings")
       .select("from_name, from_email, reply_to, mailing_address, footer_text, daily_send_cap, transport, leadership_copy_emails")
@@ -113,7 +121,17 @@ export default async function CommsPage({
   }
 
   const campaigns = (campaignsRes.data ?? []) as unknown as Campaign[];
-  const segments = (segmentsRes.data ?? []) as Array<{ id: string; name: string }>;
+  const segments = (segmentsRes.data ?? []) as SegmentOption[];
+  // V4 Stage D: which drafts an edition compiled (comms_editions RLS is
+  // comms.manage; a role without it simply sees no edition label).
+  const { data: edRows } = await supabase
+    .from("comms_editions")
+    .select("email_campaign_id, title")
+    .eq("org_id", ctx.orgId)
+    .not("email_campaign_id", "is", null);
+  const fromEdition = new Map(((edRows ?? []) as Array<{ email_campaign_id: string; title: string }>).map((e) => [e.email_campaign_id, e.title]));
+  const draftParam = typeof searchParams.draft === "string" && /^[0-9a-f-]{36}$/i.test(searchParams.draft) ? searchParams.draft : null;
+  const highlighted = draftParam ? campaigns.find((c) => c.id === draftParam) ?? null : null;
   const settings = (settingsRes.data ?? null) as CommsSettings | null;
   const sent = campaigns.filter((c) => c.status === "sent");
   const totalSent = sent.reduce((s, c) => s + c.sent_count, 0);
@@ -122,6 +140,14 @@ export default async function CommsPage({
     <div className="min-h-screen bg-ink">
       <div className="max-w-[1400px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
         <PageHeader title="Emails" subtitle="Email your donor segments" />
+
+        {highlighted && highlighted.status === "draft" && (
+          <Notice tone="info" title={`"${highlighted.name}" is ready for review.`}>
+            {highlighted.segment_id
+              ? "Send yourself a test, then Send or Schedule. The confirm shows exactly how many people it reaches."
+              : "Choose who it goes to (the count updates as you build it), send yourself a test, then send."}
+          </Notice>
+        )}
 
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 flex-1 min-w-[18rem]">
@@ -146,7 +172,7 @@ export default async function CommsPage({
 
         {segments.length === 0 && (
           <div className="bg-status-watch-bg text-status-watch-text rounded-panel px-5 py-3 text-sm">
-            No saved segments yet. Build one on the Donors page (Segments &amp; export) to target a campaign.
+            No saved audiences yet. Use Choose audience on a draft to build one with a live count, or save a view in Donors &amp; Funders.
           </div>
         )}
 
@@ -161,7 +187,7 @@ export default async function CommsPage({
           ) : (
             <ul className="divide-y divide-hairline">
               {campaigns.map((c) => (
-                <li key={c.id} className="px-5 py-3 flex items-center gap-4">
+                <li key={c.id} className="px-5 py-3 flex flex-wrap items-center gap-x-4 gap-y-2">
                   <div className="flex-1 min-w-0">
                     {c.status === "draft" ? (
                       <div className="text-sm font-medium text-ink-1 truncate">{c.name}</div>
@@ -171,11 +197,15 @@ export default async function CommsPage({
                       </Link>
                     )}
                     <div className="text-xs text-ink-3 truncate">
+                      {fromEdition.has(c.id) ? `From the edition "${fromEdition.get(c.id)}" · ` : ""}
                       {c.subject}
-                      {c.segment?.name ? ` · ${c.segment.name}` : " · no segment"}
+                      {c.segment?.name ? ` · ${c.segment.name}` : " · no audience yet"}
                     </div>
                   </div>
                   <CampaignStatus c={c} />
+                  {c.status === "draft" && (
+                    <DraftAudience campaignId={c.id} segments={segments} segmentId={c.segment_id} autoOpen={c.id === draftParam && !c.segment_id} />
+                  )}
                   <CampaignActions id={c.id} status={c.status} hasSegment={!!c.segment_id} />
                 </li>
               ))}

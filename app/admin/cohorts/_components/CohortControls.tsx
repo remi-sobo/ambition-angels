@@ -6,11 +6,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { userMessage } from "@/lib/admin/errors";
+import Button from "@/app/admin/_components/ui/Button";
+import Drawer from "@/app/admin/_components/ui/Drawer";
+import { DateField, TextField } from "@/app/admin/_components/ui/Field";
 
-
-
-const inputCls =
-  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
+// V4 Stage E: the form is a kit Drawer (spec §5 Form archetype: a drawer
+// for anything under about ten fields), so it works from a header, an
+// empty state or a phone without squeezing a six-column grid.
 
 export function NewCohortForm({ programs = [] }: { programs?: string[] }) {
   const router = useRouter();
@@ -41,8 +43,10 @@ export function NewCohortForm({ programs = [] }: { programs?: string[] }) {
         }),
       });
       if (!res.ok) {
+        // Keep the form open with what was typed, so a failed save can be fixed and retried.
         const j = await res.json().catch(() => ({}));
         toast.error(userMessage(res, j));
+        return;
       }
       setName(""); setProgram(""); setTerm(""); setCapacity(""); setStartDate(""); setEndDate("");
       setOpen(false);
@@ -52,63 +56,44 @@ export function NewCohortForm({ programs = [] }: { programs?: string[] }) {
     }
   };
 
-  if (!open) {
-    return (
-      <button onClick={() => setOpen(true)}
-        className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors">
-        + New cohort
-      </button>
-    );
-  }
-
   return (
-    <form onSubmit={submit}
-      className="w-full bg-surface border-hairline rounded-panel p-4 grid grid-cols-2 lg:grid-cols-6 gap-3 items-end">
-      <label className="text-xs text-ink-2 col-span-2 lg:col-span-1">
-        Name
-        <input className={`${inputCls} w-full mt-1`} value={name} required autoFocus
-          placeholder="YGB Creators Camp 2027" onChange={(e) => setName(e.target.value)} />
-      </label>
-      <label className="text-xs text-ink-2">
-        Program
-        <input className={`${inputCls} w-full mt-1`} value={program} list="cohort-programs"
-          placeholder="YGB Creators Camp" onChange={(e) => setProgram(e.target.value)} />
-        {programs.length > 0 && (
-          <datalist id="cohort-programs">
-            {programs.map((p) => <option key={p} value={p} />)}
-          </datalist>
-        )}
-      </label>
-      <label className="text-xs text-ink-2">
-        Term
-        <input className={`${inputCls} w-full mt-1`} value={term}
-          placeholder="Summer 2027" onChange={(e) => setTerm(e.target.value)} />
-      </label>
-      <label className="text-xs text-ink-2">
-        Capacity
-        <input className={`${inputCls} w-full mt-1`} value={capacity} type="number" min={1}
-          placeholder="20" onChange={(e) => setCapacity(e.target.value)} />
-      </label>
-      <label className="text-xs text-ink-2">
-        Starts
-        <input className={`${inputCls} w-full mt-1`} value={startDate} type="date"
-          onChange={(e) => setStartDate(e.target.value)} />
-      </label>
-      <label className="text-xs text-ink-2">
-        Ends
-        <input className={`${inputCls} w-full mt-1`} value={endDate} type="date"
-          onChange={(e) => setEndDate(e.target.value)} />
-      </label>
-      <div className="col-span-full flex justify-end gap-2">
-        <button type="button" onClick={() => setOpen(false)}
-          className="text-xs text-ink-2 hover:text-ink-1 px-2 py-2">
-          Cancel
-        </button>
-        <button type="submit" disabled={busy}
-          className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors disabled:opacity-50">
-          {busy ? "Saving…" : "Create cohort"}
-        </button>
-      </div>
-    </form>
+    <>
+      <Button type="button" onClick={() => setOpen(true)}>
+        New cohort
+      </Button>
+      <Drawer
+        open={open}
+        onClose={() => setOpen(false)}
+        title="New cohort"
+        description="Only the name is required. You can add people and sessions right after."
+        footer={
+          <>
+            <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="new-cohort-form" loading={busy}>
+              {busy ? "Saving" : "Create cohort"}
+            </Button>
+          </>
+        }
+      >
+        <form id="new-cohort-form" onSubmit={submit} className="grid grid-cols-2 gap-4">
+          <TextField className="col-span-2" label="Name" required autoFocus value={name}
+            placeholder="Fall Career Lab: Eastlake" onChange={(e) => setName(e.target.value)} />
+          <TextField className="col-span-2" label="Program" value={program} list="cohort-programs"
+            placeholder="Career Labs" onChange={(e) => setProgram(e.target.value)} />
+          {programs.length > 0 && (
+            <datalist id="cohort-programs">
+              {programs.map((p) => <option key={p} value={p} />)}
+            </datalist>
+          )}
+          <TextField label="Term" value={term} placeholder="Fall 2026" onChange={(e) => setTerm(e.target.value)} />
+          <TextField label="Capacity" value={capacity} type="number" min={1} inputMode="numeric"
+            placeholder="20" onChange={(e) => setCapacity(e.target.value)} />
+          <DateField label="Starts" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+          <DateField label="Ends" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+        </form>
+      </Drawer>
+    </>
   );
 }

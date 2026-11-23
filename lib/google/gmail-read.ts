@@ -1,9 +1,10 @@
-import { getGmailClient } from "./auth";
+import type { gmail_v1 } from "googleapis";
 
 // Read side of the Gmail integration (Phase 1C.b). The existing lib/google
 // only sends; this lists + fetches message metadata for logging against
-// constituents. Requires the `gmail.readonly` scope on GOOGLE_REFRESH_TOKEN —
-// until that scope is granted these calls return a 403 and the sync logs zero.
+// constituents. The caller passes the Gmail client: it must come from
+// getGmailReadClient (lib/google/gmail-sync-connection.ts), which uses the
+// separate Internal OAuth client, never the "bloom / meet" env token.
 
 // Staff side of any thread: mail between two staff addresses is internal and
 // never logged. The counterparty is the non-staff address. The staff domain
@@ -67,8 +68,7 @@ export async function listMessageIds(opts: {
   pageToken?: string | null;
   query?: string | null;
   max?: number;
-}): Promise<{ ids: string[]; nextPageToken: string | null }> {
-  const gmail = getGmailClient();
+}, gmail: gmail_v1.Gmail): Promise<{ ids: string[]; nextPageToken: string | null }> {
   const res = await gmail.users.messages.list({
     userId: "me",
     maxResults: opts.max ?? 100,
@@ -83,8 +83,7 @@ export async function listMessageIds(opts: {
 }
 
 // Metadata-only fetch: headers + Gmail's own snippet, no body download.
-export async function getMessage(id: string): Promise<ParsedMessage | null> {
-  const gmail = getGmailClient();
+export async function getMessage(id: string, gmail: gmail_v1.Gmail): Promise<ParsedMessage | null> {
   const res = await gmail.users.messages.get({
     userId: "me",
     id,

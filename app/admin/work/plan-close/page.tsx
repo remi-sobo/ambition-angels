@@ -1,4 +1,3 @@
-import Link from "next/link";
 import PlanSection from "@/app/admin/ops/monday/PlanSection";
 import CloseSection from "@/app/admin/ops/friday/CloseSection";
 import { resolveRitual, ritualForToday } from "@/lib/admin/ops/planClose";
@@ -65,11 +64,8 @@ export default async function PlanClosePage({
               : seg,
           )}
         />
-        {/* The AI-narrated weekly briefing: same gate (modules.ops, ops.read),
-            and the week's read sits naturally beside planning and closing it. */}
-        <Link href="/admin/briefing/weekly" className="text-xs font-semibold text-orange hover:text-orange-dark">
-          Weekly briefing →
-        </Link>
+        {/* The weekly briefing link moved into the ritual header's More
+            actions (V4 Stage G: one header, everything else one click away). */}
       </div>
 
       {/* ── Level 3 + the ritual body, verbatim ────────────────────────── */}

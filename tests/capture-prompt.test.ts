@@ -63,7 +63,8 @@ describe("CAPTURE_TOOL", () => {
     const schema = CAPTURE_TOOL.input_schema;
     expect(schema.required).toEqual(["cards", "youth_skipped"]);
     expect(schema.properties.cards.maxItems).toBe(MAX_CARDS);
-    expect(schema.properties.cards.items.properties.dest.enum).toEqual(["interaction", "task", "thought", "message_draft"]);
+    // V4 §8 (Stage C): the model may also propose gift and story cards.
+    expect(schema.properties.cards.items.properties.dest.enum).toEqual(["interaction", "task", "thought", "message_draft", "gift", "story"]);
     expect(schema.properties.cards.items.required).toContain("ref");
     expect(schema.properties.cards.items.required).toContain("confidence");
   });

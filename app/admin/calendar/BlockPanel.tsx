@@ -15,6 +15,10 @@ import {
   priorityRank,
 } from "@/app/admin/ops/_types/ops";
 import { TYPE } from "@/lib/admin/typeScale";
+import Drawer from "@/app/admin/_components/ui/Drawer";
+import Button from "@/app/admin/_components/ui/Button";
+import Input, { Select } from "@/app/admin/_components/ui/Input";
+import { TextField } from "@/app/admin/_components/ui/Field";
 
 /**
  * The block sheet: what's in this block, and what should go in it. The
@@ -123,52 +127,64 @@ export default function BlockPanel({
 
   const done = tasks.filter((t) => t.status === "done").length;
 
-  return (
+  const when = (
     <>
-      <div className="fixed inset-0 z-30 bg-ink-1/20" onClick={onClose} aria-hidden />
-      <aside className="fixed inset-y-0 right-0 z-40 w-[400px] max-w-[94vw] bg-surface border-l-[1.5px] border-hairline flex flex-col">
-        {/* Header */}
-        <div className="px-5 pt-5 pb-4 border-b border-hairline">
-          <div className="flex items-start gap-2">
-            <span className="mt-1.5 w-2.5 h-2.5 rounded-full bg-orange shrink-0" aria-hidden />
-            {readOnly ? (
-              <h2 className={`${TYPE.modalTitle} flex-1 min-w-0`}>{block.title}</h2>
-            ) : (
-              <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                onBlur={() => {
-                  if (title.trim() && title.trim() !== block.title) onRetitle(title.trim());
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                }}
-                className={`${TYPE.modalTitle} flex-1 min-w-0 bg-transparent border-b border-transparent focus:border-hairline focus:outline-none`}
-                aria-label="Block title"
-              />
-            )}
-            <button
-              onClick={onClose}
-              aria-label="Close"
-              className="shrink-0 w-7 h-7 rounded-control text-ink-3 hover:text-ink-1 hover:bg-tile"
-            >
-              ×
-            </button>
-          </div>
-          <p className={`${TYPE.metadata} mt-1.5 pl-[18px]`}>
-            {dayLabel(block.day)} · {formatMinuteRange(block.startMin, block.endMin)} ·{" "}
-            {formatDuration(block.endMin - block.startMin)}
-            {!block.synced && (
-              <span className="ml-2 inline-flex items-center gap-1 text-status-watch-text">
-                <span className="w-1.5 h-1.5 rounded-full bg-status-watch" /> not on Google yet
-              </span>
-            )}
-          </p>
-        </div>
+      {dayLabel(block.day)} · {formatMinuteRange(block.startMin, block.endMin)} · {formatDuration(block.endMin - block.startMin)}
+      {!block.synced && (
+        <span className="ml-2 inline-flex items-center gap-1 text-status-watch-text">
+          <span className="w-1.5 h-1.5 rounded-full bg-status-watch" aria-hidden /> not on Google yet
+        </span>
+      )}
+    </>
+  );
 
-        <div className="flex-1 overflow-y-auto">
+  return (
+    <Drawer
+      open
+      onClose={onClose}
+      title={block.title}
+      description={when}
+      footer={
+        readOnly ? undefined : (
+          <>
+            <span className="text-xs text-ink-3 mr-auto">Tasks are never deleted</span>
+            <Button
+              type="button"
+              variant="danger"
+              onClick={() => {
+                if (!confirmDelete) {
+                  setConfirmDelete(true);
+                  setTimeout(() => setConfirmDelete(false), 3000);
+                } else {
+                  onDelete();
+                }
+              }}
+            >
+              {confirmDelete ? "Delete block, keep tasks?" : "Delete block"}
+            </Button>
+          </>
+        )
+      }
+    >
+      {!readOnly && (
+        <div className="pb-4">
+          <TextField
+            label="Block title"
+            controlSize="md"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onBlur={() => {
+              if (title.trim() && title.trim() !== block.title) onRetitle(title.trim());
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+            }}
+          />
+        </div>
+      )}
+        <div>
           {/* Checklist */}
-          <div className="px-5 py-4">
+          <div className="py-4 border-t border-hairline">
             <h3 className={`${TYPE.sectionHeader} mb-2`}>
               In this block{tasks.length > 0 && ` · ${done}/${tasks.length}`}
             </h3>
@@ -235,19 +251,21 @@ export default function BlockPanel({
 
           {/* Fill the block */}
           {!readOnly && (
-            <div className="px-5 py-4 border-t border-hairline">
+            <div className="py-4 border-t border-hairline">
               <h3 className={`${TYPE.sectionHeader} mb-2`}>Fill this block</h3>
               <div className="flex items-center gap-2 mb-2">
-                <input
+                <Input
+                  type="search"
+                  aria-label="Search tasks"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search tasks…"
-                  className="flex-1 min-w-0 text-sm rounded-control border border-hairline bg-tile text-ink-1 px-2.5 py-1.5 placeholder:text-ink-3 focus:outline-none focus:border-orange/60"
+                  placeholder="Search tasks"
+                  className="flex-1 min-w-0"
                 />
-                <select
+                <Select
                   value={projectFilter}
                   onChange={(e) => setProjectFilter(e.target.value)}
-                  className="shrink-0 text-xs rounded-control border border-hairline bg-tile text-ink-1 px-1.5 py-1.5 max-w-[130px]"
+                  className="!w-auto shrink-0 max-w-[150px]"
                   aria-label="Filter by project"
                 >
                   <option value="all">All projects</option>
@@ -257,9 +275,9 @@ export default function BlockPanel({
                       {p.title}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
-              <div className="flex items-center gap-1 mb-3">
+              <div role="group" aria-label="Sort" className="flex items-center gap-1 mb-3">
                 {(
                   [
                     ["smart", "Smart"],
@@ -269,9 +287,11 @@ export default function BlockPanel({
                 ).map(([mode, label]) => (
                   <button
                     key={mode}
+                    type="button"
+                    aria-pressed={sort === mode}
                     onClick={() => setSort(mode)}
                     className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-colors ${
-                      sort === mode ? "bg-orange text-white" : "text-ink-2 hover:text-ink-1"
+                      sort === mode ? "bg-accent-soft text-orange-dark" : "text-ink-2 hover:text-ink-1"
                     }`}
                   >
                     {label}
@@ -333,30 +353,6 @@ export default function BlockPanel({
           )}
         </div>
 
-        {/* Footer */}
-        {!readOnly && (
-          <div className="px-5 py-3 border-t border-hairline flex items-center justify-between">
-            <button
-              onClick={() => {
-                if (!confirmDelete) {
-                  setConfirmDelete(true);
-                  setTimeout(() => setConfirmDelete(false), 3000);
-                } else {
-                  onDelete();
-                }
-              }}
-              className={`text-xs font-semibold rounded-control px-3 py-1.5 transition-colors ${
-                confirmDelete
-                  ? "bg-expense text-white"
-                  : "text-expense hover:bg-expense-bg"
-              }`}
-            >
-              {confirmDelete ? "Delete block + keep tasks?" : "Delete block"}
-            </button>
-            <span className="text-xs text-ink-3">Tasks are never deleted</span>
-          </div>
-        )}
-      </aside>
-    </>
+    </Drawer>
   );
 }

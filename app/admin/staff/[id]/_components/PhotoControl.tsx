@@ -1,5 +1,6 @@
 "use client";
 
+import { saveAction } from "@/lib/admin/saveAction";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Avatar } from "../../../messages/_components/Avatar";
@@ -46,24 +47,18 @@ export default function PhotoControl({
     }
     setError(null);
     setBusy(true);
-    try {
-      const form = new FormData();
-      form.append("file", file);
-      const res = await fetch(`/api/admin/staff/${memberId}/photo`, {
-        method: "POST",
-        body: form,
-      });
-      if (!res.ok) {
-        const body = (await res.json().catch(() => null)) as { error?: string } | null;
-        setError(body?.error ?? "Upload failed. Try again.");
-        return;
-      }
-      router.refresh();
-    } catch {
-      setError("Upload failed. Try again.");
-    } finally {
-      setBusy(false);
+    const form = new FormData();
+    form.append("file", file);
+    const r = await saveAction({
+      request: () => fetch(`/api/admin/staff/${memberId}/photo`, { method: "POST", body: form }),
+      failure: false,
+    });
+    setBusy(false);
+    if (!r.ok) {
+      setError(r.message);
+      return;
     }
+    router.refresh();
   }
 
   return (
@@ -83,7 +78,7 @@ export default function PhotoControl({
 
       {canEdit ? (
         <div className="flex flex-col items-center gap-1">
-          <input
+          <input aria-label="Profile photo"
             ref={fileRef}
             type="file"
             accept="image/*"

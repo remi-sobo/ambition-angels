@@ -1,9 +1,9 @@
 "use client";
 
+import { saveAction } from "@/lib/admin/saveAction";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
-import { userMessage } from "@/lib/admin/errors";
 import SectionHeading from "../../../_components/SectionHeading";
 import EmptyState from "../../../_components/EmptyState";
 import { StatusChip } from "../../../_components/StatusChip";
@@ -65,20 +65,9 @@ function GoalsSection({
 
   async function call(url: string, method: string, body?: unknown) {
     setBusy(true);
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: body ? { "Content-Type": "application/json" } : undefined,
-        body: body ? JSON.stringify(body) : undefined,
-      });
-      if (res.ok) router.refresh();
-      else {
-        const b = (await res.json().catch(() => null)) as { error?: string } | null;
-        toast.error(userMessage(res, b));
-      }
-    } finally {
-      setBusy(false);
-    }
+    const r = await saveAction({ request: { url, method: method as "POST" | "PATCH" | "PUT" | "DELETE", body }, toast });
+    setBusy(false);
+    if (r.ok) router.refresh();
   }
 
   async function add() {
@@ -106,26 +95,26 @@ function GoalsSection({
 
       {adding && (
         <div className={`${CARD} p-3 mb-3 flex flex-col gap-2`}>
-          <input
+          <input aria-label="Goal title"
             className={FIELD}
             placeholder="Goal title (SMART)"
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
           />
           <div className="flex flex-wrap gap-2">
-            <input
+            <input aria-label="Period"
               className={FIELD}
               placeholder="Period (FY26)"
               value={form.period}
               onChange={(e) => setForm({ ...form, period: e.target.value })}
             />
-            <input
+            <input aria-label="Target date"
               type="date"
               className={FIELD}
               value={form.target_date}
               onChange={(e) => setForm({ ...form, target_date: e.target.value })}
             />
-            <select
+            <select aria-label="How progress is measured"
               className={FIELD}
               value={form.metric_type}
               onChange={(e) => setForm({ ...form, metric_type: e.target.value })}
@@ -196,7 +185,7 @@ function GoalsSection({
                 </div>
               </div>
               <div className="mt-2">
-                <select
+                <select aria-label={`Status of ${g.title}`}
                   className={`${FIELD} text-xs`}
                   value={g.status}
                   disabled={busy}
@@ -240,20 +229,9 @@ function KpisSection({
 
   async function call(url: string, method: string, body?: unknown) {
     setBusy(true);
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: body ? { "Content-Type": "application/json" } : undefined,
-        body: body ? JSON.stringify(body) : undefined,
-      });
-      if (res.ok) router.refresh();
-      else {
-        const b = (await res.json().catch(() => null)) as { error?: string } | null;
-        toast.error(userMessage(res, b));
-      }
-    } finally {
-      setBusy(false);
-    }
+    const r = await saveAction({ request: { url, method: method as "POST" | "PATCH" | "PUT" | "DELETE", body }, toast });
+    setBusy(false);
+    if (r.ok) router.refresh();
   }
 
   async function add() {
@@ -307,7 +285,7 @@ function KpisSection({
       {adding && (
         <div className={`${CARD} p-3 mb-3 flex flex-col gap-2`}>
           <div className="flex flex-wrap gap-2">
-            <select
+            <select aria-label="KPI source"
               className={FIELD}
               value={form.source}
               onChange={(e) => setForm({ ...form, source: e.target.value })}
@@ -316,7 +294,7 @@ function KpisSection({
               <option value="auto">Auto (from the spine)</option>
             </select>
             {form.source === "auto" ? (
-              <select
+              <select aria-label="Linked metric"
                 className={FIELD}
                 value={form.linked_metric_key}
                 onChange={(e) => setForm({ ...form, linked_metric_key: e.target.value })}
@@ -329,7 +307,7 @@ function KpisSection({
                 ))}
               </select>
             ) : (
-              <input
+              <input aria-label="KPI title"
                 className={FIELD}
                 placeholder="KPI title"
                 value={form.title}
@@ -338,13 +316,13 @@ function KpisSection({
             )}
           </div>
           <div className="flex flex-wrap gap-2">
-            <input
+            <input aria-label="Target"
               className={`${FIELD} w-24`}
               placeholder="Target"
               value={form.target}
               onChange={(e) => setForm({ ...form, target: e.target.value })}
             />
-            <input
+            <input aria-label="Cadence"
               className={`${FIELD} w-28`}
               placeholder="Cadence"
               value={form.cadence}
@@ -413,7 +391,7 @@ function KpisSection({
               </div>
               {logId === k.id && (
                 <div className="mt-2 flex items-center gap-2">
-                  <input
+                  <input aria-label="New value"
                     autoFocus
                     className={`${FIELD} w-28`}
                     placeholder="New value"

@@ -1,10 +1,12 @@
-import Link from "next/link";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getOrgContext } from "@/lib/admin/auth";
 import type { FinCategory } from "@/lib/finance/types";
 import BudgetEditor, { type BudgetRow } from "./_components/BudgetEditor";
 import NoCategories from "../_components/NoCategories";
 import PageHeader from "../../_components/PageHeader";
+import PageShell from "../../_components/ui/PageShell";
+import Button from "../../_components/ui/Button";
+import SegmentedControl from "../../_components/ui/SegmentedControl";
 import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
 
 type SearchParams = { year?: string };
@@ -26,9 +28,9 @@ export default async function BudgetPage({
   const ctx = await getOrgContext();
   if (!ctx) {
     return (
-      <div className="max-w-5xl px-4 lg:px-8 py-6 lg:py-8">
+      <PageShell>
         <PageHeader title="Budget" subtitle="Sign in to view the budget." />
-      </div>
+      </PageShell>
     );
   }
   const orgId = ctx.orgId;
@@ -74,57 +76,33 @@ export default async function BudgetPage({
   // Year picker options — show a small window around the active year.
   const years = [year - 1, year, year + 1].filter((y) => y >= 2024 && y <= 2030);
 
+  // List archetype (V4 Stage G2): one primary action, the year as a
+  // link-driven segmented control, the editor on DataTable v2.
   return (
-    <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8">
-      <header>
-        <div className="flex items-center gap-3 text-xs text-ink-2 mb-1">
-          <Link href="/admin/finance" className="hover:text-ink-1">
-            ← Finance
-          </Link>
-        </div>
-        <PageHeader
-          title={<>Budget · {year}</>}
-          subtitle={
-            <span className="block max-w-2xl">
-              Mirrors the Budget-{year} workbook tab. Base + Tier 1 / Tier 2
-              contingency per line item. Activated contingency flips on once
-              fundraising crosses the unlock threshold.
-            </span>
-          }
-          actions={
-            <div className="flex items-center gap-2 text-xs">
-              <Link
-                href={`/admin/settings/finance/budget-import?year=${year}`}
-                className="px-3 py-1 rounded-full border border-orange/40 bg-orange/15 text-orange hover:bg-orange/25"
-              >
-                ⇪ Import from QuickBooks
-              </Link>
-              <span className="text-ink-2">·</span>
-              {years.map((y) => (
-                <Link
-                  key={y}
-                  href={`/admin/finance/budget?year=${y}`}
-                  className={`px-3 py-1 rounded-full border ${
-                    y === year
-                      ? "border-orange/60 bg-orange/15 text-orange"
-                      : "border-hairline text-ink-2 hover:text-ink-1"
-                  }`}
-                >
-                  {y}
-                </Link>
-              ))}
-            </div>
-          }
-        />
-      </header>
+    <PageShell>
+      <PageHeader
+        title={`Budget ${year}`}
+        subtitle="Base plus Tier 1 and Tier 2 contingency for each line. Activated contingency turns on once fundraising crosses the unlock threshold."
+        secondaryActions={
+          <SegmentedControl
+            label="Budget year"
+            segments={years.map((y) => ({ value: String(y), label: String(y) }))}
+            value={String(year)}
+            hrefFor={(y) => `/admin/finance/budget?year=${y}`}
+          />
+        }
+        moreActions={[
+          { label: "Budget vs actual on the snapshot", href: "/admin/finance/snapshot" },
+          { label: "Finance categories", href: "/admin/settings/finance" },
+        ]}
+        primaryAction={<Button href={`/admin/settings/finance/budget-import?year=${year}`}>Import from QuickBooks</Button>}
+      />
 
       {categories.length === 0 ? (
-        <div className="mt-6">
-          <NoCategories />
-        </div>
+        <NoCategories />
       ) : (
         <BudgetEditor year={year} categories={categories} initialBudget={initialBudget} />
       )}
-    </div>
+    </PageShell>
   );
 }

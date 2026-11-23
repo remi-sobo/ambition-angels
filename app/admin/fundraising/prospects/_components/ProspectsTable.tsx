@@ -1,21 +1,25 @@
 "use client";
 
-// Prospects list on the shared DataTable (design-system §4.4). The server
-// component loads every HubSpot-mirror contact (read-only staging) joined to
-// its internal score and passes plain rows here. This wrapper owns the
-// lifecycle / owner / scored facets (faceted filters aren't part of the
-// generic table), then hands the faceted rows to DataTable for search, sort,
-// column picker, pagination, CSV, bulk actions, and saved views.
+// Prospects list on the kit table (V4 P1; was the V1 shared DataTable). The
+// server component loads every bench row joined to its live HubSpot fields
+// and score and passes plain rows here. Everything stays in the browser, as
+// before: the lifecycle / owner / scored facets, search, sort (a Sort control
+// in place of header clicks), 50-row pages, CSV of the filtered view, saved
+// views (same localStorage key as V1, so existing views carry over), and the
+// bulk actions, which run here through the kit table's "run" kind.
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import DataTable, { type Column, type BulkAction } from "../../../_components/DataTable";
+import { StaticTable, type DataTableColumn, type DataTableBulkAction } from "@/app/admin/_components/ui/DataTable";
+import { TextField, SelectField, CheckboxField } from "@/app/admin/_components/ui/Field";
+import Button from "@/app/admin/_components/ui/Button";
 import TaskComposer, { type TaskTarget } from "../../_components/TaskComposer";
 import { CategoryTag, ScoreBadge } from "@/app/admin/_components/StatusChip";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import AddProspectModal from "./AddProspectModal";
+import SavedViews, { SaveViewButton, type SavedView } from "@/app/admin/_components/ui/SavedViews";
 
 export type ProspectRow = {
   id: string;
@@ -35,8 +39,60 @@ export type ProspectRow = {
   overdueTasks: number;
 };
 
-const selectCls =
-  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm focus:outline-none focus:border-orange/50";
+const PAGE_SIZE = 50;
+const VIEWS_KEY = "bloomos.table.prospects.views";
+
+type SortKey = "last_activity" | "name" | "company" | "lifecycle" | "score" | "tasks";
+type Sort = { key: SortKey; dir: "asc" | "desc" };
+type StoredView = { name: string; search: string; sort: { key: string; dir: "asc" | "desc" } | null };
+
+const SORTS: { value: string; label: string; sort: Sort }[] = [
+  { value: "last_activity:desc", label: "Last activity, newest", sort: { key: "last_activity", dir: "desc" } },
+  { value: "last_activity:asc", label: "Last activity, oldest", sort: { key: "last_activity", dir: "asc" } },
+  { value: "name:asc", label: "Name, A to Z", sort: { key: "name", dir: "asc" } },
+  { value: "company:asc", label: "Company, A to Z", sort: { key: "company", dir: "asc" } },
+  { value: "lifecycle:asc", label: "Lifecycle", sort: { key: "lifecycle", dir: "asc" } },
+  { value: "score:desc", label: "Score, highest", sort: { key: "score", dir: "desc" } },
+  { value: "tasks:desc", label: "Open tasks, most", sort: { key: "tasks", dir: "desc" } },
+];
+
+function sortValue(r: ProspectRow, key: SortKey): string | number | null {
+  switch (key) {
+    case "last_activity":
+      return r.last_activity_at;
+    case "name":
+      return displayName(r).toLowerCase();
+    case "company":
+      return r.company?.toLowerCase() ?? null;
+    case "lifecycle":
+      return r.lifecycle_stage;
+    case "score":
+      return r.score_total;
+    case "tasks":
+      return r.openTasks;
+  }
+}
+
+function csvEscape(v: string | number | null): string {
+  const s = v == null ? "" : String(v);
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function downloadCsv(rows: ProspectRow[]) {
+  const head = ["Name", "Email", "Company", "Lifecycle", "Owner ID", "Last Activity", "Score", "Tasks"];
+  const body = rows.map((r) =>
+    [displayName(r), r.email, r.company, r.lifecycle_stage, r.owner_id, r.last_activity_at, r.score_total, r.openTasks]
+      .map(csvEscape)
+      .join(","),
+  );
+  const blob = new Blob([[head.join(","), ...body].join("\n")], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "prospects.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 function displayName(r: ProspectRow): string {
   return r.name || r.email || "Unknown";
@@ -75,6 +131,52 @@ export default function ProspectsTable({
   const [lifecycle, setLifecycle] = useState("");
   const [owner, setOwner] = useState("");
   const [scored, setScored] = useState(false);
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<Sort>({ key: "last_activity", dir: "desc" });
+  const [page, setPage] = useState(0);
+  const [views, setViews] = useState<StoredView[]>([]);
+  const [activeView, setActiveView] = useState("all");
+  const [naming, setNaming] = useState(false);
+  const [viewName, setViewName] = useState("");
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(VIEWS_KEY);
+      if (raw) setViews(JSON.parse(raw) as StoredView[]);
+    } catch {
+      /* corrupt prefs are non-fatal */
+    }
+  }, []);
+  const persistViews = (next: StoredView[]) => {
+    setViews(next);
+    try {
+      localStorage.setItem(VIEWS_KEY, JSON.stringify(next));
+    } catch {
+      /* storage full or blocked: the view lasts this session */
+    }
+  };
+  const applyView = (key: string) => {
+    setActiveView(key);
+    setPage(0);
+    if (key === "all") {
+      setSearch("");
+      setSort({ key: "last_activity", dir: "desc" });
+      return;
+    }
+    const v = views.find((x) => x.name === key);
+    if (!v) return;
+    setSearch(v.search);
+    const known = SORTS.find((o) => o.sort.key === v.sort?.key && o.sort.dir === v.sort?.dir);
+    setSort(known ? known.sort : { key: "last_activity", dir: "desc" });
+  };
+  const saveView = () => {
+    const name = viewName.trim();
+    if (!name) return;
+    persistViews([...views.filter((v) => v.name !== name), { name, search, sort }]);
+    setActiveView(name);
+    setNaming(false);
+    setViewName("");
+  };
   const [addOpen, setAddOpen] = useState(false);
   const [identifying, setIdentifying] = useState<string | null>(null);
   const [taskTargets, setTaskTargets] = useState<TaskTarget[] | null>(null);
@@ -106,22 +208,37 @@ export default function ProspectsTable({
       .finally(() => setIdentifying(null));
   };
 
-  const filtered = useMemo(
-    () =>
-      rows.filter(
-        (r) =>
-          (!lifecycle || r.lifecycle_stage === lifecycle) &&
-          (!owner || r.owner_id === owner) &&
-          (!scored || r.score_total !== null)
-      ),
-    [rows, lifecycle, owner, scored]
-  );
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const out = rows.filter(
+      (r) =>
+        (!lifecycle || r.lifecycle_stage === lifecycle) &&
+        (!owner || r.owner_id === owner) &&
+        (!scored || r.score_total !== null) &&
+        (!q || [displayName(r), r.email, r.company].some((v) => (v ?? "").toLowerCase().includes(q))),
+    );
+    const dir = sort.dir === "asc" ? 1 : -1;
+    return [...out].sort((a, b) => {
+      const av = sortValue(a, sort.key);
+      const bv = sortValue(b, sort.key);
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1; // nulls last
+      if (bv == null) return -1;
+      if (typeof av === "number" && typeof bv === "number") return (av - bv) * dir;
+      return String(av).localeCompare(String(bv)) * dir;
+    });
+  }, [rows, lifecycle, owner, scored, search, sort]);
+  useEffect(() => setPage(0), [lifecycle, owner, scored, search, sort]);
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount - 1);
+  const pageRows = filtered.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
+  const byId = useMemo(() => new Map(rows.map((r) => [r.id, r])), [rows]);
+  const rowsFor = (ids: string[]) => ids.map((id) => byId.get(id)).filter((r): r is ProspectRow => !!r);
 
-  const columns: Column<ProspectRow>[] = [
+  const columns: DataTableColumn<ProspectRow>[] = [
     {
       key: "name",
       header: "Name",
-      value: (r) => displayName(r),
       render: (r) => (
         <span className="flex items-center gap-1.5">
           <Link href={`/admin/fundraising/prospects/${r.id}`} className="text-ink-1 font-medium hover:text-orange">
@@ -140,19 +257,16 @@ export default function ProspectsTable({
     {
       key: "email",
       header: "Email",
-      value: (r) => r.email ?? "",
       render: (r) => <span className="text-ink-2 truncate block max-w-[220px]">{r.email ?? "—"}</span>,
     },
     {
       key: "company",
       header: "Company",
-      value: (r) => r.company ?? "",
       render: (r) => <span className="text-ink-2 truncate block max-w-[160px]">{r.company ?? "—"}</span>,
     },
     {
       key: "lifecycle",
       header: "Lifecycle",
-      value: (r) => r.lifecycle_stage ?? "",
       render: (r) =>
         r.lifecycle_stage ? (
           <CategoryTag category={r.lifecycle_stage}>{r.lifecycle_stage}</CategoryTag>
@@ -171,30 +285,20 @@ export default function ProspectsTable({
         ),
     },
     {
-      key: "owner_id",
-      header: "Owner ID",
-      value: (r) => r.owner_id ?? "",
-      render: (r) => <span className="text-ink-2 font-mono text-xs">{r.owner_id ?? "—"}</span>,
-      defaultHidden: true,
-    },
-    {
       key: "last_activity",
-      header: "Last Activity",
-      value: (r) => r.last_activity_at,
+      header: "Last activity",
       render: (r) => <span className="text-ink-2">{fmtRelative(r.last_activity_at)}</span>,
     },
     {
       key: "score",
       header: "Score",
       align: "right",
-      value: (r) => r.score_total,
       render: (r) => <ScoreBadge score={r.score_total} />,
     },
     {
       key: "tasks",
       header: "Tasks",
       align: "right",
-      value: (r) => r.openTasks,
       render: (r) =>
         r.openTasks > 0 ? (
           <span
@@ -213,8 +317,6 @@ export default function ProspectsTable({
       key: "actions",
       header: "",
       align: "right",
-      csv: false,
-      alwaysVisible: true,
       render: (r) => (
         <button
           onClick={() => setTaskTargets([{ id: r.id, name: displayName(r) }])}
@@ -227,14 +329,19 @@ export default function ProspectsTable({
     },
   ];
 
-  const bulkActions: BulkAction<ProspectRow>[] = [
+  const bulkActions: DataTableBulkAction[] = [
     {
+      kind: "run",
+      key: "task",
       label: "Add follow-up task…",
-      run: (selected) => setTaskTargets(selected.map((r) => ({ id: r.id, name: displayName(r) }))),
+      run: (ids) => setTaskTargets(rowsFor(ids).map((r) => ({ id: r.id, name: displayName(r) }))),
     },
     {
+      kind: "run",
+      key: "emails",
       label: "Copy emails",
-      run: (selected) => {
+      run: (ids) => {
+        const selected = rowsFor(ids);
         const emails = selected.map((r) => r.email).filter((e): e is string => !!e);
         if (emails.length === 0) {
           toast.info("None of the selected prospects have an email on file.");
@@ -252,8 +359,11 @@ export default function ProspectsTable({
       ? []
       : [
           {
+            kind: "run",
+            key: "promote",
             label: "Promote to pipeline →",
-            run: async (selected: ProspectRow[]) => {
+            run: async (ids: string[]) => {
+              const selected = rowsFor(ids);
               const ok = await confirm({
                 title: `Promote ${selected.length} prospect${selected.length === 1 ? "" : "s"} to the pipeline?`,
                 body: "They'll enter at the Identify stage, move off the bench, and appear in Pipeline.",
@@ -274,12 +384,15 @@ export default function ProspectsTable({
                 })
                 .catch(() => toast.error("Could not promote. Try again."));
             },
-          } as BulkAction<ProspectRow>,
+          } as DataTableBulkAction,
         ]),
     disqualifiedView
       ? {
+          kind: "run" as const,
+          key: "requalify",
           label: "Requalify",
-          run: (selected) => {
+          run: (ids: string[]) => {
+            const selected = rowsFor(ids);
             void fetch("/api/admin/fundraising/prospects/disqualify", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -288,8 +401,12 @@ export default function ProspectsTable({
           },
         }
       : {
+          kind: "run" as const,
+          key: "disqualify",
           label: "Disqualify",
-          run: async (selected) => {
+          tone: "danger" as const,
+          run: async (ids: string[]) => {
+            const selected = rowsFor(ids);
             const ok = await confirm({
               title: `Disqualify ${selected.length} prospect${selected.length === 1 ? "" : "s"}?`,
               body: "They leave the bench. You can requalify them later.",
@@ -305,46 +422,123 @@ export default function ProspectsTable({
         },
   ];
 
+  const viewTabs: SavedView[] = [
+    { key: "all", label: "All", mine: true },
+    ...views.map((v) => ({ key: v.name, label: v.name })),
+  ];
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3 text-sm">
-        <select value={lifecycle} onChange={(e) => setLifecycle(e.target.value)} className={selectCls}>
-          <option value="">All lifecycles</option>
-          {lifecycleOptions.map((o) => (
-            <option key={o} value={o}>{o}</option>
-          ))}
-        </select>
-        <select value={owner} onChange={(e) => setOwner(e.target.value)} className={`${selectCls} font-mono text-xs`}>
-          <option value="">All owners</option>
-          {ownerOptions.map((o) => (
-            <option key={o} value={o}>{o}</option>
-          ))}
-        </select>
-        <label className="flex items-center gap-2 cursor-pointer select-none text-ink-1">
-          <input type="checkbox" checked={scored} onChange={(e) => setScored(e.target.checked)} className="accent-orange" />
-          Scored only
-        </label>
-        {!disqualifiedView && (
-          <button
-            onClick={() => setAddOpen(true)}
-            className="ml-auto text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors"
-          >
-            + Add prospect
-          </button>
-        )}
+      <SavedViews
+        views={viewTabs}
+        activeKey={activeView}
+        onSelect={applyView}
+        label="Saved prospect views"
+        saveSlot={
+          naming ? (
+            <span className="inline-flex items-end gap-2">
+              <TextField
+                label="View name"
+                controlSize="md"
+                data-autofocus
+                value={viewName}
+                onChange={(e) => setViewName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") saveView();
+                  if (e.key === "Escape") setNaming(false);
+                }}
+              />
+              <Button size="sm" onClick={saveView} disabled={!viewName.trim()}>
+                Save
+              </Button>
+              <Button size="sm" variant="quiet" onClick={() => setNaming(false)}>
+                Cancel
+              </Button>
+            </span>
+          ) : (
+            <SaveViewButton onClick={() => setNaming(true)} />
+          )
+        }
+      />
+      <div className="flex flex-wrap items-end gap-3">
+        <TextField
+          label="Search"
+          type="search"
+          controlSize="md"
+          className="w-full sm:w-72"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setActiveView("");
+          }}
+          placeholder="Name, email, or company"
+        />
+        <SelectField
+          label="Lifecycle"
+          controlSize="md"
+          value={lifecycle}
+          onChange={(e) => setLifecycle(e.target.value)}
+          placeholder="All lifecycles"
+          options={lifecycleOptions.map((o) => ({ value: o, label: o }))}
+        />
+        <SelectField
+          label="Owner"
+          controlSize="md"
+          value={owner}
+          onChange={(e) => setOwner(e.target.value)}
+          placeholder="All owners"
+          options={ownerOptions.map((o) => ({ value: o, label: o }))}
+        />
+        <SelectField
+          label="Sort"
+          controlSize="md"
+          value={`${sort.key}:${sort.dir}`}
+          onChange={(e) => {
+            const pick = SORTS.find((o) => o.value === e.target.value);
+            if (pick) setSort(pick.sort);
+            setActiveView("");
+          }}
+          options={SORTS.map((o) => ({ value: o.value, label: o.label }))}
+        />
+        <CheckboxField label="Scored only" checked={scored} onChange={(e) => setScored(e.target.checked)} className="pb-2" />
+        <div className="ml-auto flex items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={() => downloadCsv(filtered)}>
+            Export CSV
+          </Button>
+          {!disqualifiedView && (
+            <Button size="sm" onClick={() => setAddOpen(true)}>
+              + Add prospect
+            </Button>
+          )}
+        </div>
       </div>
 
-      <DataTable
-        rows={filtered}
+      <StaticTable
+        label="Prospects"
+        noun={{ one: "prospect", many: "prospects" }}
         columns={columns}
+        rows={pageRows}
         getRowId={(r) => r.id}
-        initialSort={{ key: "last_activity", dir: "desc" }}
+        getRowLabel={(r) => displayName(r)}
         bulkActions={bulkActions}
-        csvFilename="prospects.csv"
-        viewsKey="prospects"
-        searchPlaceholder="Search prospects by name, email, or company…"
         emptyMessage="No prospects on the bench match these filters."
+        minWidth={900}
       />
+      {pageCount > 1 && (
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-xs text-ink-2">
+            Page {safePage + 1} of {pageCount} · {filtered.length} prospects
+          </span>
+          <div className="flex gap-2">
+            <Button variant="secondary" size="sm" onClick={() => setPage(safePage - 1)} disabled={safePage === 0}>
+              ← Prev
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => setPage(safePage + 1)} disabled={safePage >= pageCount - 1}>
+              Next →
+            </Button>
+          </div>
+        </div>
+      )}
 
       {addOpen && <AddProspectModal onClose={() => setAddOpen(false)} />}
       {taskTargets && (

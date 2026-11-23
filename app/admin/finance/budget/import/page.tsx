@@ -1,10 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { userMessage } from "@/lib/admin/errors";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import PageHeader from "../../../_components/PageHeader";
+import PageShell from "../../../_components/ui/PageShell";
+import Button from "../../../_components/ui/Button";
+import { Select } from "../../../_components/ui/Input";
+import { TextField } from "../../../_components/ui/Field";
+import Notice from "../../../_components/ui/Notice";
+import Figure, { SummaryStrip } from "../../../_components/ui/Figure";
+import DataTable, { type DataTableColumn } from "../../../_components/ui/DataTable";
+import { useSaveAction } from "@/app/admin/_lib/useSaveAction";
 import { TYPE } from "@/lib/admin/typeScale";
 
 type MatchedRow = {
@@ -43,63 +49,60 @@ type CategoryOption = {
   display_name: string;
 };
 
+const SPEC = { sortable: [], defaultSort: null, pageSize: 1000 } as const;
+
 function fmt(n: number): string {
   return n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 }
 
+// Budget import from QuickBooks: the Form archetype as a full page, because
+// it is multi-step (V4 Stage G2: reading width, kit fields, Figure strip with
+// sources, DataTable v2 for both previews, saveAction for both requests).
+// Only base_amount changes; contingency tiers stay where they were.
 export default function QbBudgetImportPage() {
   const router = useRouter();
   const sp = useSearchParams();
+  const save = useSaveAction();
   const initialYear = parseInt(sp.get("year") ?? "", 10);
 
   const [year, setYear] = useState<number>(
-    Number.isFinite(initialYear) && initialYear >= 2000 ? initialYear : new Date().getFullYear()
+    Number.isFinite(initialYear) && initialYear >= 2000 ? initialYear : new Date().getFullYear(),
   );
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [busy, setBusy] = useState<"idle" | "previewing" | "committing">("idle");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-
   // Per-unmatched override map: account → category_id (empty string = skip).
   const [overrides, setOverrides] = useState<Record<string, string>>({});
-
-  // Categories for the override dropdowns. Fetched lazily — only needed
-  // once a preview comes back with unmatched rows.
+  // Categories for the override menus, gathered from the suggestions across
+  // every unmatched row (the minimum set the menus need).
   const [categories, setCategories] = useState<CategoryOption[] | null>(null);
-  useEffect(() => {
-    if (categories !== null) return;
-    if (!preview || preview.unmatched.length === 0) return;
-    fetch("/api/admin/finance/budget/import/categories")
-      .then(() => null) // Endpoint optional; we read from suggestions instead.
-      .catch(() => null);
-    // Build a category list from the suggestions across all unmatched rows
-    // — that's the minimum set we need for the dropdowns. If the user
-    // truly needs to pick a category that wasn't suggested, they'd use the
-    // budget editor directly. Keeping this client-side keeps the route
-    // count smaller.
-    const all = new Map<string, CategoryOption>();
-    for (const u of preview.unmatched) {
-      for (const s of u.suggestions) {
-        all.set(s.category_id, {
-          id: s.category_id,
-          group_name: s.group_name,
-          display_name: s.display_name,
-        });
-      }
-    }
-    setCategories(Array.from(all.values()));
-  }, [preview, categories]);
 
-  // Seed overrides with the top suggestion when the preview lands.
   useEffect(() => {
     if (!preview) return;
+    const all = new Map<string, CategoryOption>();
     const seed: Record<string, string> = {};
     for (const u of preview.unmatched) {
       seed[u.account] = u.suggestions[0]?.category_id ?? "";
+      for (const s of u.suggestions) all.set(s.category_id, { id: s.category_id, group_name: s.group_name, display_name: s.display_name });
     }
+    setCategories(Array.from(all.values()));
     setOverrides(seed);
   }, [preview]);
+
+  function form(mode: "preview" | "commit") {
+    const fd = new FormData();
+    fd.set("file", file as File);
+    fd.set("year", String(year));
+    fd.set("mode", mode);
+    if (mode === "commit") {
+      for (const [account, category_id] of Object.entries(overrides)) {
+        if (category_id) fd.set(`override:${account}`, category_id);
+      }
+    }
+    return fd;
+  }
 
   async function doPreview() {
     if (!file) return;
@@ -107,40 +110,34 @@ export default function QbBudgetImportPage() {
     setError(null);
     setSuccess(null);
     setPreview(null);
-    const fd = new FormData();
-    fd.set("file", file);
-    fd.set("year", String(year));
-    fd.set("mode", "preview");
-    const r = await fetch("/api/admin/finance/budget/import", { method: "POST", body: fd });
-    const j = await r.json().catch(() => ({}));
+    const r = await save<{ preview: PreviewResponse }>({
+      request: () => fetch("/api/admin/finance/budget/import", { method: "POST", body: form("preview") }),
+      failure: false,
+    });
     setBusy("idle");
     if (!r.ok) {
-      setError(userMessage(r, j));
+      setError(r.message);
       return;
     }
-    setPreview(j.preview as PreviewResponse);
+    setPreview(r.data.preview);
   }
 
   async function doCommit() {
     if (!file || !preview) return;
     setBusy("committing");
     setError(null);
-    const fd = new FormData();
-    fd.set("file", file);
-    fd.set("year", String(year));
-    fd.set("mode", "commit");
-    for (const [account, category_id] of Object.entries(overrides)) {
-      if (category_id) fd.set(`override:${account}`, category_id);
-    }
-    const r = await fetch("/api/admin/finance/budget/import", { method: "POST", body: fd });
-    const j = await r.json().catch(() => ({}));
+    const r = await save<{ upserted: number; year: number; matched: number; overrides: number; skipped: number }>({
+      request: () => fetch("/api/admin/finance/budget/import", { method: "POST", body: form("commit") }),
+      failure: false,
+    });
     setBusy("idle");
     if (!r.ok) {
-      setError(userMessage(r, j));
+      setError(r.message);
       return;
     }
+    const j = r.data;
     setSuccess(
-      `Wrote ${j.upserted} budget lines for ${j.year}. ${j.matched} auto-matched · ${j.overrides} manually mapped · ${j.skipped} skipped.`
+      `Wrote ${j.upserted} budget lines for ${j.year}: ${j.matched} matched, ${j.overrides} mapped by hand, ${j.skipped} skipped.`,
     );
     setPreview(null);
     setFile(null);
@@ -148,237 +145,188 @@ export default function QbBudgetImportPage() {
     setTimeout(() => router.push(`/admin/finance/budget?year=${year}`), 1500);
   }
 
-  return (
-    <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8">
-      <header>
-        <div className="flex items-center gap-3 text-xs text-ink-2 mb-1">
-          <Link href={`/admin/finance/budget?year=${year}`} className="hover:text-ink-1">
-            ← Budget
-          </Link>
-        </div>
-        <PageHeader
-          title="Import budget from QuickBooks"
-          subtitle={
-            <span className="block max-w-2xl">
-              Drop a CSV exported from QuickBooks Budget Overview (or any CSV
-              with an Account column and a Total column). We match account names
-              to your categories, show what we&apos;ll write, and let you fix any
-              unmatched rows before commit. Only <span className="text-ink-1">base_amount</span> changes. 
-              contingency tiers stay where they were.
-            </span>
-          }
-        />
-      </header>
+  const matchedColumns: DataTableColumn<MatchedRow>[] = [
+    { key: "account", header: "QuickBooks account", card: "title", render: (m) => <span className="text-ink-1">{m.account}</span> },
+    { key: "category", header: "Category", className: "text-ink-2", render: (m) => m.category_id },
+    { key: "current", header: "Current base", align: "right", className: "tabular-nums text-ink-2", render: (m) => fmt(m.current_base) },
+    { key: "new", header: "New base", align: "right", className: "tabular-nums text-ink-1", render: (m) => fmt(m.amount) },
+    {
+      key: "change",
+      header: "Change",
+      align: "right",
+      className: "tabular-nums",
+      render: (m) => {
+        const d = m.amount - m.current_base;
+        return d === 0 ? (
+          <span className="text-ink-2">No change</span>
+        ) : (
+          <span className={d > 0 ? "text-status-healthy-text" : "text-status-critical-text"}>
+            {d > 0 ? "+" : ""}
+            {fmt(d)}
+          </span>
+        );
+      },
+    },
+  ];
 
-      <section className="rounded-panel-lg border-hairline bg-surface p-5 mb-6">
-        <div className="grid sm:grid-cols-[auto_1fr_auto] gap-4 items-end">
-          <label className="block">
-            <span className={`block ${TYPE.fieldLabel} mb-1`}>Year</span>
-            <input
-              value={year}
-              onChange={(e) => setYear(Number(e.target.value) || year)}
-              inputMode="numeric"
-              className="bg-ink border-hairline rounded px-2 py-1.5 text-sm text-ink-1 w-24"
-            />
-          </label>
-          <label className="block">
-            <span className={`block ${TYPE.fieldLabel} mb-1`}>QuickBooks CSV</span>
-            <input
-              type="file"
-              accept=".csv,text/csv"
-              onChange={(e) => {
-                setFile(e.target.files?.[0] ?? null);
-                setPreview(null);
-                setError(null);
-                setSuccess(null);
-              }}
-              className="block text-sm text-ink-1 file:mr-3 file:rounded-control file:border-0 file:bg-orange file:text-white file:px-3 file:py-2 file:text-xs file:font-medium file:cursor-pointer hover:file:bg-orange-dark"
-            />
-          </label>
-          <button
-            type="button"
-            disabled={!file || busy !== "idle"}
-            onClick={doPreview}
-            className={`px-4 py-2 rounded-control bg-tile hover:bg-tile ${TYPE.body} font-medium disabled:opacity-40`}
-          >
-            {busy === "previewing" ? "Parsing…" : "Preview"}
-          </button>
+  const unmatchedColumns: DataTableColumn<UnmatchedRow>[] = [
+    { key: "account", header: "QuickBooks account", card: "title", render: (u) => <span className="text-ink-1">{u.account}</span> },
+    { key: "amount", header: "Amount", align: "right", className: "tabular-nums", render: (u) => fmt(u.amount) },
+    {
+      key: "map",
+      header: "Map to",
+      render: (u) => (
+        <Select
+          aria-label={`Category for ${u.account}`}
+          value={overrides[u.account] ?? ""}
+          onChange={(e) => setOverrides((o) => ({ ...o, [u.account]: e.target.value }))}
+          className="max-w-xs text-[13px]"
+        >
+          <option value="">Skip this row</option>
+          {u.suggestions.length > 0 ? (
+            <optgroup label="Suggested">
+              {u.suggestions.map((s) => (
+                <option key={s.category_id} value={s.category_id}>
+                  {s.display_name} ({s.group_name})
+                </option>
+              ))}
+            </optgroup>
+          ) : null}
+          {categories && categories.length > 0 ? (
+            <optgroup label="Other suggestions in this file">
+              {categories
+                .filter((c) => !u.suggestions.some((s) => s.category_id === c.id))
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.display_name} ({c.group_name})
+                  </option>
+                ))}
+            </optgroup>
+          ) : null}
+        </Select>
+      ),
+    },
+  ];
+
+  const commitCount = preview ? preview.matched_count + Object.values(overrides).filter(Boolean).length : 0;
+  const src = preview ? `From ${preview.filename}, before anything is saved` : "";
+
+  return (
+    <PageShell width="reading">
+      <PageHeader
+        breadcrumb={[
+          { label: "Settings", href: "/admin/settings" },
+          { label: "Finance", href: "/admin/settings/finance" },
+        ]}
+        title="Import budget from QuickBooks"
+        subtitle="Use a CSV from QuickBooks Budget Overview, or any CSV with an Account column and a Total column. Account names are matched to your categories; you fix any that do not match before anything is saved. Only the base amount changes."
+        secondaryActions={
+          <Button variant="secondary" href={`/admin/finance/budget?year=${year}`}>
+            Back to budget
+          </Button>
+        }
+      />
+
+      <section className="bg-surface border border-hairline rounded-panel p-5 mb-6">
+        <div className="grid sm:grid-cols-[120px_1fr] gap-4 items-end">
+          <TextField
+            label="Year"
+            value={year}
+            onChange={(e) => setYear(Number(e.target.value) || year)}
+            inputMode="numeric"
+          />
+          <TextField
+            label="QuickBooks CSV"
+            type="file"
+            accept=".csv,text/csv"
+            onChange={(e) => {
+              setFile(e.target.files?.[0] ?? null);
+              setPreview(null);
+              setError(null);
+              setSuccess(null);
+            }}
+            className="[&_input]:pt-2"
+          />
+        </div>
+        <div className="mt-4">
+          <Button onClick={doPreview} disabled={!file} loading={busy === "previewing"}>
+            {busy === "previewing" ? "Reading" : "Preview"}
+          </Button>
         </div>
       </section>
 
-      {error && (
-        <div className="mb-6 rounded-panel border border-expense/30 bg-expense-bg p-4 text-sm text-expense">
+      {error ? (
+        <Notice tone="danger" title="That did not work." className="mb-6">
           {error}
-        </div>
-      )}
-      {success && (
-        <div className="mb-6 rounded-panel border border-revenue/30 bg-revenue-bg p-4 text-sm text-revenue">
+        </Notice>
+      ) : null}
+      {success ? (
+        <Notice tone="success" title="Budget imported." className="mb-6">
           {success}
-        </div>
-      )}
+        </Notice>
+      ) : null}
 
-      {preview && (
+      {preview ? (
         <section className="space-y-5">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <Stat label="Rows in file" value={String(preview.row_count)} />
-            <Stat label="Matched" value={String(preview.matched_count)} accent />
-            <Stat label="Unmatched" value={String(preview.unmatched_count)} tone="warn" />
-            <Stat label="Format" value={preview.detected_format} />
+          <SummaryStrip label="Import preview">
+            <Figure label="Rows in file" value={preview.row_count} source={src} />
+            <Figure label="Matched" value={preview.matched_count} source="Account names that match a category" />
+            <Figure label="Need mapping" value={preview.unmatched_count} source="No category matched by name" />
+            <Figure label="Format" value={preview.detected_format} source="Read from the file's header rows" />
+          </SummaryStrip>
+
+          <div>
+            <h2 className={`${TYPE.cardTitle} mb-2`}>Will overwrite</h2>
+            <DataTable
+              label="Budget lines that will be overwritten"
+              noun={{ one: "line", many: "lines" }}
+              columns={matchedColumns}
+              data={{ rows: preview.matched, total: preview.matched.length, page: 0, pageSize: SPEC.pageSize }}
+              getRowId={(m) => m.account + m.category_id}
+              getRowLabel={(m) => m.account}
+              spec={SPEC}
+              state={{ page: 0, sort: null }}
+              baseHref="/admin/settings/finance/budget-import"
+              emptyMessage="No automatic matches yet. Map them below."
+            />
           </div>
 
-          {/* Matched */}
-          <div className="rounded-panel-lg border-hairline bg-surface overflow-hidden">
-            <header className="px-4 py-2.5 border-b border-hairline">
-              <div className={`${TYPE.sectionHeader} !text-orange`}>
-                Will overwrite
-              </div>
-            </header>
-            <table className="w-full text-xs">
-              <thead className={`bg-surface ${TYPE.tableHeader}`}>
-                <tr>
-                  <th className="text-left px-3 py-2">QB account</th>
-                  <th className="text-left px-3 py-2">→ Category</th>
-                  <th className="text-right px-3 py-2 w-32">Current base</th>
-                  <th className="text-right px-3 py-2 w-32">New base</th>
-                  <th className="text-right px-3 py-2 w-24">Δ</th>
-                </tr>
-              </thead>
-              <tbody>
-                {preview.matched.length === 0 ? (
-                  <tr><td colSpan={5} className="px-3 py-6 text-center text-ink-2">No automatic matches yet. Map them below.</td></tr>
-                ) : (
-                  preview.matched.map((m) => {
-                    const delta = m.amount - m.current_base;
-                    return (
-                      <tr key={m.account + m.category_id} className="border-t border-hairline">
-                        <td className="px-3 py-1.5 text-ink-1">{m.account}</td>
-                        <td className="px-3 py-1.5 text-ink-2">{m.category_id}</td>
-                        <td className="px-3 py-1.5 text-right font-mono text-ink-2">{fmt(m.current_base)}</td>
-                        <td className="px-3 py-1.5 text-right font-mono text-ink-1">{fmt(m.amount)}</td>
-                        <td
-                          className={`px-3 py-1.5 text-right font-mono ${
-                            delta > 0 ? "text-revenue" : delta < 0 ? "text-expense" : "text-ink-2"
-                          }`}
-                        >
-                          {delta === 0 ? "—" : `${delta > 0 ? "+" : ""}${fmt(delta)}`}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Unmatched with manual mapping */}
-          {preview.unmatched.length > 0 && (
-            <div className="rounded-panel-lg border border-status-watch/40 bg-status-watch-bg overflow-hidden">
-              <header className="px-4 py-2.5 border-b border-hairline">
-                <div className={`${TYPE.sectionHeader} !text-status-watch-text`}>
-                  Needs mapping
-                </div>
-                <p className="text-xs text-ink-2 mt-1">
-                  We couldn&apos;t auto-match these QB accounts. Pick a category
-                  for each, or leave as &ldquo;skip&rdquo; to leave that QB line out of
-                  the import.
-                </p>
-              </header>
-              <table className="w-full text-xs">
-                <thead className={`bg-surface ${TYPE.tableHeader}`}>
-                  <tr>
-                    <th className="text-left px-3 py-2">QB account</th>
-                    <th className="text-right px-3 py-2 w-32">Amount</th>
-                    <th className="text-left px-3 py-2">Map to</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {preview.unmatched.map((u) => (
-                    <tr key={u.account} className="border-t border-hairline">
-                      <td className="px-3 py-1.5 text-ink-1">{u.account}</td>
-                      <td className="px-3 py-1.5 text-right font-mono text-ink-1">{fmt(u.amount)}</td>
-                      <td className="px-3 py-1.5">
-                        <select
-                          value={overrides[u.account] ?? ""}
-                          onChange={(e) =>
-                            setOverrides((o) => ({ ...o, [u.account]: e.target.value }))
-                          }
-                          className="bg-ink border-hairline rounded px-2 py-1 text-xs text-ink-1 max-w-xs"
-                        >
-                          <option value="">(skip this row)</option>
-                          {/* Suggested first */}
-                          {u.suggestions.length > 0 && (
-                            <optgroup label="Suggested">
-                              {u.suggestions.map((s) => (
-                                <option key={s.category_id} value={s.category_id}>
-                                  {s.display_name} ({s.group_name})
-                                </option>
-                              ))}
-                            </optgroup>
-                          )}
-                          {/* Everything else gathered from preview suggestions across
-                              all unmatched rows. Categories without any suggestion in
-                              this file aren't picked up — for those, use the budget
-                              editor directly. */}
-                          {categories && categories.length > 0 && (
-                            <optgroup label="All from suggestions">
-                              {categories
-                                .filter((c) => !u.suggestions.some((s) => s.category_id === c.id))
-                                .map((c) => (
-                                  <option key={c.id} value={c.id}>
-                                    {c.display_name} ({c.group_name})
-                                  </option>
-                                ))}
-                            </optgroup>
-                          )}
-                        </select>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {preview.unmatched.length > 0 ? (
+            <div>
+              <h2 className={`${TYPE.cardTitle} mb-1`}>Needs mapping</h2>
+              <p className={`${TYPE.bodyMuted} mb-2`}>
+                Pick a category for each, or skip it to leave that line out of the import.
+              </p>
+              <DataTable
+                label="QuickBooks accounts that need a category"
+                noun={{ one: "account", many: "accounts" }}
+                columns={unmatchedColumns}
+                data={{ rows: preview.unmatched, total: preview.unmatched.length, page: 0, pageSize: SPEC.pageSize }}
+                getRowId={(u) => u.account}
+                getRowLabel={(u) => u.account}
+                spec={SPEC}
+                state={{ page: 0, sort: null }}
+                baseHref="/admin/settings/finance/budget-import"
+              />
             </div>
-          )}
+          ) : null}
 
-          {/* Commit */}
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              disabled={busy !== "idle"}
-              onClick={doCommit}
-              className="px-4 py-2 rounded-control bg-orange hover:bg-orange-dark text-white text-sm font-medium disabled:opacity-40"
-            >
-              {busy === "committing" ? "Writing…" : `Commit ${preview.matched_count + Object.values(overrides).filter(Boolean).length} budget lines`}
-            </button>
-            <button
-              type="button"
-              onClick={() => { setPreview(null); setOverrides({}); }}
-              className={`px-4 py-2 rounded-control text-ink-1 hover:${TYPE.body}`}
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setPreview(null);
+                setOverrides({});
+              }}
             >
               Cancel
-            </button>
+            </Button>
+            <Button onClick={doCommit} loading={busy === "committing"}>
+              {busy === "committing" ? "Writing" : `Commit ${commitCount} budget lines`}
+            </Button>
           </div>
         </section>
-      )}
-    </div>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  accent,
-  tone,
-}: {
-  label: string;
-  value: string;
-  accent?: boolean;
-  tone?: "warn";
-}) {
-  const valueClass = tone === "warn" ? "text-status-watch-text" : accent ? "text-orange" : "text-ink-1";
-  return (
-    <div className="rounded-panel border-hairline bg-surface p-3">
-      <div className={`${TYPE.cardLabel} mb-1`}>{label}</div>
-      <div className={`text-lg font-medium ${valueClass}`}>{value}</div>
-    </div>
+      ) : null}
+    </PageShell>
   );
 }

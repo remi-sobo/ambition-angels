@@ -2,6 +2,7 @@ import "server-only";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { MemberRole } from "./people";
+import { inviteMemberWith, type InviteOutcome } from "./people-invite";
 
 /**
  * Settings → People and roles: the reads and writes behind the screen and
@@ -107,23 +108,7 @@ export async function countOwners(orgId: string): Promise<number> {
   return count ?? 0;
 }
 
-/** Find an existing auth user by email. The admin API has no lookup by
- *  email, so this pages the user list (1,000 a page, capped at 20 pages). */
-async function findUserIdByEmail(email: string): Promise<string | null> {
-  const admin = getSupabaseAdmin();
-  for (let page = 1; page <= 20; page++) {
-    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
-    if (error) return null;
-    const hit = data.users.find((u) => (u.email ?? "").toLowerCase() === email);
-    if (hit) return hit.id;
-    if (data.users.length < 1000) return null;
-  }
-  return null;
-}
-
-export type InviteOutcome =
-  | { ok: true; userId: string; emailed: boolean }
-  | { ok: false; status: 409 | 500; error: string };
+export type { InviteOutcome } from "./people-invite";
 
 /**
  * Invite `email` into the active org as `role`.
@@ -133,6 +118,8 @@ export type InviteOutcome =
  *  - Existing account: no email from Supabase; they are added and can sign
  *    in with the account they have.
  *  - Already in this org: 409, nothing changes.
+ * The core lives in lib/admin/people-invite.ts, shared with the operator
+ * setup script (V4 Stage F).
  */
 export async function inviteMember(
   orgId: string,
@@ -140,32 +127,7 @@ export async function inviteMember(
   role: MemberRole,
   redirectTo: string,
 ): Promise<InviteOutcome> {
-  let userId = await findUserIdByEmail(email);
-  let emailed = false;
-  if (userId) {
-    if (await getMembership(orgId, userId)) {
-      return { ok: false, status: 409, error: "That person is already in this organization." };
-    }
-  } else {
-    const { data, error } = await getSupabaseAdmin().auth.admin.inviteUserByEmail(email, { redirectTo });
-    if (error || !data.user) {
-      console.error("Invite failed:", error?.message);
-      return { ok: false, status: 500, error: "The invite didn't send. Try again." };
-    }
-    userId = data.user.id;
-    emailed = true;
-  }
-
-  // Upsert: the sign-up trigger may already have added this person to this
-  // org as staff (an org email-domain rule). The invited role wins.
-  const { error } = await createServerSupabase()
-    .from("memberships")
-    .upsert({ user_id: userId, org_id: orgId, role }, { onConflict: "user_id,org_id" });
-  if (error) {
-    console.error("Invite membership write failed:", error.message);
-    return { ok: false, status: 500, error: "The invite was sent, but adding them failed. Try again." };
-  }
-  return { ok: true, userId, emailed };
+  return inviteMemberWith({ admin: getSupabaseAdmin(), db: createServerSupabase() }, orgId, email, role, redirectTo);
 }
 
 export async function setMemberRole(orgId: string, userId: string, role: MemberRole): Promise<string | null> {

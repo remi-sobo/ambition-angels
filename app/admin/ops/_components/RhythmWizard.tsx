@@ -3,6 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { TYPE } from "@/lib/admin/typeScale";
+import PageHeader from "../../_components/PageHeader";
 import Stepper from "../../_components/ui/Stepper";
 import Button, { ButtonLink } from "../../_components/ui/Button";
 
@@ -64,21 +65,19 @@ export default function RhythmWizard({
 
   return (
     <div className="max-w-workspace px-4 lg:px-8 py-6 lg:py-8">
-      {/* ── Chrome: title + back to hub ─────────────────────────────────── */}
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <div className={`${TYPE.sectionHeader} mb-1.5`}>{eyebrow}</div>
-          <h1 className={TYPE.pageTitle}>{title}</h1>
-          {subtitle && (
-            <div className="mt-2 text-sm text-ink-2 flex items-baseline gap-2 flex-wrap">
-              {subtitle}
-            </div>
-          )}
-        </div>
-        <ButtonLink href="/admin/ops/my-week" variant="ghost" size="sm" className="shrink-0">
-          ← My Week
-        </ButtonLink>
-      </header>
+      {/* ── Chrome: the kit PageHeader (V4 Stage G). Advancing the ritual
+          is the page's primary action, so it stays in the footer; the
+          doors out (My Week, the weekly briefing) live in More actions. */}
+      <PageHeader
+        eyebrow={eyebrow}
+        title={title}
+        subtitle={subtitle ? <span className="flex items-baseline gap-2 flex-wrap">{subtitle}</span> : undefined}
+        moreActions={[
+          { label: "My Week", href: "/admin/work/my-week" },
+          { label: "Weekly briefing", href: "/admin/briefing/weekly" },
+          { label: "Tasks", href: "/admin/work/tasks" },
+        ]}
+      />
 
       {notice && <div className="mt-6">{notice}</div>}
 
@@ -90,7 +89,7 @@ export default function RhythmWizard({
           under each number, terracotta for active, a success check for done,
           neutral ahead. On mobile it becomes a vertical progression.  */}
       <Stepper
-        className="mt-8"
+        className="mt-2"
         label="Ritual steps"
         steps={steps.map((s) => ({ key: s.key, label: s.label }))}
         current={clamped}
@@ -112,7 +111,7 @@ export default function RhythmWizard({
             one primary button (V3 §4) instead of the tinted outline both
             controls used to share. */}
         {atLast ? (
-          <ButtonLink href="/admin/ops/my-week" variant="primary">
+          <ButtonLink href="/admin/work/my-week" variant="primary">
             Done →
           </ButtonLink>
         ) : (

@@ -1,10 +1,12 @@
 "use client";
 
+import { saveAction } from "@/lib/admin/saveAction";
+import Button from "@/app/admin/_components/ui/Button";
+import { Select } from "@/app/admin/_components/ui/Input";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
-import { userMessage } from "@/lib/admin/errors";
 import { Avatar } from "../../messages/_components/Avatar";
 import type { StaffNode, StaffRow, PendingInvite } from "../_lib/read";
 
@@ -135,18 +137,14 @@ export default function StaffChart({
 
   async function post(url: string, bodyObj: unknown) {
     setBusy(true);
-    try {
-      const res = await fetch(url, {
-        method: url.endsWith("/reorder") ? "POST" : "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(bodyObj),
-      });
-      if (res.ok) router.refresh();
-      else toast.error(userMessage(res, (await res.json().catch(() => null)) as { error?: string } | null));
-    } finally {
-      setBusy(false);
-      setDragging(null);
-    }
+    const r = await saveAction({
+      request: { url, method: url.endsWith("/reorder") ? "POST" : "PATCH", body: bodyObj },
+      success: "Chart updated",
+      toast,
+    });
+    setBusy(false);
+    setDragging(null);
+    if (r.ok) router.refresh();
   }
 
   function handleDrop(targetId: string) {
@@ -184,38 +182,30 @@ export default function StaffChart({
     <div className="flex flex-col gap-6">
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-2">
-        <select
-          value={dept}
-          onChange={(e) => setDept(e.target.value)}
-          className="rounded-control border border-hairline bg-surface px-2 py-1 text-sm text-ink-1"
-        >
+        <Select aria-label="Department" value={dept} onChange={(e) => setDept(e.target.value)} className="!w-auto">
           <option value="">All departments</option>
           {departments.map((d) => (
             <option key={d} value={d}>{d}</option>
           ))}
-        </select>
-        <select
-          value={type}
-          onChange={(e) => setType(e.target.value)}
-          className="rounded-control border border-hairline bg-surface px-2 py-1 text-sm text-ink-1"
-        >
+        </Select>
+        <Select aria-label="Type" value={type} onChange={(e) => setType(e.target.value)} className="!w-auto">
           <option value="">All types</option>
           <option value="staff">Staff</option>
           <option value="contractor">Contractor</option>
           <option value="volunteer">Volunteer</option>
           <option value="board">Board</option>
-        </select>
+        </Select>
         {canWrite && !filtering && (
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            className="ml-auto"
+            aria-pressed={arrange}
             onClick={() => setArrange((v) => !v)}
             disabled={busy}
-            className={`ml-auto rounded-control px-3 py-1 text-sm font-semibold ${
-              arrange ? "bg-orange text-white" : "border border-hairline text-ink-1 hover:border-orange/50"
-            }`}
           >
             {arrange ? "Done arranging" : "Arrange"}
-          </button>
+          </Button>
         )}
       </div>
 

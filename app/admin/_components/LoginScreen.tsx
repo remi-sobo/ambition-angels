@@ -150,7 +150,9 @@ export default function LoginScreen({
   );
 
   return (
-    <div className="fixed inset-0 z-50 lg:grid lg:grid-cols-2">
+    // A full page in normal flow (the pre-auth layout has no shell to cover),
+    // not an overlay: .admin-bare clears the shell's top and bottom padding.
+    <div className="admin-bare min-h-[100dvh] lg:grid lg:grid-cols-2">
       {/* Brand panel — the BloomOS illustration (tulip mark over the valley),
           words at the bottom over a soft scrim so they never fight the mark. */}
       <div className="hidden lg:block relative bg-navy overflow-hidden">
@@ -182,7 +184,7 @@ export default function LoginScreen({
       </div>
 
       {/* Form panel — cream workspace, same surface language as the app. */}
-      <div className="h-full overflow-y-auto bg-ink flex flex-col items-center justify-center px-6 py-12">
+      <div className="min-h-[100dvh] bg-ink flex flex-col items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
           <div className="text-ink-1 mb-10">{wordmark}</div>
 
@@ -269,6 +271,7 @@ export default function LoginScreen({
               <form onSubmit={handleLogin} className="flex flex-col gap-4">
                 <input
                   type="email"
+                  aria-label="Email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email"
@@ -279,6 +282,7 @@ export default function LoginScreen({
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
+                    aria-label="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Password"

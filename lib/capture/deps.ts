@@ -9,6 +9,10 @@ import type { NextRequest } from "next/server";
 import { audit } from "@/lib/audit";
 import { ctxHasPermission, getAdminUser, type OrgContext } from "@/lib/admin/auth";
 import { createServerSupabase } from "@/lib/supabase/server";
+// "Send to a teammate" (handoff.ts) writes ONE team-inbox note through the
+// notifications spine's single write path. This is the only door from
+// Capture to anything beyond the session client (tests/capture-fence.test.ts).
+import { notify } from "@/lib/notifications/notify";
 import type { ActionDeps } from "./confirm";
 
 export async function actionDeps(req: NextRequest, ctx: OrgContext): Promise<ActionDeps> {
@@ -22,5 +26,12 @@ export async function actionDeps(req: NextRequest, ctx: OrgContext): Promise<Act
       audit: (entry) => audit(req, entry),
     },
     hasPermission: (perm) => ctxHasPermission(ctx, perm),
+    notify: async (n) => {
+      // The pairing is the caller's active org and a recipient read from its
+      // memberships through the session client (handoff.ts).
+      if (n.orgId !== ctx.orgId) return null;
+      const row = await notify(n);
+      return row ? { id: row.id } : null;
+    },
   };
 }

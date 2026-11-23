@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { encryptSecret, decryptSecret, toByteaHex, fromBytea } from "@/lib/crypto/secret-box";
 import { googleOAuthClientFor } from "@/lib/google/oauth";
+import { mayRevokeGoogleGrant } from "@/lib/google/grant";
 
 /**
  * An org's Gmail sender, stored in `connections` (provider 'google_gmail',
@@ -131,9 +132,11 @@ export async function markGmailConnectionBroken(connectionId: string, reason: st
   if (error) console.error("marking gmail connection broken failed:", error.message);
 }
 
-/** Disconnect: revoke the grant at Google (best effort, so a token Google has
- *  already dropped doesn't block the disconnect), then delete the row.
- *  Returns the account that was connected, for the audit log. */
+/** Disconnect: delete the row, and revoke the grant at Google only when no
+ *  other BloomOS connection uses the same account (see lib/google/grant.ts:
+ *  revoking would also kill that account's calendar connection). The revoke
+ *  is best effort, so a token Google has already dropped doesn't block the
+ *  disconnect. Returns the account that was connected, for the audit log. */
 export async function deleteGmailConnection(orgId: string): Promise<string | null> {
   const admin = getSupabaseAdmin();
   const { data } = await admin
@@ -144,8 +147,9 @@ export async function deleteGmailConnection(orgId: string): Promise<string | nul
     .eq("external_id", EXTERNAL_ID)
     .maybeSingle();
   if (!data) return null;
+  const accountEmail = str(data.meta as Meta, "account_email");
 
-  if (data.refresh_token_enc) {
+  if (data.refresh_token_enc && (await mayRevokeGoogleGrant(accountEmail, [data.id as string]))) {
     try {
       await googleOAuthClientFor().revokeToken(decryptSecret(fromBytea(data.refresh_token_enc)));
     } catch (err) {
@@ -154,5 +158,5 @@ export async function deleteGmailConnection(orgId: string): Promise<string | nul
   }
   const { error } = await admin.from("connections").delete().eq("id", data.id);
   if (error) throw new Error(`deleting google_gmail connection failed: ${error.message}`);
-  return str(data.meta as Meta, "account_email");
+  return accountEmail;
 }

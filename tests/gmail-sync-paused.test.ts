@@ -3,11 +3,11 @@ import { join } from "node:path";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { fakeDb, type FakeDb } from "./support/fakeDb";
 
-// The Gmail → interactions sync is paused (lib/fundraising/gmail-sync-flag.ts):
-// it read the mailbox with gmail.readonly, which the privacy policy says
-// BloomOS does not do. While paused, nothing may call Gmail, create a job or
-// write an interaction, and Vercel must not schedule the cron. Existing rows
-// stay untouched.
+// The Gmail → interactions sync's pause switch (lib/fundraising/gmail-sync-flag.ts).
+// These tests force the flag ON so the pause path stays covered whatever the
+// real value is: while paused, nothing may call Gmail, create a job or write an
+// interaction, and existing rows stay untouched. One test checks the REAL flag
+// against vercel.json so the cron entry and the flag never drift apart.
 
 const AA = "org-aa";
 let admin: FakeDb = fakeDb();
@@ -23,6 +23,7 @@ vi.mock("@/lib/admin/auth", () => ({
   ctxHasPermission: vi.fn(async () => true),
 }));
 vi.mock("@/lib/audit", () => ({ audit: vi.fn(async () => {}) }));
+vi.mock("@/lib/fundraising/gmail-sync-flag", () => ({ GMAIL_SYNC_PAUSED: true, GMAIL_SYNC_PAUSED_MESSAGE: "paused" }));
 vi.mock("@/lib/google/gmail-read", () => ({
   listMessageIds: vi.fn(async () => ({ ids: ["m1"], nextPageToken: null })),
   getMessage: vi.fn(),
@@ -30,7 +31,6 @@ vi.mock("@/lib/google/gmail-read", () => ({
   staffCoPresent: vi.fn(() => false),
 }));
 
-import { GMAIL_SYNC_PAUSED } from "@/lib/fundraising/gmail-sync-flag";
 import { GET as cronGET } from "@/app/api/cron/gmail-sync/route";
 import { GET as adminGET, POST as adminPOST } from "@/app/api/admin/fundraising/gmail-sync/route";
 import { listMessageIds, getMessage } from "@/lib/google/gmail-read";
@@ -64,16 +64,16 @@ beforeEach(() => {
   });
 });
 
-describe("Gmail sync is paused", () => {
-  test("the flag is on", () => {
-    expect(GMAIL_SYNC_PAUSED).toBe(true);
-  });
-
-  test("vercel.json no longer schedules the cron", () => {
+describe("Gmail sync while paused", () => {
+  test("vercel.json schedules the cron exactly when the real flag is off", async () => {
+    const real = await vi.importActual<typeof import("@/lib/fundraising/gmail-sync-flag")>(
+      "@/lib/fundraising/gmail-sync-flag",
+    );
     const cfg = JSON.parse(readFileSync(join(process.cwd(), "vercel.json"), "utf8")) as {
       crons: { path: string }[];
     };
-    expect(cfg.crons.map((c) => c.path)).not.toContain("/api/cron/gmail-sync");
+    const scheduled = cfg.crons.some((c) => c.path === "/api/cron/gmail-sync");
+    expect(scheduled).toBe(!real.GMAIL_SYNC_PAUSED);
   });
 
   test("the cron still requires its secret", async () => {

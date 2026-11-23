@@ -45,6 +45,14 @@ PostgREST):
    first-hit compile makes fixed waits flaky, and navigating before the
    session cookies land gets you bounced back to `/admin` by middleware.
 
+Two-step login (docs/two-step-login.md) is enforced for every session: the
+access token needs `aal: "aal2"` AND `GET /auth/v1/user` must return a
+verified factor (`factors: [{ status: "verified", ... }]`), or middleware
+redirects every admin page to `/admin/two-step/enroll|verify` and API routes
+return 401 `two_step_required`. `e2e/v4/mock-supabase.mjs` already does this
+(`V4_MFA=aal2`, the default); a hand-written mock must too. Use
+`V4_MFA=verify|enroll` to see the two-step screens.
+
 Gotchas:
 - Layout/dashboard fan out to dozens of tables; the `[]` default covers them —
   admin pages degrade gracefully on empty data.

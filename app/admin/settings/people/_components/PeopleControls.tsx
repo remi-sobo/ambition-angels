@@ -83,6 +83,7 @@ export function MemberActions({
   roleChoices,
   canChangeRole,
   canRemove,
+  canResetTwoStep = false,
   lockedReason,
 }: {
   userId: string;
@@ -91,6 +92,8 @@ export function MemberActions({
   roleChoices: RoleOption[];
   canChangeRole: boolean;
   canRemove: boolean;
+  /** Owner/admin may reset this person's two-step login (they have one). */
+  canResetTwoStep?: boolean;
   lockedReason: string | null;
 }) {
   const router = useRouter();
@@ -129,11 +132,36 @@ export function MemberActions({
     if (r.ok) router.refresh();
   }
 
+  async function resetTwoStep() {
+    if (busy) return;
+    const ok = await confirm({
+      title: `Reset two-step login for ${name}?`,
+      body: "Their authenticator stops working right away, and BloomOS asks them to set up a new one the next time they open it. Use this when they have lost their phone.",
+      confirmLabel: "Reset two-step login",
+      destructive: true,
+    });
+    if (!ok) return;
+    setBusy(true);
+    const r = await save({
+      request: { url: `/api/admin/settings/people/${userId}/two-step`, method: "DELETE" },
+      success: `Two-step login reset for ${name}. They set it up again at their next sign-in.`,
+    });
+    setBusy(false);
+    if (r.ok) router.refresh();
+  }
+
+  const resetButton = canResetTwoStep ? (
+    <Button variant="quiet" size="md" onClick={() => void resetTwoStep()} disabled={busy} aria-label={`Reset two-step login for ${name}`}>
+      Reset two-step login
+    </Button>
+  ) : null;
+
   if (!canChangeRole && !canRemove) {
     return (
       <span className="block">
         <span className="text-sm font-semibold text-ink-1">{label}</span>
         {lockedReason ? <span className="block text-xs text-ink-3">{lockedReason}</span> : null}
+        {resetButton ? <span className="block mt-1">{resetButton}</span> : null}
       </span>
     );
   }
@@ -163,6 +191,7 @@ export function MemberActions({
           Remove
         </Button>
       ) : null}
+      {resetButton}
     </span>
   );
 }

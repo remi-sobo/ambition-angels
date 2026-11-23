@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendOperatorEmail, getOperatorEmails, operatorEmailShell } from "@/lib/email/operator";
 import { refreshAllPlanMetrics } from "@/lib/admin/plan/metrics";
 import { prewarmNarrative } from "@/lib/admin/briefing/narrate";
+import { loadOperatorEmailOrgs, NOT_OPTED_IN } from "@/lib/cron/emailOptIn";
 import { EXCLUDE_PARTNERSHIP_OPPS } from "@/lib/hubspot/stage-map";
 import { OPEN_STAGE_LIST } from "@/lib/fundraising/stage-sets";
 import {
@@ -28,7 +29,9 @@ import {
  * Auth via Bearer CRON_SECRET (Vercel sets it on cron invocations).
  * Exact-offset matching means each deadline emails at most three times;
  * overdue sections repeat daily by design — they're the point.
- * Sends nothing for an org with nothing to say.
+ * Sends nothing for an org with nothing to say, and nothing at all for an org
+ * without the `notify.operator_emails` opt-in (lib/cron/emailOptIn.ts): those
+ * orgs are skipped before any of their rows are read.
  */
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -142,8 +145,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: `orgs: ${error.message}` }, { status: 500 });
   }
 
+  const optIn = await loadOperatorEmailOrgs(supabase);
+  if (!optIn.ok) {
+    return NextResponse.json({ error: optIn.error }, { status: 500 });
+  }
+
   const results: OrgResult[] = [];
   for (const o of (orgs ?? []) as { id: string }[]) {
+    if (!optIn.orgIds.has(o.id)) {
+      results.push({ orgId: o.id, sent: false, reason: NOT_OPTED_IN });
+      continue;
+    }
     try {
       results.push(await remindOrg(supabase, o.id));
     } catch (e) {

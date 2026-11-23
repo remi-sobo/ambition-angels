@@ -5,6 +5,7 @@ import {
   counterpartyEmails,
   staffCoPresent,
 } from "@/lib/google/gmail-read";
+import { getGmailReadClient } from "@/lib/google/gmail-sync-connection";
 
 // Phase 1C.b — chunked Gmail → interactions sync. One page of messages per
 // `advanceGmailJob` call so a single Vercel invocation never overruns; the
@@ -13,12 +14,17 @@ import {
 // message's counterparty (no name matching). Idempotent on the Gmail message
 // id via interactions_external_idx, so re-listing a page is harmless.
 //
-// The mailbox is one env credential (GOOGLE_REFRESH_TOKEN), owned by one org
+// The mailbox is read through the separate Internal OAuth client
+// (lib/google/gmail-sync-oauth.ts) with a token stored per org in
+// `connections`; the mailbox's org is the env integration owner
 // (lib/integrations/env-owner.ts). Callers resolve that org and pass it in;
 // every job read, match and write here is scoped to it, and a job without an
 // org does nothing.
 
 const PAGE = 40;
+
+export const NO_MAILBOX_MESSAGE =
+  "No mailbox is connected through the internal Gmail app. Connect it from Today's Moves.";
 
 type Counts = { scanned: number; logged: number; skipped: number; maxInternal: number };
 type JobError = { message: string; occurred_at: string; message_id?: string };
@@ -124,9 +130,25 @@ export async function advanceGmailJob(supabase: SupabaseClient, job: GmailJob): 
       ? `after:${Math.floor(job.last_internal_date / 1000)}`
       : null;
 
+  let gmail;
+  try {
+    gmail = await getGmailReadClient(orgId);
+  } catch (e: unknown) {
+    return finalize(supabase, job, "failed", [
+      ...job.errors,
+      { message: `connection: ${msg(e)}`, occurred_at: new Date().toISOString() },
+    ]);
+  }
+  if (!gmail) {
+    return finalize(supabase, job, "failed", [
+      ...job.errors,
+      { message: NO_MAILBOX_MESSAGE, occurred_at: new Date().toISOString() },
+    ]);
+  }
+
   let page: { ids: string[]; nextPageToken: string | null };
   try {
-    page = await listMessageIds({ pageToken: job.page_token, query, max: PAGE });
+    page = await listMessageIds({ pageToken: job.page_token, query, max: PAGE }, gmail);
   } catch (e: unknown) {
     return finalize(supabase, job, "failed", [
       ...job.errors,
@@ -141,7 +163,7 @@ export async function advanceGmailJob(supabase: SupabaseClient, job: GmailJob): 
     counts.scanned += 1;
     let parsed;
     try {
-      parsed = await getMessage(id);
+      parsed = await getMessage(id, gmail);
     } catch (e: unknown) {
       errors.push({ message: `get: ${msg(e)}`, message_id: id, occurred_at: new Date().toISOString() });
       counts.skipped += 1;

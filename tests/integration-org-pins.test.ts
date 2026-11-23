@@ -31,6 +31,7 @@ vi.mock("@/lib/fundraising/stewardship", () => ({ processGiftStewardship: vi.fn(
 // these tests run with the pause flag off (tests/gmail-sync-paused.test.ts
 // covers the paused behavior).
 vi.mock("@/lib/fundraising/gmail-sync-flag", () => ({ GMAIL_SYNC_PAUSED: false, GMAIL_SYNC_PAUSED_MESSAGE: "paused" }));
+vi.mock("@/lib/google/gmail-sync-connection", () => ({ getGmailReadClient: vi.fn(async () => ({})) }));
 vi.mock("@/lib/google/gmail-read", () => ({
   listMessageIds: vi.fn(async () => ({ ids: ["m1"], nextPageToken: null })),
   getMessage: vi.fn(async () => ({

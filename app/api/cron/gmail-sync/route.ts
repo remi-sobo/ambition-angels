@@ -5,7 +5,8 @@
  * run), and advances chunks until the job finishes or the function budget is
  * nearly spent — the next cron tick picks up any remainder.
  *
- * Requires the gmail.readonly scope on GOOGLE_REFRESH_TOKEN.
+ * Reads the mailbox connected through the Internal OAuth client
+ * (lib/google/gmail-sync-connection.ts), never the "bloom / meet" env token.
  *
  * The mailbox belongs to one org, resolved from data
  * (lib/integrations/env-owner.ts). If that can't be resolved unambiguously the

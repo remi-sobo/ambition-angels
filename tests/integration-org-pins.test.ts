@@ -27,6 +27,10 @@ vi.mock("@/lib/admin/auth", () => ({
 }));
 vi.mock("@/lib/audit", () => ({ audit: vi.fn(async () => {}) }));
 vi.mock("@/lib/fundraising/stewardship", () => ({ processGiftStewardship: vi.fn(async () => {}) }));
+// The org-pin rules below must still hold when the sync comes back on, so
+// these tests run with the pause flag off (tests/gmail-sync-paused.test.ts
+// covers the paused behavior).
+vi.mock("@/lib/fundraising/gmail-sync-flag", () => ({ GMAIL_SYNC_PAUSED: false, GMAIL_SYNC_PAUSED_MESSAGE: "paused" }));
 vi.mock("@/lib/google/gmail-read", () => ({
   listMessageIds: vi.fn(async () => ({ ids: ["m1"], nextPageToken: null })),
   getMessage: vi.fn(async () => ({

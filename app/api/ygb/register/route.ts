@@ -3,6 +3,7 @@ import { Resend } from "resend";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getResidentOrgId } from "@/lib/admin/orgs";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { intakeMode, sendToBloomOS } from "@/lib/site/bloomos";
 import { buildYgbRegistrationEmail } from "@/lib/email/templates/ygb-registration";
 
 // At/over this many confirmed campers, new sign-ups are waitlisted. Decided
@@ -119,6 +120,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Please provide a valid date of birth for ${label}.` }, { status: 400 });
     }
     campers.push({ ...camper, camper_age });
+  }
+
+  // INTAKE_MODE=api: BloomOS decides seats, stores the campers and sends the
+  // roster email. If it can't be reached, the family sees "received" and the
+  // outbox delivers the registration shortly.
+  if (intakeMode() === "api") {
+    const sent = await sendToBloomOS("ygb_registration", { ...shared, campers });
+    if (sent.outcome === "rejected") return NextResponse.json({ error: sent.error }, { status: 400 });
+    if (sent.outcome === "failed") {
+      return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
+    }
+    const results =
+      sent.outcome === "delivered" && Array.isArray(sent.body.results)
+        ? sent.body.results
+        : campers.map((c) => ({ name: `${c.camper_first_name} ${c.camper_last_name}`, status: "received" }));
+    return NextResponse.json({ ok: true, results });
   }
 
   const supabase = getSupabaseAdmin();

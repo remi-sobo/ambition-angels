@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { getResidentOrgId } from "@/lib/admin/orgs";
+import { intakeMode, sendToBloomOS } from "@/lib/site/bloomos";
 
 const getSupabase = () =>
   createClient(
@@ -97,6 +98,26 @@ export async function POST(req: NextRequest) {
 
   if (!first_name || !last_name || !org_name || !email || !program_type) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
+
+  // INTAKE_MODE=api: BloomOS files the sign-up and alerts staff; the website
+  // still sends the welcome email.
+  if (intakeMode() === "api") {
+    const sent = await sendToBloomOS("partner_inquiry", {
+      source: "signup_form",
+      first_name, last_name, org_name, email, program_type, teen_count: teen_count || null, referral: referral || null,
+    });
+    if (sent.outcome === "rejected") return NextResponse.json({ error: sent.error }, { status: 400 });
+    if (sent.outcome === "failed") {
+      return NextResponse.json({ error: "Failed to save. Please try again." }, { status: 500 });
+    }
+    await getResend().emails.send({
+      from: "Ambition Angels <careers@mail.ambitionangels.org>",
+      to: email,
+      subject: "Welcome to Ambition Angels — here's how to get started",
+      html: buildConfirmationHTML(first_name, org_name),
+    }).catch((err) => console.error("Resend confirmation error:", err));
+    return NextResponse.json({ success: true });
   }
 
   const supabase = getSupabase();

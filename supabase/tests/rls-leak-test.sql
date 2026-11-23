@@ -2583,4 +2583,102 @@ delete from public.fin_budget where category_id like 'leak.fin.%';
 delete from public.fin_categories where id like 'leak.fin.%';
 delete from public.fin_categories where org_id = (select id from public.orgs where slug = 'tenant-two');
 
+-- ════ Intake API keys + submission ledger (create_org_api_keys_intake.sql) ══
+-- Keys and the ledger are written by the service role only. Org managers read
+-- their own org's rows and may revoke a key (revoked_at, nothing else). No
+-- other org, no stranger, and no anon caller sees a key hash or a submission.
+reset role;
+reset request.jwt.claim.sub;
+insert into public.org_api_keys (org_id, name, key_prefix, key_hash, scopes)
+select id, 'leak-test aa', 'bos_live_leakaaaa', 'leak-hash-aa', array['intake:forms']
+from public.orgs where slug = 'ambition-angels';
+insert into public.org_api_keys (org_id, name, key_prefix, key_hash, scopes)
+select id, 'leak-test t2', 'bos_live_leakt2t2', 'leak-hash-t2', array['intake:forms']
+from public.orgs where slug = 'tenant-two';
+insert into public.intake_submissions (org_id, kind, submission_id, status)
+select id, 'application', '6f1c2b3a-4d5e-4f60-8a7b-9c0d1e2f3a4b', 'done'
+from public.orgs where slug = 'ambition-angels';
+
+-- Anon: nothing.
+set role anon;
+do $$ begin
+  perform 1 from public.org_api_keys limit 1;
+  raise exception 'LEAK: anon can read org_api_keys';
+exception when insufficient_privilege then null;
+end $$;
+do $$ begin
+  perform 1 from public.intake_submissions limit 1;
+  raise exception 'LEAK: anon can read intake_submissions';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+
+-- Stranger (session, no membership): sees no keys and no submissions.
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000003';
+do $$ begin
+  if (select count(*) from public.org_api_keys) <> 0 then raise exception 'LEAK: stranger reads org_api_keys'; end if;
+  if (select count(*) from public.intake_submissions) <> 0 then raise exception 'LEAK: stranger reads intake_submissions'; end if;
+end $$;
+
+-- Staff at AA (no org.manage): no keys either.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
+do $$ begin
+  if (select count(*) from public.org_api_keys) <> 0 then raise exception 'LEAK: AA staff reads org_api_keys'; end if;
+end $$;
+
+-- Tenant-two owner: its own key only; cannot revoke AA's; cannot mint a key.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000004';
+do $$
+declare n int;
+begin
+  if (select count(*) from public.org_api_keys where key_hash = 'leak-hash-aa') <> 0 then
+    raise exception 'LEAK: tenant-two reads an AA API key';
+  end if;
+  if (select count(*) from public.org_api_keys where key_hash = 'leak-hash-t2') <> 1 then
+    raise exception 'tenant-two cannot read its own API key';
+  end if;
+  if (select count(*) from public.intake_submissions) <> 0 then
+    raise exception 'LEAK: tenant-two reads AA intake submissions';
+  end if;
+  update public.org_api_keys set revoked_at = now() where key_hash = 'leak-hash-aa';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'LEAK: tenant-two revoked an AA API key'; end if;
+end $$;
+do $$ begin
+  insert into public.org_api_keys (org_id, name, key_prefix, key_hash)
+  select id, 'minted', 'x', 'leak-hash-minted' from public.orgs where slug = 'tenant-two';
+  raise exception 'LEAK: an authenticated user minted an API key';
+exception when insufficient_privilege then null;
+end $$;
+
+-- AA owner: reads its key and submissions, may revoke, may not widen scopes.
+set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
+do $$
+declare n int;
+begin
+  if (select count(*) from public.org_api_keys where key_hash = 'leak-hash-aa') <> 1 then
+    raise exception 'AA owner cannot read its own API key';
+  end if;
+  if (select count(*) from public.org_api_keys where key_hash = 'leak-hash-t2') <> 0 then
+    raise exception 'LEAK: AA owner reads a tenant-two API key';
+  end if;
+  if (select count(*) from public.intake_submissions) <> 1 then
+    raise exception 'AA owner cannot read its own intake submissions';
+  end if;
+  update public.org_api_keys set revoked_at = now() where key_hash = 'leak-hash-aa';
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'AA owner could not revoke its own API key'; end if;
+end $$;
+do $$ begin
+  update public.org_api_keys set scopes = array['intake:forms','intake:donations'] where key_hash = 'leak-hash-aa';
+  raise exception 'LEAK: an org owner widened an API key''s scopes';
+exception when insufficient_privilege then null;
+end $$;
+
+reset role;
+reset request.jwt.claim.sub;
+delete from public.intake_submissions where submission_id = '6f1c2b3a-4d5e-4f60-8a7b-9c0d1e2f3a4b';
+delete from public.org_api_keys where key_hash like 'leak-hash-%';
+
 select 'RLS leak test: ALL CHECKS PASSED' as result;

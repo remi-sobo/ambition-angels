@@ -12,6 +12,7 @@ import OrgSwitcher from "../OrgSwitcher";
 import SearchTrigger from "../search/SearchTrigger";
 import { useAdminBadges } from "../AdminBadges";
 import SidebarItem from "../ui/SidebarItem";
+import { TYPE } from "@/lib/admin/typeScale";
 import { openCapture } from "../../capture/_lib/openCapture";
 
 /**
@@ -39,6 +40,7 @@ export default function V2Sidebar({
   orgs,
   activeOrgId,
   captureEnabled = false,
+  websiteAdminUrl = null,
 }: {
   nav: ShellNav;
   displayName: string | null;
@@ -48,6 +50,8 @@ export default function V2Sidebar({
   activeOrgId: string | null;
   /** V4 §8: the one desktop Capture button ("Talk to log"), behind ai.capture. */
   captureEnabled?: boolean;
+  /** Repo split §6e: the org's own website admin (aa.site_admin + orgs.settings). */
+  websiteAdminUrl?: string | null;
 }) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
@@ -138,6 +142,18 @@ export default function V2Sidebar({
             label="Settings"
             icon={<Icon name="settings" className="w-4 h-4" />}
           />
+          {websiteAdminUrl && (
+            <a
+              href={websiteAdminUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`relative flex items-center gap-3 pl-3 pr-2.5 py-2 rounded-control transition-colors ${TYPE.nav} text-[color:var(--sidebar-muted)] hover:text-[color:var(--sidebar-text)] hover:bg-white/[0.04]`}
+            >
+              <Icon name="webanalytics" className="w-4 h-4" />
+              <span className="truncate">Website admin</span>
+              <span aria-hidden className="ml-auto text-xs">↗</span>
+            </a>
+          )}
         </div>
       </nav>
 

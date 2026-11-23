@@ -72,6 +72,12 @@ export const FEATURE_KEYS = [
   "aa.career_library",
   // The /strategy Strategy Room (AA's funder framing, read by slug) — AA-only.
   "aa.strategy_room",
+  // Repo split (specs/bloomos-repo-split.md §6e). aa.site_admin shows the
+  // "Website admin" sidebar link out to the org's own website admin
+  // (orgs.settings.website_admin_url). aa.site_signals turns on the daily
+  // pull of website numbers into metric_snapshots. Both AA-only.
+  "aa.site_admin",
+  "aa.site_signals",
   // Notification opt-in. The scheduled jobs that EMAIL people (daily
   // deadline reminders, the Monday digest, meeting reminders to bookers) skip
   // any org without it. Off by default, like every key: a new tenant gets no

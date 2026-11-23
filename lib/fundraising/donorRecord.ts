@@ -81,3 +81,33 @@ export function usd(n: number): string {
   const cents = Math.round(n * 100) % 100 !== 0;
   return n.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: cents ? 2 : 0, maximumFractionDigits: cents ? 2 : 0 });
 }
+
+export type StepAsk = {
+  id: string; name: string | null; open: boolean; next_step: string | null;
+  next_step_due: string | null; ask_amount: number | null; owner: string | null;
+};
+
+/** The bar's step as plain data, chosen the way the record chooses it: the
+ *  soonest-due open ask with a step, else the first open ask (step empty),
+ *  else no ask (oppId null). The search preview renders this. */
+export function nextStepData(asks: readonly StepAsk[], today: string) {
+  const open = asks.filter((a) => a.open);
+  const move = open.filter((a) => a.next_step).sort((a, b) => (a.next_step_due ?? "9999").localeCompare(b.next_step_due ?? "9999"))[0] ?? null;
+  const opp = move ?? open[0] ?? null;
+  const due = move?.next_step_due ? dueText(move.next_step_due, today) : null;
+  const meta = opp
+    ? [
+        move?.next_step_due && due?.late ? `Was due ${shortDay(move.next_step_due, today)}.` : "",
+        opp.owner ? `Owner: ${opp.owner}.` : "",
+        `For ${opp.name ? `the ${opp.name}` : "the open ask"}${opp.ask_amount ? `, ${usd(Number(opp.ask_amount))}` : ""}.`,
+        open.length > 1 ? `${open.length} open asks.` : "",
+      ].filter(Boolean).join(" ")
+    : null;
+  return {
+    oppId: opp?.id ?? null,
+    title: move?.next_step ? asSentence(move.next_step) : null,
+    due: due ? { text: due.text, late: due.late } : undefined,
+    dueISO: move?.next_step_due ?? null,
+    meta,
+  };
+}

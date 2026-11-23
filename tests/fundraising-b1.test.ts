@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { asSentence, daysBetween, dueText, givingSummary, shortDay, usd, yearOverYear } from "@/lib/fundraising/donorRecord";
+import { asSentence, daysBetween, dueText, givingSummary, nextStepData, shortDay, usd, yearOverYear } from "@/lib/fundraising/donorRecord";
 import {
   boardSummary,
   cardUrgency,
@@ -78,6 +78,29 @@ describe("donor record: next-step wording", () => {
     expect(asSentence("Call her?")).toBe("Call her?");
     expect(usd(25000)).toBe("$25,000");
     expect(usd(1250.5)).toBe("$1,250.50");
+  });
+
+  test("the preview's step is the record's: soonest-due open ask, else the first open ask", () => {
+    const ask = (id: string, o: Partial<Parameters<typeof nextStepData>[0][number]> = {}) => ({
+      id, name: null, open: true, next_step: null, next_step_due: null, ask_amount: null, owner: null, ...o,
+    });
+    const s = nextStepData(
+      [
+        ask("a", { next_step: "Later step", next_step_due: "2026-12-01" }),
+        ask("b", { next_step: "Send year-end ask", next_step_due: "2026-11-09", name: "Year-end ask", ask_amount: 25000, owner: "Remi" }),
+        ask("c", { next_step: "Closed step", next_step_due: "2026-10-01", open: false }),
+      ],
+      TODAY,
+    );
+    expect(s).toEqual({
+      oppId: "b",
+      title: "Send year-end ask.",
+      due: { text: "12 days late.", late: true },
+      dueISO: "2026-11-09",
+      meta: "Was due Nov 9. Owner: Remi. For the Year-end ask, $25,000. 2 open asks.",
+    });
+    expect(nextStepData([ask("x")], TODAY)).toMatchObject({ oppId: "x", title: null, due: undefined, meta: "For the open ask." });
+    expect(nextStepData([ask("y", { open: false, next_step: "Old" })], TODAY)).toMatchObject({ oppId: null, title: null, meta: null });
   });
 });
 
@@ -207,6 +230,16 @@ describe("B1 source guards", () => {
     const src = strip(read("app/api/admin/opportunities/[id]/route.ts"));
     const patch = src.slice(src.indexOf("export async function PATCH"), src.indexOf("export async function DELETE"));
     expect(patch).toMatch(/requirePermission\("fundraising\.write"\)/);
+  });
+
+  test("the search preview's next-step bar is read-only without fundraising.write", () => {
+    const route = strip(read("app/api/admin/search/profile/route.ts"));
+    expect(route).toMatch(/ctxHasPermission\(ctx, "fundraising\.write"\)/);
+    const view = strip(read("app/admin/_components/search/EntityProfile.tsx"));
+    expect(view).toMatch(/<NextStepActions/);
+    expect(view).toMatch(/readOnly=\{!step\.canEdit\}/);
+    const lookup = strip(read("app/admin/lookup/page.tsx"));
+    expect(lookup).toMatch(/canWrite && step\?\.source === "ask"/);
   });
 
   test("the next-step bar writes through saveAction with no optimistic update", () => {

@@ -8,7 +8,7 @@ Grades: **met**, **partly**, **not met**. Human-only items are listed at the end
 
 | Area | Line | Grade |
 |---|---|---|
-| Usability | Each Section 9 target demonstrated | partly (5 of 6; find-a-donor is 4 clicks, target 3) |
+| Usability | Each Section 9 target demonstrated | partly (6 of 6 on desktop; find-a-donor on the phone is 4 taps, target 3) |
 | Usability | Three new users complete the core flows without help | not met (human sessions not run) |
 | Onboarding | New org with 2 operator actions | partly (built in #607; not timed on a real throwaway org) |
 | Onboarding | ED finishes the checklist in one sitting; first gift in the first session | not met (needs a real first session) |
@@ -28,7 +28,7 @@ Grades: **met**, **partly**, **not met**. Human-only items are listed at the end
 | Workflow | Target | Desktop 1440 | Phone 390 | Grade |
 |---|---|---|---|---|
 | Record a gift and thank | 3 clicks or fewer after opening the drawer, gifts editable | 1 (type amount, "Save gift and queue thank-you"); Edit on the timeline reopens the drawer | 1 | met (#598) |
-| Find a donor, log the next step | search, record, next-step bar: 3 clicks | 4 to the bar (search, result, "Open full page" from the 360 preview, Change), 5 with Save | 5 to the bar (Look someone up, Search, result, "Open the record", Change), 6 with Save | **not met** |
+| Find a donor, log the next step | search, record, next-step bar: 3 clicks | 3 to the bar (search, result, Change in the 360 preview's next-step bar), 4 with Save; a forced failure shows "Update failed" and the bar stays as it was | 4 to the bar (Look someone up, Search, result, Change on the lookup card), 5 with Save | met on desktop; phone 4 (held, see below) |
 | Take attendance on a phone | 2 taps to the roster, 1 per exception, offline and says so | staff 1 (Today, "Take attendance"); owner 2 (Attendance, today's session) | same; 1 tap per exception; offline banner shows and the mark waits on the device | met (#603) |
 | Enroll a roster in a cohort | under 10 clicks | 3 for 42 people (select all, Enroll in cohort, pick cohort) | 3 (select-all added to the phone list on this branch) | met (#603, this branch) |
 | Complete a task | one tap; rolls back and says so | 1; forced failure: toast "Failed to update task", row back to not done | same | met (#592, #594) |
@@ -36,7 +36,7 @@ Grades: **met**, **partly**, **not met**. Human-only items are listed at the end
 
 Board viewers: every workflow's entry page shows the not-authorized panel, and the write API refuses (403, or 404 where RLS hides the row first) with nothing written. Asserted in the same suite.
 
-The find-a-donor gap: a person in global search opens the 360 preview first, and the preview has no next-step bar. Either the preview gets the bar (Mark done, Change) or a click on a person opens the record and the preview moves to Tab only. A product call, not made here; the test holds the count at 4 (`KNOWN_GAP` in the spec) so it cannot get worse. On the phone, the lookup card shows the next step read-only; adding Change there would make it 4 taps.
+Find a donor: Remi's call was to put the next-step bar in the 360 preview. A person in global search now opens a preview that leads with the record's own bar (the same `NextStepActions`: Mark done, Reschedule, Change, one PATCH to the ask through saveAction), so the desktop flow is 3 clicks and `KNOWN_GAP` no longer lists it. Without fundraising.write the preview shows the step read-only, and the PATCH still refuses. On the phone the lookup card gets the same bar when the step belongs to an open ask and the caller can write (a task's step stays read-only with a link to the record), which brings it from 5 taps to 4. The fourth tap is the lookup form's Search button; `KNOWN_GAP.findDonorPhone` holds it at 4 so it cannot get worse. The lookup card also read open asks with the old five-stage list, so asks in the current pipelines showed "No next step yet"; it now uses the shared open-stage list.
 
 **Three new-user sessions: not met.** Human only. Record-a-gift, find-a-donor and take-attendance, three people who have never used BloomOS, at least 2 of 3 complete each without help.
 
@@ -95,7 +95,7 @@ One migration, so it waits for Remi's yes like any database change.
 ## What remains
 
 Code:
-- Find a donor in 3 clicks (search preview or lookup card gets the next-step actions).
+- Find a donor on the phone in 3 taps (today 4: Look someone up, Search, result, Change).
 - Board-viewer write controls on board, strategy, KPI notes, messages and Settings home (hide by permission; server already refuses).
 - The accessibility list above (contrast, target size, scrollable tables).
 - Run `e2e:smoke` and `e2e:roles` in CI.

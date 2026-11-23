@@ -1,21 +1,30 @@
 "use client";
 
+import NextStepActions from "@/app/admin/fundraising/donors-funders/_components/NextStepActions";
 import type { ProfilePayload } from "./types";
 
 /**
- * The 360° profile view rendered inside the search overlay (Mode B). Pure
- * presentation — GlobalSearch fetches the payload and owns navigation; this
- * just lays out the stats, sections and timeline the route assembled.
+ * The 360° profile view rendered inside the search overlay (Mode B).
+ * GlobalSearch fetches the payload and owns navigation; this lays out the
+ * stats, sections and timeline the route assembled.
+ *
+ * It leads with the record's next-step bar (the same NextStepActions the donor
+ * record uses), so "find a donor, log the next step" is search, result,
+ * Change. Without fundraising.write the step is read-only. After a save the
+ * overlay re-reads the profile (`onChanged`) instead of refreshing the page.
  */
 export default function EntityProfile({
   data,
   onBack,
   onOpen,
+  onChanged,
 }: {
   data: ProfilePayload;
   onBack: () => void;
   onOpen: (href: string, newTab: boolean) => void;
+  onChanged: () => void;
 }) {
+  const step = data.nextStep;
   return (
     <div className="flex-1 overflow-y-auto">
       {/* Header */}
@@ -42,6 +51,20 @@ export default function EntityProfile({
       </div>
 
       <div className="p-4 space-y-4">
+        {step && (
+          <NextStepActions
+            key={`${step.oppId}-${step.title}-${step.dueISO}`}
+            oppId={step.oppId}
+            title={step.title}
+            due={step.due}
+            dueISO={step.dueISO}
+            meta={step.meta ?? undefined}
+            today={step.today}
+            readOnly={!step.canEdit}
+            onSaved={onChanged}
+          />
+        )}
+
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {data.stats.map((s) => (

@@ -9,8 +9,6 @@ import { join } from "node:path";
  * sit unscheduled without anyone deciding that it should.
  */
 const INTENTIONALLY_UNSCHEDULED: Record<string, string> = {
-  "hubspot-sync":
-    "Its last runs (July to September 2026) ended partial or failed. The operator runs it once by hand, supervised, before it gets a schedule (docs/cron-restoration-plan.md §10).",
   journeys:
     "No journey is active and its Comms home arrives in V4 Stage D. The code stays; it sends Resend email to constituents once scheduled.",
 };
@@ -56,6 +54,13 @@ describe("cron routes are scheduled or deliberately not", () => {
     expect(scheduled.get("weekly-digest")).toBe("23 15 * * 1");
     expect(scheduled.get("meet-reminders")).toBe("12 * * * *");
     expect(scheduled.get("stewardship-milestones")).toBe("37 14 * * *");
+  });
+
+  test("HubSpot sync runs every 10 minutes inside one daily hour, and starts at most one sync a day", () => {
+    expect(scheduled.get("hubspot-sync")).toBe("*/10 22 * * *");
+    const src = readFileSync(join(CRON_DIR, "hubspot-sync", "route.ts"), "utf8");
+    expect(src).toContain("FRESH_FOR_MS");
+    expect(src).toMatch(/started_at[\s\S]*FRESH_FOR_MS/);
   });
 
   test("every job that emails people checks the notify.operator_emails opt-in", () => {

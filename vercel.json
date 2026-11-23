@@ -1,6 +1,10 @@
 {
   "crons": [
     {
+      "path": "/api/cron/gmail-sync",
+      "schedule": "45 * * * *"
+    },
+    {
       "path": "/api/cron/calendar-sync",
       "schedule": "*/15 * * * *"
     },

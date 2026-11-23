@@ -81,6 +81,17 @@ export type ProfileStat = { label: string; value: string; tone?: "default" | "wa
 export type ProfileRow = { id: string; title: string; subtitle?: string; badge?: string; href: string };
 export type ProfileSection = { key: string; label: string; rows: ProfileRow[] };
 export type ProfileTimelineItem = { kind: string; when: string | null; text: string };
+/** The record's next-step bar, as data (lib/fundraising/donorRecord nextStepData).
+ *  canEdit is fundraising.write: without it the preview shows the step read-only. */
+export type ProfileNextStep = {
+  oppId: string | null;
+  title: string | null;
+  due?: { text: string; late: boolean };
+  dueISO: string | null;
+  meta: string | null;
+  today: string;
+  canEdit: boolean;
+};
 
 export type ProfilePayload = {
   entity: {
@@ -94,6 +105,7 @@ export type ProfilePayload = {
   stats: ProfileStat[];
   sections: ProfileSection[];
   timeline: ProfileTimelineItem[];
+  nextStep?: ProfileNextStep;
 };
 
 // ── Page index ───────────────────────────────────────────────────────────────

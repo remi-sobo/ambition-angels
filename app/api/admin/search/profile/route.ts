@@ -8,12 +8,19 @@
  *
  * Implemented as a route-layer fan-out (parallel queries) rather than the
  * Postgres RPC sketched in the spec, so it ships without a migration; the shape
- * it returns is the same. Same isAuthed + RLS user-session posture as the rest
+ * it returns is the same. Same signed-in + RLS user-session posture as the rest
  * of admin search.
+ *
+ * It also carries the record's next step (`nextStep`) so the preview can show
+ * the next-step bar; `canEdit` (fundraising.write) decides whether the bar gets
+ * Mark done and Change. The PATCH route checks the same permission again.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { isAuthed } from "@/lib/admin/auth";
+import { getOrgContext, ctxHasPermission } from "@/lib/admin/auth";
+import { todayInTZ } from "@/lib/admin/ops/week";
+import { nextStepData } from "@/lib/fundraising/donorRecord";
+import { isOpenStage } from "@/lib/fundraising/stage-sets";
 import { constituentName } from "@/lib/fundraising/display";
 import type {
   ProfilePayload,
@@ -38,7 +45,8 @@ const shortDate = (iso: string | null) =>
 const CLOSED_GRANT_STAGES = new Set(["declined", "closed"]);
 
 export async function GET(req: NextRequest) {
-  if (!(await isAuthed())) {
+  const ctx = await getOrgContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const id = new URL(req.url).searchParams.get("id") ?? "";
@@ -60,7 +68,7 @@ export async function GET(req: NextRequest) {
   const emails: string[] = base.emails ?? [];
 
   // Wave 1: everything keyed directly off the constituent id.
-  const [giftsRes, grantsRes, recurringRes, tasksRes, interactionsRes, relsRes] = await Promise.all([
+  const [giftsRes, grantsRes, recurringRes, tasksRes, interactionsRes, relsRes, oppsRes, canEdit] = await Promise.all([
     supabase
       .from("gifts")
       .select("id, amount, gift_date, method")
@@ -93,6 +101,12 @@ export async function GET(req: NextRequest) {
       .from("relationships")
       .select("a_id, b_id, kind")
       .or(`a_id.eq.${id},b_id.eq.${id}`),
+    supabase
+      .from("opportunities")
+      .select("id, name, stage, next_step, next_step_due, ask_amount, owner")
+      .eq("constituent_id", id)
+      .limit(20),
+    ctxHasPermission(ctx, "fundraising.write"),
   ]);
 
   const gifts = (giftsRes.data ?? []) as Array<{ id: string; amount: number; gift_date: string; method: string }>;
@@ -101,6 +115,10 @@ export async function GET(req: NextRequest) {
   const tasks = (tasksRes.data ?? []) as Array<{ id: string; title: string; status: string; priority: string | null; due_date: string | null }>;
   const interactions = (interactionsRes.data ?? []) as Array<{ id: string; kind: string; occurred_at: string; notes: string | null }>;
   const rels = (relsRes.data ?? []) as Array<{ a_id: string; b_id: string; kind: string }>;
+  const opps = (oppsRes.data ?? []) as Array<{
+    id: string; name: string | null; stage: string; next_step: string | null;
+    next_step_due: string | null; ask_amount: number | null; owner: string | null;
+  }>;
 
   // Wave 2: things that need data from wave 1 (related-party names, household
   // members, meetings matched by email).
@@ -240,6 +258,7 @@ export async function GET(req: NextRequest) {
     text: i.notes?.trim() || titleCase(i.kind),
   }));
 
+  const today = todayInTZ();
   const name = constituentName(base);
   const subtitle = [
     base.type === "organization" ? "Organization" : "Person",
@@ -260,6 +279,11 @@ export async function GET(req: NextRequest) {
     stats,
     sections,
     timeline,
+    nextStep: {
+      ...nextStepData(opps.map((o) => ({ ...o, open: isOpenStage(o.stage) })), today),
+      today,
+      canEdit,
+    },
   };
 
   return NextResponse.json(payload);

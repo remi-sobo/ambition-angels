@@ -5,6 +5,7 @@ import PageShell from "../_components/ui/PageShell";
 import Notice from "../_components/ui/Notice";
 import Figure from "../_components/ui/Figure";
 import LookupTalk from "./LookupTalk";
+import NextStepActions from "../fundraising/donors-funders/_components/NextStepActions";
 import { getOrgContext, ctxHasPermission } from "@/lib/admin/auth";
 import { getEntitlements, hasFeature } from "@/lib/admin/entitlements";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -13,6 +14,8 @@ import { todayInTZ } from "@/lib/admin/ops/week";
 import { cleanLookupQuery, donorFigures, mailHref, pickNextStep, telHref } from "@/lib/admin/lookup";
 import { dueLabel } from "@/lib/admin/todayPanels";
 import { TYPE } from "@/lib/admin/typeScale";
+import { asSentence, dueText } from "@/lib/fundraising/donorRecord";
+import { OPEN_STAGE_KEYS } from "@/lib/fundraising/stage-sets";
 
 export const metadata: Metadata = { title: "Look someone up" };
 export const dynamic = "force-dynamic";
@@ -28,6 +31,12 @@ export const dynamic = "force-dynamic";
  * student result shows name and stage and links to the record; no contact
  * buttons for a minor. Targets are 44px; the column never exceeds 390px of
  * content on a phone (max-w-[640px] on desktop).
+ *
+ * When the next step belongs to an open ask and the caller has
+ * fundraising.write, the card shows the record's next-step bar (Mark done,
+ * Change), the same NextStepActions and PATCH as the donor record. Otherwise
+ * (a task's step, no step, or no write permission) it stays read-only with a
+ * link to the record.
  */
 
 type Search = { q?: string; donor?: string };
@@ -42,17 +51,18 @@ const day = (iso: string) => new Date(`${iso.slice(0, 10)}T12:00:00Z`).toLocaleD
 export default async function LookupPage({ searchParams }: { searchParams?: Search }) {
   const ctx = await getOrgContext();
   if (!ctx) notFound();
-  const [canDonors, canStudents, ents] = await Promise.all([
+  const [canDonors, canStudents, ents, canWrite] = await Promise.all([
     ctxHasPermission(ctx, "fundraising.read"),
     ctxHasPermission(ctx, "program.read"),
     getEntitlements(ctx.orgId),
+    ctxHasPermission(ctx, "fundraising.write"),
   ]);
   const captureOn = hasFeature(ents, "ai.capture") && (await ctxHasPermission(ctx, "capture.use"));
   const supabase = createServerSupabase();
   const donorId = searchParams?.donor && /^[0-9a-f-]{36}$/i.test(searchParams.donor) ? searchParams.donor : null;
 
   if (donorId && canDonors) {
-    return <DonorCard id={donorId} orgId={ctx.orgId} captureOn={captureOn} q={searchParams?.q ?? ""} supabase={supabase} />;
+    return <DonorCard id={donorId} orgId={ctx.orgId} captureOn={captureOn} canWrite={canWrite} q={searchParams?.q ?? ""} supabase={supabase} />;
   }
 
   const q = cleanLookupQuery(searchParams?.q);
@@ -176,12 +186,14 @@ async function DonorCard({
   id,
   orgId,
   captureOn,
+  canWrite,
   q,
   supabase,
 }: {
   id: string;
   orgId: string;
   captureOn: boolean;
+  canWrite: boolean;
   q: string;
   supabase: ReturnType<typeof createServerSupabase>;
 }) {
@@ -199,7 +211,7 @@ async function DonorCard({
       .select("id, name, next_step, next_step_due, ask_amount, stage")
       .eq("org_id", orgId)
       .eq("constituent_id", id)
-      .in("stage", ["identify", "qualify", "cultivate", "solicit"])
+      .in("stage", [...OPEN_STAGE_KEYS])
       .limit(20),
     supabase
       .from("ops_tasks")
@@ -231,15 +243,17 @@ async function DonorCard({
   const tasks = (tasksRes.data ?? []) as { id: string; title: string; due_date: string | null }[];
   const step = pickNextStep([
     ...opps.map((o) => ({
-      text: o.next_step ?? "", due: o.next_step_due, source: "ask" as const,
+      text: o.next_step ?? "", due: o.next_step_due, source: "ask" as const, oppId: o.id as string | null,
       context: [o.name, o.ask_amount ? `${usd(Number(o.ask_amount))} ask` : null].filter(Boolean).join(", ") || null,
     })),
-    ...tasks.map((t) => ({ text: t.title, due: t.due_date, source: "task" as const, context: "Task" })),
+    ...tasks.map((t) => ({ text: t.title, due: t.due_date, source: "task" as const, context: "Task", oppId: null })),
   ]);
   const touches = (touchRes.data ?? []) as { id: string; kind: string; occurred_at: string; notes: string | null; logged_by: string | null }[];
   const last = touches[0] ?? null;
   const due = step ? dueLabel(step.due, today) : null;
   const record = `/admin/fundraising/donors-funders/${c.id}`;
+  const editable = canWrite && step?.source === "ask" && step.oppId ? step : null;
+  const barDue = editable?.due ? dueText(editable.due, today) : null;
 
   return (
     <PageShell>
@@ -275,21 +289,34 @@ async function DonorCard({
           {captureOn && <LookupTalk id={c.id} name={name} />}
         </div>
 
-        <section aria-label="Next step" className="mt-4 rounded-panel border border-hairline bg-surface p-4">
-          <h2 className={TYPE.cardLabel}>Next step</h2>
-          {step ? (
-            <>
-              <p className={`${TYPE.body} font-semibold mt-1`}>{step.text}</p>
-              {due && <p className={`text-sm mt-0.5 ${due.tone === "late" ? "text-expense font-semibold" : "text-ink-2"}`}>{due.text}</p>}
-              {step.context && <p className={`${TYPE.metadata} mt-0.5`}>{step.context}</p>}
-            </>
-          ) : (
-            <p className={`${TYPE.bodyMuted} mt-1`}>No next step yet.</p>
-          )}
-          <Link href={record} className="mt-2 inline-flex min-h-[44px] items-center text-sm font-semibold text-orange">
-            {step ? "Open the record to change it" : "Add one on the record"}
-          </Link>
-        </section>
+        {editable ? (
+          <div className="mt-4">
+            <NextStepActions
+              oppId={editable.oppId}
+              title={asSentence(editable.text)}
+              due={barDue ? { text: barDue.text, late: barDue.late } : undefined}
+              dueISO={editable.due}
+              meta={editable.context ?? undefined}
+              today={today}
+            />
+          </div>
+        ) : (
+          <section aria-label="Next step" className="mt-4 rounded-panel border border-hairline bg-surface p-4">
+            <h2 className={TYPE.cardLabel}>Next step</h2>
+            {step ? (
+              <>
+                <p className={`${TYPE.body} font-semibold mt-1`}>{step.text}</p>
+                {due && <p className={`text-sm mt-0.5 ${due.tone === "late" ? "text-expense font-semibold" : "text-ink-2"}`}>{due.text}</p>}
+                {step.context && <p className={`${TYPE.metadata} mt-0.5`}>{step.context}</p>}
+              </>
+            ) : (
+              <p className={`${TYPE.bodyMuted} mt-1`}>No next step yet.</p>
+            )}
+            <Link href={record} className="mt-2 inline-flex min-h-[44px] items-center text-sm font-semibold text-orange">
+              {step ? "Open the record to change it" : "Add one on the record"}
+            </Link>
+          </section>
+        )}
 
         <section aria-label="Giving" className="mt-4 grid grid-cols-3 divide-x divide-hairline rounded-panel border border-hairline bg-surface">
           <Figure label="Lifetime" value={figs.lifetime.value == null ? null : usd(figs.lifetime.value)} source={figs.lifetime.source} />

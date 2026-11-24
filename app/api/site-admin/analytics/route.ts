@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { websiteDb } from "@/lib/site/websiteDb";
+import { fetchAll, type PageableQuery } from "@/lib/supabase/fetchAll";
 import { requireSiteAdmin } from "@/lib/site/adminAuth";
 
 // We pull a generous slice of recent rows and let the client filter by
@@ -35,17 +36,23 @@ export async function GET() {
 
   const supabase = websiteDb();
 
+  // Paged: Supabase answers at most 1,000 rows per request, silently. One
+  // .limit(20000) call used to return only the newest 1,000 page views.
   const [pvRes, evRes] = await Promise.all([
-    supabase
-      .from("page_views")
-      .select("id, created_at, page, referrer, device, browser, session_id, duration_seconds")
-      .order("created_at", { ascending: false })
-      .limit(MAX_ROWS),
-    supabase
-      .from("click_events")
-      .select("id, created_at, event_name, page, session_id, metadata")
-      .order("created_at", { ascending: false })
-      .limit(MAX_ROWS),
+    fetchAll<PageView>(
+      () =>
+        supabase
+          .from("page_views")
+          .select("id, created_at, page, referrer, device, browser, session_id, duration_seconds") as unknown as PageableQuery<PageView>,
+      { order: [{ column: "created_at", ascending: false }, "id"], hardCap: MAX_ROWS },
+    ),
+    fetchAll<ClickEvent>(
+      () =>
+        supabase
+          .from("click_events")
+          .select("id, created_at, event_name, page, session_id, metadata") as unknown as PageableQuery<ClickEvent>,
+      { order: [{ column: "created_at", ascending: false }, "id"], hardCap: MAX_ROWS },
+    ),
   ]);
 
   if (pvRes.error) {

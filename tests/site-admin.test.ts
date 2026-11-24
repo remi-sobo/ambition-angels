@@ -105,6 +105,12 @@ describe("access", () => {
     for (const f of guarded) expect(readFileSync(f, "utf8"), f).toMatch(/await requireSiteAdmin\(\)/);
   });
 
+  test("the website admin layout mounts the providers the shared admin components need", () => {
+    const layout = readFileSync(join(__dirname, "..", "app", "site-admin", "layout.tsx"), "utf8");
+    expect(layout).toMatch(/<ToastProvider>/);
+    expect(layout).toMatch(/<ConfirmProvider>/);
+  });
+
   test("every website admin page checks sign-in itself, before loading anything", () => {
     // The layout's sign-in screen does not stop Next from rendering the page
     // into the same response, so a page without its own check leaks its data.

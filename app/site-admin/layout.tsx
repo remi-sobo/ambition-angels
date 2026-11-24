@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { getSiteAdmin } from "@/lib/site/adminAuth";
 import ConfirmProvider from "@/app/admin/_components/feedback/ConfirmProvider";
+import ToastProvider from "@/app/admin/_components/feedback/ToastProvider";
 import SignIn from "./SignIn";
 import SignOutButton from "./SignOutButton";
 
@@ -30,6 +31,9 @@ export default async function SiteAdminLayout({ children }: { children: ReactNod
   if (!admin) return <SignIn />;
 
   return (
+    // The shared admin components expect both providers (BloomOS's layout
+    // mounts them too); without ToastProvider, Analytics crashed on load.
+    <ToastProvider>
     <ConfirmProvider>
       <div className="min-h-screen bg-cream text-ink">
         <header className="border-b border-gray-light bg-white">
@@ -54,5 +58,6 @@ export default async function SiteAdminLayout({ children }: { children: ReactNod
         <main className="max-w-6xl mx-auto">{children}</main>
       </div>
     </ConfirmProvider>
+    </ToastProvider>
   );
 }

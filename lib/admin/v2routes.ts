@@ -75,14 +75,12 @@ const ACTIVE: V2RouteRow[] = [
   { v1: "/admin/documents", v2: "/admin/work/documents", kind: "prefix", activation: "now", disposition: "re-homed" },
   { v1: "/admin/finance", v2: "/admin/finance/snapshot", kind: "exact", activation: "now", disposition: "renamed" },
   { v1: "/admin/finance/report", v2: "/admin/finance/reports", kind: "exact", activation: "now", disposition: "merged", note: "1:1 today; Reports absorbs more at the Finance cutover" },
-  { v1: "/admin/analytics", v2: "/admin/impact/analytics", kind: "exact", activation: "now", disposition: "re-homed" },
   { v1: "/admin/kpis", v2: "/admin/impact/kpis", kind: "exact", activation: "now", disposition: "re-homed" },
   { v1: "/admin/students", v2: "/admin/programs/people", kind: "prefix", activation: "now", disposition: "re-homed" },
   { v1: "/admin/intake", v2: "/admin/programs/intake", kind: "exact", activation: "now", disposition: "kept" },
   { v1: "/admin/cohorts", v2: "/admin/programs/cohorts", kind: "prefix", activation: "now", disposition: "re-homed" },
   { v1: "/admin/program", v2: "/admin/programs/overview", kind: "exact", activation: "now", disposition: "re-homed" },
   { v1: "/admin/partners", v2: "/admin/programs/partners", kind: "prefix", activation: "now", disposition: "re-homed" },
-  { v1: "/admin/careers", v2: "/admin/programs/content", kind: "exact", activation: "now", disposition: "re-homed", note: "daily/pool stay at V1 paths (no-home rows)" },
   { v1: "/admin/board", v2: "/admin/organization/board", kind: "prefix", activation: "now", disposition: "re-homed" },
   { v1: "/admin/compliance", v2: "/admin/organization/compliance", kind: "prefix", activation: "now", disposition: "re-homed" },
   // ── Home cutover (Spec Home, H3) — the first at-cutover activations ──────
@@ -205,8 +203,6 @@ const NO_HOME: V2RouteRow[] = [
   { v1: "/admin/staff/reviews", v2: null, kind: "prefix", activation: "no-home", disposition: "NO V2 HOME", note: "modules.reviews" },
   { v1: "/admin/fundraising/reports", v2: null, kind: "exact", activation: "no-home", disposition: "NO V2 HOME", note: "nearest: Impact → Reports or Finance → Reports" },
   { v1: "/admin/fundraising/strategy", v2: null, kind: "prefix", activation: "no-home", disposition: "NO V2 HOME", note: "funder-angle briefs" },
-  { v1: "/admin/careers/daily", v2: null, kind: "exact", activation: "no-home", disposition: "NO V2 HOME", note: "proposal: Programs → Content section" },
-  { v1: "/admin/careers/pool", v2: null, kind: "exact", activation: "no-home", disposition: "NO V2 HOME", note: "proposal: Programs → Content section" },
   { v1: "/admin/legacy", v2: null, kind: "exact", activation: "no-home", disposition: "NO V2 HOME", note: "keep route unlinked" },
 ];
 

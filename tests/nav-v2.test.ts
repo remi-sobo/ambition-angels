@@ -120,13 +120,15 @@ describe("rule 1: first-entitled-tab landing", () => {
     expect(resolveV2Destination(dest("work"), NINE_KEY)!.landingTab.key).toBe("plan-close");
   });
 
-  test("Programs drops Content without modules.content; Impact drops Analytics without aa.site_analytics", () => {
-    expect(tabKeys(AA, "programs")).toContain("content");
-    expect(tabKeys(YGB, "programs")).not.toContain("content");
+  test("Careers and website Analytics left the BloomOS nav for every org (repo split §6d)", () => {
+    for (const org of [AA, YGB, NINE_KEY]) {
+      expect(tabKeys(org, "programs")).not.toContain("content");
+      expect(tabKeys(org, "impact")).not.toContain("analytics");
+    }
     expect(tabKeys(NINE_KEY, "programs")).toEqual([
       "overview", "people", "intake", "cohorts", "attendance", "partners",
     ]);
-    expect(tabKeys(AA, "impact")).toEqual(["outcomes", "kpis", "analytics", "reports"]);
+    expect(tabKeys(AA, "impact")).toEqual(["outcomes", "kpis", "reports"]);
     expect(tabKeys(NINE_KEY, "impact")).toEqual(["outcomes", "kpis", "reports"]);
     expect(resolveV2Destination(dest("impact"), NINE_KEY)!.landingTab.key).toBe("outcomes");
   });

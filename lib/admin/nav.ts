@@ -116,7 +116,6 @@ export const V2_DESTINATIONS: V2Destination[] = [
       { key: "cohorts", label: "Cohorts", href: "/admin/programs/cohorts", feature: "modules.program", term: "cohort" },
       { key: "attendance", label: "Attendance", href: "/admin/programs/attendance", feature: "modules.program" },
       { key: "partners", label: "Partners", href: "/admin/programs/partners", feature: "modules.partners", term: "partner" },
-      { key: "content", label: "Content", href: "/admin/programs/content", feature: "modules.content" },
       { key: "coach", label: "Coach", href: "/admin/programs/coach", feature: "aa.coach" },
     ],
   },
@@ -179,7 +178,6 @@ export const V2_DESTINATIONS: V2Destination[] = [
     tabs: [
       { key: "outcomes", label: "Outcomes", href: "/admin/impact/outcomes", feature: "modules.metrics" },
       { key: "kpis", label: "KPIs", href: "/admin/impact/kpis", feature: "modules.metrics" },
-      { key: "analytics", label: "Analytics", href: "/admin/impact/analytics", feature: "aa.site_analytics" },
       { key: "reports", label: "Reports", href: "/admin/impact/reports", feature: "modules.metrics" },
     ],
   },

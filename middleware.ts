@@ -4,6 +4,7 @@ import { updateSession } from "@/lib/supabase/middleware";
 import { ACTIVE_ORG_COOKIE, sessionOrgHasEntitlement } from "@/lib/admin/activeOrg";
 import { twoStepApiRefusal, twoStepPageRedirect } from "@/lib/auth/twoStep";
 import { isUnknownAdminPath } from "@/lib/admin/adminRoutes";
+import { isSiteAdminPath, rewriteToSiteAdmin } from "@/lib/site/adminRoutes";
 
 /**
  * Host guard + server-side auth gates.
@@ -266,6 +267,29 @@ export async function middleware(req: NextRequest) {
   if (appOriginEnv && MARKETING_HOSTS.has(requestHost(req)) && movedToAppHost(pathname)) {
     return NextResponse.redirect(`${appOriginEnv}${pathname}${req.nextUrl.search}`, 308);
   }
+  // ── Website admin on the Ambition Angels host (repo split §6d) ───────
+  // The website admin owns a fixed list of /admin paths there (rewritten to
+  // app/site-admin). Every other /admin/* path is an old BloomOS link and
+  // 308s to the app host, forever. /site-admin itself is not a public
+  // address on this host: it redirects to its /admin form.
+  if (MARKETING_HOSTS.has(requestHost(req))) {
+    if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+      if (isSiteAdminPath(pathname)) return rewriteToSiteAdmin(req);
+      // Same target as the cutover redirect it replaces, even without APP_ORIGIN.
+      const target = appOriginEnv || "https://app.bloomos.org";
+      return NextResponse.redirect(`${target}${pathname}${req.nextUrl.search}`, 308);
+    }
+    if (pathname === "/site-admin" || pathname.startsWith("/site-admin/")) {
+      const url = req.nextUrl.clone();
+      url.pathname = pathname.replace(/^\/site-admin/, "/admin");
+      return NextResponse.redirect(url, 308);
+    }
+  }
+  // The website admin's API is never served on the app host.
+  if (APP_HOSTS.has(requestHost(req)) && pathname.startsWith("/api/site-admin")) {
+    return appHostNotFound();
+  }
+
   // These two API paths are matched only for the redirect above. Anywhere
   // else they run their own handlers, with no session refresh.
   if (pathname === "/api/unsubscribe" || pathname.startsWith("/api/meet/booking/")) {
@@ -436,6 +460,8 @@ export const config = {
     // Old email links on the marketing host that 308 to the app host.
     "/api/unsubscribe",
     "/api/meet/booking/:path*",
+    // Website admin API: matched only so the app host can 404 it.
+    "/api/site-admin/:path*",
     // Host-guard coverage: "/" and extension-less page paths, so the app host
     // can redirect/404 them. Excludes /api and Next internals; files with an
     // extension (static assets) are left alone. Non-app hosts pass straight

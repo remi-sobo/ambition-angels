@@ -359,7 +359,8 @@ const SCREENS: Record<string, string[]> = {
   ],
   "Impact outcomes": ["app/admin/impact/outcomes/page.tsx"],
   "Impact KPIs (List)": ["app/admin/kpis/page.tsx", "app/admin/kpis/_components/MetricUpdateForm.tsx"],
-  "Impact analytics (Dashboard)": ["app/admin/analytics/page.tsx", "app/admin/AnalyticsView.tsx"],
+  // Moved to the website admin (repo split §6d); the view itself stays on the kit.
+  "Website analytics view": ["app/site-admin/analytics/AnalyticsView.tsx"],
   "Impact reports (Form)": ["app/admin/impact/reports/page.tsx"],
 };
 
@@ -384,7 +385,6 @@ describe("source guards: every Finance and Impact screen is on the kit", () => {
       "app/admin/finance/forecast/page.tsx",
       "app/admin/kpis/page.tsx",
       "app/admin/impact/outcomes/page.tsx",
-      "app/admin/analytics/page.tsx",
     ]) {
       expect(read(f), f).toMatch(/<PageShell>/);
     }

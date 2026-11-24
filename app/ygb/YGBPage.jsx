@@ -675,33 +675,9 @@ function RegistrationSection({ earlyAccess, formRef }) {
 }
 
 // ─── SHOWCASE RSVP ───────────────────────────────────────────────────────────
+// RSVPs closed after the Aug 7, 2026 showcase. The RSVP route wrote straight
+// to the BloomOS database, so it was removed in the repo split.
 function ShowcaseRSVP() {
-  const [form, setForm] = useState({ name:"", email:"", camper_name:"", guest_count:"2" });
-  const [done, setDone]   = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
-  const set = f => e => setForm(p=>({...p,[f]:e.target.value}));
-
-  const submit = async () => {
-    if (!form.name||!form.email||!form.camper_name) { setErr("Please fill in all fields."); return; }
-    setErr("");
-    setLoading(true);
-    try {
-      const res = await fetch("/api/ygb/showcase-rsvp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: form.email, guest_count: form.guest_count, name: form.name, camper_name: form.camper_name }),
-      });
-      const data = await res.json().catch(() => ({}));
-      setLoading(false);
-      if (res.ok) setDone(true);
-      else setErr(data.error || "Something went wrong. Please try again.");
-    } catch {
-      setLoading(false);
-      setErr("Something went wrong. Please try again.");
-    }
-  };
-
   return (
     <section id="showcase" style={{ background:"#0c0c0c", padding:"0 24px 80px", scrollMarginTop:64 }}>
       <KenteDivider />
@@ -714,28 +690,8 @@ function ShowcaseRSVP() {
           <br /><br />
           <span style={{ color:C.gold }}>Bring $100 per camper.</span> All proceeds go directly to the kids.
         </p>
-        {done
-          ? <div style={{ padding:"40px 0" }}>
-              <div style={{ fontSize:52, marginBottom:16 }}>🎊</div>
-              <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:32, color:C.gold, margin:"0 0 8px" }}>SEE YOU FRIDAY!</p>
-              <p style={{ fontFamily:"'Barlow',sans-serif", fontSize:15, color:C.muted }}>You&apos;re on the list.</p>
-            </div>
-          : <div style={{ textAlign:"left" }}>
-              <Field label="Your Name" req><Input value={form.name} onChange={set("name")} /></Field>
-              <Field label="Email (must match registration)" req><Input type="email" value={form.email} onChange={set("email")} /></Field>
-              <Field label="Camper's Name" req><Input value={form.camper_name} onChange={set("camper_name")} /></Field>
-              <Field label="Number of guests (including yourself)">
-                <Select value={form.guest_count} onChange={set("guest_count")}>
-                  {["1","2","3","4","5","6+"].map(n => <option key={n} value={n}>{n} guest{n!=="1"?"s":""}</option>)}
-                </Select>
-              </Field>
-              {err && <div style={{ background:"#f5444418", border:"1px solid #f54444", color:"#ff8888",
-                fontFamily:"'Barlow',sans-serif", fontSize:14, padding:"12px 16px", marginBottom:16 }}>{err}</div>}
-              <Btn onClick={submit} full disabled={loading}>
-                {loading ? "SAVING..." : "RSVP FOR SHOWCASE →"}
-              </Btn>
-            </div>
-        }
+        <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:28, color:C.gold, margin:0 }}>RSVPS ARE CLOSED</p>
+        <p style={{ fontFamily:"'Barlow',sans-serif", fontSize:15, color:C.muted }}>Thank you to every family who came out.</p>
       </div>
       <div style={{ marginTop:64 }}><KenteDivider /></div>
     </section>

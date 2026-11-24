@@ -1,13 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
-import { adminUrl } from "@/lib/origins";
-import { intakeMode, sendToBloomOS } from "@/lib/site/bloomos";
-
-const getSupabase = () => createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { sendToBloomOS } from "@/lib/site/bloomos";
 
 const getResend = () => new Resend(process.env.RESEND_API_KEY);
 
@@ -144,41 +137,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  // INTAKE_MODE=api: BloomOS stores the result and alerts staff. The quiz
-  // taker's own email below is the website's either way.
-  const viaBloomOS = intakeMode() === "api";
-  if (viaBloomOS) {
-    const sent = await sendToBloomOS("quiz_submission", { answers, audienceMode, careers });
-    if (sent.outcome === "rejected" || sent.outcome === "failed") {
-      console.error("quiz_submission not saved:", sent.outcome);
-    }
-  }
-
-  // Save to Supabase (db mode only; in api mode BloomOS stored it above)
-  const { error: dbError } = viaBloomOS
-    ? { error: null }
-    : await getSupabase().from("quiz_submissions").insert({
-    email: answers.email || null,
-    teen_name: answers.teenname || null,
-    audience: audienceMode,
-    age: answers.age || null,
-    status: answers.status || null,
-    location: answers.location || null,
-    subjects: answers.subjects?.join(", ") || null,
-    work_style: answers.workstyle?.join(", ") || null,
-    problem_types: answers.problemtypes?.join(", ") || null,
-    good_at: answers.goodat || null,
-    people_come: answers.peoplecome || null,
-    free_time: answers.freetime || null,
-    flow_state: answers.flowstate || null,
-    dream_day: answers.dreamday || null,
-    future_self: answers.futureself || null,
-    money_vs_meaning: answers.moneyvsmeaning ?? null,
-    career_matches: careers,
-  });
-
-  if (dbError) {
-    console.error("Supabase insert error:", dbError);
+  // BloomOS stores the result and alerts staff. The quiz taker's own email
+  // below is the website's.
+  const sent = await sendToBloomOS("quiz_submission", { answers, audienceMode, careers });
+  if (sent.outcome === "rejected" || sent.outcome === "failed") {
+    console.error("quiz_submission not saved:", sent.outcome);
   }
 
   // Send email if provided
@@ -194,35 +157,6 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       console.error("Resend error:", err);
     }
-  }
-
-  // Notification to Remi (non-blocking). In api mode BloomOS sends it.
-  if (!viaBloomOS) try {
-    const topThree = (Array.isArray(careers) ? careers : [])
-      .slice(0, 3)
-      .map((c: { title?: string }) => c.title || "—")
-      .join(", ") || "—";
-    await getResend().emails.send({
-      from: "Ambition Angels <careers@mail.ambitionangels.org>",
-      to: "remi@ambitionangels.org",
-      subject: `New career quiz: ${answers.teenname || email || "(anonymous)"}`,
-      html: `
-        <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:28px;background:#fff;border-radius:12px;">
-          <h2 style="color:#E8500A;margin:0 0 16px;font-size:18px;">New career quiz submission</h2>
-          <table style="width:100%;border-collapse:collapse;font-size:14px;">
-            <tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Teen</td><td style="padding:6px 0;color:#0E0E0E;">${answers.teenname || "—"}</td></tr>
-            <tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Audience</td><td style="padding:6px 0;color:#0E0E0E;">${audienceMode}</td></tr>
-            <tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Email</td><td style="padding:6px 0;color:#0E0E0E;">${email ? `<a href="mailto:${email}" style="color:#E8500A;text-decoration:none;">${email}</a>` : "—"}</td></tr>
-            <tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Age</td><td style="padding:6px 0;color:#0E0E0E;">${answers.age || "—"}</td></tr>
-            <tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Location</td><td style="padding:6px 0;color:#0E0E0E;">${answers.location || "—"}</td></tr>
-            <tr><td style="padding:6px 12px 6px 0;color:#6B7280;vertical-align:top;">Top 3 matches</td><td style="padding:6px 0;color:#0E0E0E;">${topThree}</td></tr>
-          </table>
-          <p style="color:#9CA3AF;font-size:12px;margin-top:20px;">View all in <a href="${adminUrl()}" style="color:#E8500A;">admin</a></p>
-        </div>
-      `,
-    });
-  } catch (notifyErr) {
-    console.error("Resend notify error:", notifyErr);
   }
 
   return NextResponse.json({ ok: true });

@@ -2,8 +2,8 @@ import Link from "next/link";
 import { getSiteAdmin } from "@/lib/site/adminAuth";
 import { websiteDb } from "@/lib/site/websiteDb";
 import { laDateString } from "@/lib/games/guess";
-import PageHeader from "@/app/admin/_components/PageHeader";
-import StatCard from "@/app/admin/_components/StatCard";
+import PageHeader from "@/app/site-admin/_ui/PageHeader";
+import StatCard from "@/app/site-admin/_ui/StatCard";
 import { DailyControls, type DailyCandidate, type DailyRow } from "./_components/DailyControls";
 
 // The daily calendar (specs/teen-games-v1.md Phase 4): Never Heard of It

@@ -1,50 +1,6 @@
 {
   "crons": [
     {
-      "path": "/api/cron/gmail-sync",
-      "schedule": "45 * * * *"
-    },
-    {
-      "path": "/api/cron/calendar-sync",
-      "schedule": "*/15 * * * *"
-    },
-    {
-      "path": "/api/cron/calendar-watch-renew",
-      "schedule": "0 8 * * *"
-    },
-    {
-      "path": "/api/cron/metric-snapshots",
-      "schedule": "0 13 * * *"
-    },
-    {
-      "path": "/api/cron/site-signals",
-      "schedule": "30 12 * * *"
-    },
-    {
-      "path": "/api/cron/comms-queue",
-      "schedule": "* * * * *"
-    },
-    {
-      "path": "/api/cron/stewardship-milestones",
-      "schedule": "37 14 * * *"
-    },
-    {
-      "path": "/api/cron/daily-reminders",
-      "schedule": "7 15 * * *"
-    },
-    {
-      "path": "/api/cron/weekly-digest",
-      "schedule": "23 15 * * 1"
-    },
-    {
-      "path": "/api/cron/meet-reminders",
-      "schedule": "12 * * * *"
-    },
-    {
-      "path": "/api/cron/hubspot-sync",
-      "schedule": "*/10 22 * * *"
-    },
-    {
       "path": "/api/site/cron/intake-outbox",
       "schedule": "*/15 * * * *"
     }

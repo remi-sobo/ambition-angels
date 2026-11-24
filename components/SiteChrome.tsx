@@ -34,20 +34,11 @@ export default function SiteChrome({
     (pathname?.startsWith("/admin") ||
       // The website admin's internal path (previews and local dev).
       pathname?.startsWith("/site-admin") ||
-      // The board portal carries its own header and footer end to end, and a
-      // fixed marketing nav over a governance surface would be wrong twice:
-      // visually, and because /board is private and never advertises the site.
-      pathname?.startsWith("/board") ||
       teensGameScreen ||
       // The My Ambition partner demo: a password door, then the demo in a
       // full-viewport iframe. Neither wants a fixed marketing nav over it.
       pathname?.startsWith("/demo") ||
       pathname?.startsWith("/ygb") ||
-      pathname?.startsWith("/strategy") ||
-      // BloomOS surfaces served on app.bloomos.org (repo split §6c). The
-      // marketing nav's links don't exist on that host.
-      pathname?.startsWith("/meet") ||
-      pathname?.startsWith("/coach/me") ||
       pathname?.startsWith("/update/koshland")) ??
     false;
 
@@ -58,9 +49,8 @@ export default function SiteChrome({
       )}
       {!standalone && nav}
       {!standalone && <ScrollAnimations />}
-      {/* /admin renders its own <main> in its shell; a second one around it
-          made two nested main landmarks on every BloomOS page (V4 Stage P
-          axe pass). */}
+      {/* The website admin renders its own <main>; a second one around it
+          would nest two main landmarks. */}
       {pathname?.startsWith("/admin") || pathname?.startsWith("/site-admin") ? children : <main>{children}</main>}
       {!standalone && footer}
     </>

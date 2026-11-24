@@ -9,11 +9,8 @@
  * carries the token opaquely; tampering with the SOC codes inside it
  * breaks the MAC.
  *
- * Keyed off SUPABASE_SERVICE_ROLE_KEY by default — already required in
- * every deploy, server-only by definition — so the games add no new
- * environment variable. GAMES_TOKEN_SECRET overrides if we ever want to
- * rotate independently. Tokens live minutes, so a key rotation stranding
- * in-flight rounds costs one "round expired, deal again".
+ * Keyed off GAMES_TOKEN_SECRET, server-only. Tokens live minutes, so a key
+ * rotation stranding in-flight rounds costs one "round expired, deal again".
  */
 
 import { createHmac, timingSafeEqual } from "crypto";
@@ -29,8 +26,8 @@ export type PairClaims = {
 export const PAIR_TOKEN_TTL_MS = 10 * 60 * 1000;
 
 function signingSecret(): string {
-  const s = process.env.GAMES_TOKEN_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!s) throw new Error("GAMES_TOKEN_SECRET or SUPABASE_SERVICE_ROLE_KEY must be set to sign game tokens");
+  const s = process.env.GAMES_TOKEN_SECRET;
+  if (!s) throw new Error("GAMES_TOKEN_SECRET must be set to sign game tokens");
   return s;
 }
 

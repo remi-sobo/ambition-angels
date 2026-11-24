@@ -1,4 +1,4 @@
-import PageHeader from "@/app/admin/_components/PageHeader";
+import PageHeader from "@/app/site-admin/_ui/PageHeader";
 import { getSiteAdmin } from "@/lib/site/adminAuth";
 import AnalyticsView from "./AnalyticsView";
 

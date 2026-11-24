@@ -1,4 +1,5 @@
 import PageHeader from "@/app/admin/_components/PageHeader";
+import { getSiteAdmin } from "@/lib/site/adminAuth";
 import StatCard from "@/app/admin/_components/StatCard";
 import { getSiteSupabase } from "@/lib/site/supabase";
 import { intakeMode } from "@/lib/site/bloomos";
@@ -34,6 +35,10 @@ type Row = {
 };
 
 export default async function FormsPage() {
+  // Every page checks sign-in itself. The layout's sign-in screen is not
+  // enough: Next renders the page alongside it, so an unguarded page would
+  // ship its data to a signed-out visitor.
+  if (!(await getSiteAdmin())) return null;
   const since = new Date(Date.now() - 30 * 86_400_000).toISOString();
   const { data } = await getSiteSupabase()
     .from("intake_outbox")

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getSiteAdmin } from "@/lib/site/adminAuth";
 import { websiteDb } from "@/lib/site/websiteDb";
 import { eligibilityIssues } from "@/lib/games/pool";
 import PageHeader from "@/app/admin/_components/PageHeader";
@@ -15,6 +16,10 @@ export const dynamic = "force-dynamic";
 const ELIGIBLE_TARGET = 300;
 
 export default async function PoolPage() {
+  // Every page checks sign-in itself. The layout's sign-in screen is not
+  // enough: Next renders the page alongside it, so an unguarded page would
+  // ship its data to a signed-out visitor.
+  if (!(await getSiteAdmin())) return null;
   const supabase = websiteDb();
   const [{ data: occData }, { data: poolData }] = await Promise.all([
     supabase

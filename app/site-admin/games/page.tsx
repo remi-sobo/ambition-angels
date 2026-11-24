@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getSiteAdmin } from "@/lib/site/adminAuth";
 import PageHeader from "@/app/admin/_components/PageHeader";
 import StatCard from "@/app/admin/_components/StatCard";
 import { getSiteSupabase } from "@/lib/site/supabase";
@@ -11,6 +12,10 @@ import { addDays, pacificToday, siteDailyStats } from "@/lib/site/stats";
 export const dynamic = "force-dynamic";
 
 export default async function GamesPage() {
+  // Every page checks sign-in itself. The layout's sign-in screen is not
+  // enough: Next renders the page alongside it, so an unguarded page would
+  // ship its data to a signed-out visitor.
+  if (!(await getSiteAdmin())) return null;
   const db = getSiteSupabase();
   const today = pacificToday();
   const [days, pool, daily, cutOpen, msOpen] = await Promise.all([

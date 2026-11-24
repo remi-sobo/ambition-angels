@@ -3,9 +3,8 @@
  *
  * The playbook's voice rule (no em dashes, owned vocabulary) belongs in ONE
  * place so every surface that emits model text to a human runs the same repair,
- * instead of each call site reinventing it. This generalizes the inline
- * em-dash strip that used to live only in the Gigi decision route
- * (app/api/shannon/route.ts).
+ * instead of each call site reinventing it. This generalizes an inline
+ * em-dash strip that one early route carried (since deleted).
  *
  * - `cleanVoiceText` repairs a single string.
  * - `cleanVoiceDeep` walks an object/array and repairs every string leaf,

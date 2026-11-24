@@ -43,7 +43,6 @@ export default function SiteChrome({
       // full-viewport iframe. Neither wants a fixed marketing nav over it.
       pathname?.startsWith("/demo") ||
       pathname?.startsWith("/ygb") ||
-      pathname?.startsWith("/shannon") ||
       pathname?.startsWith("/strategy") ||
       // BloomOS surfaces served on app.bloomos.org (repo split §6c). The
       // marketing nav's links don't exist on that host.

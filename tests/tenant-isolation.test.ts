@@ -277,9 +277,11 @@ describe("AA-only data is read only behind the AA-only guard", () => {
     const readers = adminFiles()
       .map((file) => ({ file, hits: aaOnlyTouches(readFileSync(join(REPO, file), "utf8")) }))
       .filter((r) => r.hits.length > 0);
-    // Not vacuous: the careers admin, quiz/partner/analytics feeds and the
-    // HubSpot import all live here today.
-    expect(readers.length).toBeGreaterThan(10);
+    // Not vacuous: the quiz/partner feeds and the HubSpot import live here.
+    // (The careers admin and website analytics moved to the Ambition Angels
+    // website admin, app/site-admin, in the repo split; tests/site-admin.test.ts
+    // guards those behind requireSiteAdmin.)
+    expect(readers.length).toBeGreaterThan(4);
 
     const unguarded = readers.filter((r) => !aaGuarded(r.file));
     // A page that re-exports a gated reader from another route group

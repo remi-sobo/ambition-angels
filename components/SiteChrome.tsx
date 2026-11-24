@@ -32,6 +32,8 @@ export default function SiteChrome({
     false;
   const standalone =
     (pathname?.startsWith("/admin") ||
+      // The website admin's internal path (previews and local dev).
+      pathname?.startsWith("/site-admin") ||
       // The board portal carries its own header and footer end to end, and a
       // fixed marketing nav over a governance surface would be wrong twice:
       // visually, and because /board is private and never advertises the site.
@@ -60,7 +62,7 @@ export default function SiteChrome({
       {/* /admin renders its own <main> in its shell; a second one around it
           made two nested main landmarks on every BloomOS page (V4 Stage P
           axe pass). */}
-      {pathname?.startsWith("/admin") ? children : <main>{children}</main>}
+      {pathname?.startsWith("/admin") || pathname?.startsWith("/site-admin") ? children : <main>{children}</main>}
       {!standalone && footer}
     </>
   );

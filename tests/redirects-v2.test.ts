@@ -96,15 +96,12 @@ describe("v2Href: the translation the choke points ride", () => {
     expect(v2Href(`/admin/ops/projects/${UUID}`)).toBe(`/admin/work/projects/${UUID}`);
     expect(v2Href(`/admin/meetings/${UUID}`)).toBe(`/admin/work/meetings/${UUID}`);
     expect(v2Href("/admin/finance")).toBe("/admin/finance/snapshot");
-    expect(v2Href("/admin/careers")).toBe("/admin/programs/content");
   });
 
   test("named siblings that are NOT moving stay put (no fragile exclusions)", () => {
     // monday/friday/calendar/connections left this list at W4 — they moved.
     for (const path of [
       "/admin/staff/reviews",
-      "/admin/careers/daily",
-      "/admin/careers/pool",
       "/admin/strategic-plan/narrative",
     ]) {
       expect(v2Href(path), path).toBe(path);
@@ -171,8 +168,6 @@ describe("v2Href: the translation the choke points ride", () => {
     );
     // R8/R9 honored (decision 4) and NO_HOME stands: nothing else moved.
     expect(v2Href("/admin/demoday")).toBe("/admin/demoday");
-    expect(v2Href("/admin/careers/daily")).toBe("/admin/careers/daily");
-    expect(v2Href("/admin/careers/pool")).toBe("/admin/careers/pool");
   });
 
   test("I4: the scorecard lands on KPIs; the stay-put strategic-plan siblings stay put", () => {
@@ -359,19 +354,19 @@ const TARGET_GATES: Record<string, string> = {
   "/admin/organization/team": "modules.staff",
   "/admin/finance/snapshot": "modules.finance",
   "/admin/finance/reports": "modules.finance",
-  "/admin/impact/analytics": "aa.site_analytics",
   "/admin/impact/kpis": "modules.metrics",
   "/admin/programs/people": "modules.program",
   "/admin/programs/intake": "modules.program",
   "/admin/programs/cohorts": "modules.program",
   "/admin/programs/overview": "modules.program",
   "/admin/programs/partners": "modules.partners",
-  "/admin/programs/content": "modules.content",
   "/admin/programs/coach": "aa.coach",
   "/admin/organization/board": "modules.board",
   "/admin/organization/compliance": "modules.compliance",
 };
 
+// Careers (/admin/programs/content) and website Analytics (/admin/impact/analytics)
+// left BloomOS for the Ambition Angels website admin (repo split §6d).
 describe("per-org host behavior (gate keys mirror the V1 sections)", () => {
   test("every gate key is declared in each host layout on disk", () => {
     const app = join(__dirname, "..", "app");
@@ -392,11 +387,9 @@ describe("per-org host behavior (gate keys mirror the V1 sections)", () => {
       .map(([t]) => t)
       .sort();
     expect(panelled).toEqual([
-      "/admin/impact/analytics",       // aa.site_analytics (AA-only)
       "/admin/organization/strategy",  // modules.strategy
       "/admin/organization/team",      // modules.staff
       "/admin/programs/coach",         // aa.coach (AA-only)
-      "/admin/programs/content",       // modules.content (AA-only)
       "/admin/work/meetings",          // modules.meetings
       "/admin/work/my-week",           // modules.meetings since W2 (V1 calendar had no gate; the model's deliberate shape)
     ]);

@@ -11,6 +11,9 @@ import { connectionRows, type ConnectionFacts, type ConnectionTone } from "@/lib
 import { getResidentOrgId } from "@/lib/admin/orgs";
 import { getSchedulerConnectionStatus } from "@/lib/google/scheduler-connection";
 import { SchedulerGoogleCard, type SchedulerNotice } from "./SchedulerGoogleCard";
+import { SiteSignalsCard } from "./SiteSignalsCard";
+import { getSiteSignalsStatus } from "@/lib/siteSignals/server";
+import { getWebsiteAdminUrl } from "@/lib/admin/websiteAdmin";
 
 // V4 Stage F: Settings → Connections. Gmail, Google Calendar and HubSpot
 // status in one place, each with its one next step (the connect flows stay
@@ -61,6 +64,10 @@ export default async function Page({
   // The /meet scheduler only books for the resident org (lib/meet/host.ts).
   const residentOrgId = await getResidentOrgId().catch(() => null);
   const scheduler = ctx.orgId === residentOrgId ? await getSchedulerConnectionStatus(ctx.orgId) : null;
+  // Website numbers (repo split §6e item 5): orgs with aa.site_signals only.
+  const siteSignals = hasFeature(ents, "aa.site_signals") ? await getSiteSignalsStatus(ctx.orgId).catch(() => null) : null;
+  const websiteAdmin = siteSignals ? await getWebsiteAdminUrl(ctx.orgId, ents).catch(() => null) : null;
+  const defaultStatsUrl = websiteAdmin ? `${new URL(websiteAdmin).origin}/api/site-admin/stats` : "";
 
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-reading space-y-6">
@@ -87,6 +94,7 @@ export default async function Page({
           </li>
         ))}
       </ul>
+      {siteSignals ? <SiteSignalsCard status={siteSignals} defaultUrl={defaultStatsUrl} /> : null}
       {scheduler ? <SchedulerGoogleCard status={scheduler} notice={schedulerNotice(searchParams)} /> : null}
     </div>
   );

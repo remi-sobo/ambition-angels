@@ -89,7 +89,7 @@ describe("access", () => {
     expect(isSiteAdminEmail(null)).toBe(false);
   });
 
-  test("every /api/site-admin route checks requireSiteAdmin (sign-in and sign-out excepted)", () => {
+  test("every /api/site-admin route checks requireSiteAdmin (sign-in, sign-out and the BloomOS stats feed excepted)", () => {
     const root = join(__dirname, "..", "app", "api", "site-admin");
     const files: string[] = [];
     const walk = (d: string) => {
@@ -100,9 +100,13 @@ describe("access", () => {
       }
     };
     walk(root);
-    const guarded = files.filter((f) => !/\/(signin|signout)\/route\.ts$/.test(f));
+    const guarded = files.filter((f) => !/\/(signin|signout|stats)\/route\.ts$/.test(f));
     expect(guarded.length).toBeGreaterThanOrEqual(8);
     for (const f of guarded) expect(readFileSync(f, "utf8"), f).toMatch(/await requireSiteAdmin\(\)/);
+    // The stats feed is BloomOS's, machine to machine: its guard is the bearer key.
+    const stats = readFileSync(join(root, "stats", "route.ts"), "utf8");
+    expect(stats).toMatch(/if \(!keyMatches\(req\.headers\.get\("authorization"\)\)\)/);
+    expect(stats).toMatch(/timingSafeEqual/);
   });
 
   test("the website admin layout mounts the providers the shared admin components need", () => {

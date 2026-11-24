@@ -16,11 +16,25 @@ const nextConfig = {
     // in-flight POSTs from a stale PWA shell survive the hop. Host-matched:
     // the app host itself, previews, and localhost are untouched. This stays
     // forever (links in sent email never die).
+    // The old host-wide /admin/* → app.bloomos.org redirect moved into
+    // middleware.ts (repo split §6d): the website admin now owns a few
+    // /admin paths on the AA host, and next.config redirects run before
+    // middleware and can't express those exceptions. Every other /admin/*
+    // path on the AA host still 308s to app.bloomos.org, from middleware.
     return [
-      ...["www.ambitionangels.org", "ambitionangels.org"].map((host) => ({
-        source: "/admin/:path*",
-        has: [{ type: "host", value: host }],
-        destination: "https://app.bloomos.org/admin/:path*",
+      // Repo split §6d: Careers and Analytics moved from BloomOS to the
+      // Ambition Angels website admin. Old BloomOS bookmarks land there.
+      // App host only: on ambitionangels.org these paths ARE the website admin.
+      ...[
+        ["/admin/careers", "/admin/careers"],
+        ["/admin/careers/:path*", "/admin/careers/:path*"],
+        ["/admin/programs/content", "/admin/careers"],
+        ["/admin/analytics", "/admin/analytics"],
+        ["/admin/impact/analytics", "/admin/analytics"],
+      ].map(([source, path]) => ({
+        source,
+        has: [{ type: "host", value: "app.bloomos.org" }],
+        destination: `https://www.ambitionangels.org${path}`,
         permanent: true,
       })),
       // /ms → /teens (specs/c1d2c9e2-teengamesv1): the middle-school game
@@ -66,14 +80,12 @@ const nextConfig = {
       { source: "/admin/documents/:path*", destination: "/admin/work/documents/:path*", permanent: true },
       { source: "/admin/finance", destination: "/admin/finance/snapshot", permanent: true },
       { source: "/admin/finance/report", destination: "/admin/finance/reports", permanent: true },
-      { source: "/admin/analytics", destination: "/admin/impact/analytics", permanent: true },
       { source: "/admin/kpis", destination: "/admin/impact/kpis", permanent: true },
       { source: "/admin/students/:path*", destination: "/admin/programs/people/:path*", permanent: true },
       { source: "/admin/intake", destination: "/admin/programs/intake", permanent: true },
       { source: "/admin/cohorts/:path*", destination: "/admin/programs/cohorts/:path*", permanent: true },
       { source: "/admin/program", destination: "/admin/programs/overview", permanent: true },
       { source: "/admin/partners/:path*", destination: "/admin/programs/partners/:path*", permanent: true },
-      { source: "/admin/careers", destination: "/admin/programs/content", permanent: true },
       { source: "/admin/board/:path*", destination: "/admin/organization/board/:path*", permanent: true },
       { source: "/admin/compliance/:path*", destination: "/admin/organization/compliance/:path*", permanent: true },
       // Home cutover (Spec Home, H3). /admin itself is NOT here: it hosts the

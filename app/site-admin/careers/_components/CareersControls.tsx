@@ -8,9 +8,9 @@
 // cannot be batched, and never will be.
 
 import { useMemo, useState } from "react";
-import { userMessage } from "@/lib/admin/errors";
+import { userMessage } from "@/lib/site/ui/errors";
 import { useRouter } from "next/navigation";
-import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
+import { useConfirm } from "@/app/site-admin/_ui/feedback/ConfirmProvider";
 
 export type OccupationView = {
   soc_code: string;

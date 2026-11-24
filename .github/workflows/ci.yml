@@ -1,14 +1,10 @@
 # CI — typecheck, lint, and unit tests on every PR (and pushes to main).
-#
-# The existing workflows cover DB concerns (rls-test spins Postgres + checks
-# the access matrix; db-migrate applies a file; db-backup dumps nightly) but
-# nothing ran the TypeScript / ESLint / vitest gate. This is that gate, so the
-# guards in tests/ (money + identity paths, migration idempotency) actually
-# enforce on PRs instead of relying on a human to run them locally.
+# The tests cover the games, the career library, the public forms' path to
+# BloomOS, the website admin, and migration idempotency.
 #
 # `next build` is intentionally NOT run here: it needs runtime secrets
-# (Stripe etc.) and fails at the data-collection step without them. Type safety
-# is covered by `tsc --noEmit`; correctness by vitest.
+# (Stripe etc.). Type safety is covered by `tsc --noEmit`; correctness by
+# vitest. Vercel builds every PR as a preview.
 
 name: CI
 

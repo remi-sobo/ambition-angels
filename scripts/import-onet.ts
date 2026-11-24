@@ -22,8 +22,8 @@
  * 1:1 onto BLS SOC codes, which is the dedup key
  * (specs/ms-career-library-addendum.md "The dedup key is the SOC code").
  *
- * Usage (from the repo root, with NEXT_PUBLIC_SUPABASE_URL and
- * SUPABASE_SERVICE_ROLE_KEY in the environment):
+ * Usage (from the repo root, with SITE_SUPABASE_URL and
+ * SITE_SUPABASE_SERVICE_ROLE_KEY in the environment):
  *
  *   npx tsx scripts/import-onet.ts \
  *     --onet-dir ~/Downloads/db_30_3_text \
@@ -324,10 +324,10 @@ async function main() {
     return;
   }
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = process.env.SITE_SUPABASE_URL;
+  const key = process.env.SITE_SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
-    console.error("NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set.");
+    console.error("SITE_SUPABASE_URL and SITE_SUPABASE_SERVICE_ROLE_KEY must be set.");
     process.exit(1);
   }
   const supabase = createClient(url, key, { auth: { persistSession: false } });

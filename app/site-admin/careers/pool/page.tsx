@@ -2,8 +2,8 @@ import Link from "next/link";
 import { getSiteAdmin } from "@/lib/site/adminAuth";
 import { websiteDb } from "@/lib/site/websiteDb";
 import { eligibilityIssues } from "@/lib/games/pool";
-import PageHeader from "@/app/admin/_components/PageHeader";
-import StatCard from "@/app/admin/_components/StatCard";
+import PageHeader from "@/app/site-admin/_ui/PageHeader";
+import StatCard from "@/app/site-admin/_ui/StatCard";
 import { PoolControls, type PoolOccupation, type PoolRow } from "./_components/PoolControls";
 
 // The play pool (specs/teen-games-v1.md Phase 1): the gate between the

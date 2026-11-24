@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getResidentOrgId } from "@/lib/admin/orgs";
-import { fetchOpenCohorts, intakeMode } from "@/lib/site/bloomos";
+import { fetchOpenCohorts } from "@/lib/site/bloomos";
 import ApplyForm, { type OpenCohort } from "./ApplyForm";
 
 export const metadata: Metadata = {
@@ -11,8 +9,8 @@ export const metadata: Metadata = {
 };
 
 // Public student application form (modules/02-program.md "Intake").
-// Cohorts flagged accepting_applications appear in the program picker;
-// submissions land in `applications` for screening in /admin/intake.
+// BloomOS supplies the open cohorts for the program picker, and submissions
+// go to BloomOS through the intake API.
 export const dynamic = "force-dynamic";
 
 const dotTexture = {
@@ -21,24 +19,9 @@ const dotTexture = {
   backgroundSize: "22px 22px",
 };
 
-/**
- * The programs to offer. INTAKE_MODE=api asks BloomOS, which returns only
- * this org's open cohorts. The db path reads them directly, scoped to the
- * resident org (it used to read every tenant's open cohorts).
- */
+/** The programs to offer: this org's open cohorts, from BloomOS. */
 async function loadCohorts(): Promise<OpenCohort[]> {
-  if (intakeMode() === "api") {
-    const cohorts = await fetchOpenCohorts();
-    return cohorts ?? [];
-  }
-  const { data } = await getSupabaseAdmin()
-    .from("cohorts")
-    .select("id, name")
-    .eq("org_id", await getResidentOrgId())
-    .eq("accepting_applications", true)
-    .in("status", ["planning", "active"])
-    .order("start_date", { ascending: true, nullsFirst: false });
-  return (data ?? []) as OpenCohort[];
+  return (await fetchOpenCohorts()) ?? [];
 }
 
 export default async function ApplyPage() {

@@ -2,27 +2,20 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 
-// Repo split phase 2b: SITE_DB picks the database behind the games, the
-// career library and site analytics. One switch for all of them, so an
-// approval in /admin/careers and the game that shows it never disagree.
+// The games, the career library and site analytics all read and write the
+// website's own database through one client, so an approval in
+// /admin/careers and the game that shows it never disagree.
 
 vi.mock("server-only", () => ({}));
-const bloomos = { name: "bloomos" };
 const site = { name: "site" };
-vi.mock("@/lib/supabase/admin", () => ({ getSupabaseAdmin: () => bloomos }));
 vi.mock("@/lib/site/supabase", () => ({ getSiteSupabase: () => site }));
 
-import { siteDbMode, websiteDb } from "@/lib/site/websiteDb";
+import { websiteDb } from "@/lib/site/websiteDb";
 
 afterEach(() => vi.unstubAllEnvs());
 
 describe("websiteDb", () => {
-  test("BloomOS until SITE_DB=site, then the website database", () => {
-    vi.stubEnv("SITE_DB", "");
-    expect(siteDbMode()).toBe("bloomos");
-    expect(websiteDb()).toBe(bloomos);
-    vi.stubEnv("SITE_DB", "site");
-    expect(siteDbMode()).toBe("site");
+  test("is the website database", () => {
     expect(websiteDb()).toBe(site);
   });
 

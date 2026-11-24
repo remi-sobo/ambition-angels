@@ -8,7 +8,7 @@
 // mitigation for "the pool is boring and the game is unfair".
 
 import { useMemo, useState } from "react";
-import { userMessage } from "@/lib/admin/errors";
+import { userMessage } from "@/lib/site/ui/errors";
 import { useRouter } from "next/navigation";
 import { draftRevealLine, eligibilityIssues, REVEAL_LINE_MAX } from "@/lib/games/pool";
 

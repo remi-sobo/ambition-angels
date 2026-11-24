@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/site/supabase", () => ({ getSiteSupabase: vi.fn(), isSiteDbConfigured: () => false }));
 
-import { fetchOpenCohorts, intakeMode, sendToBloomOS } from "@/lib/site/bloomos";
+import { fetchOpenCohorts, sendToBloomOS } from "@/lib/site/bloomos";
 
 const SUB = "11111111-2222-4333-8444-555555555555";
 
@@ -44,17 +44,6 @@ beforeEach(() => {
   vi.stubEnv("BLOOMOS_INTAKE_KEY", "bos_live_" + "k".repeat(40));
 });
 afterEach(() => vi.unstubAllEnvs());
-
-describe("intakeMode", () => {
-  test("defaults to db; only the exact value api switches", () => {
-    vi.stubEnv("INTAKE_MODE", "");
-    expect(intakeMode()).toBe("db");
-    vi.stubEnv("INTAKE_MODE", "API");
-    expect(intakeMode()).toBe("db");
-    vi.stubEnv("INTAKE_MODE", "api");
-    expect(intakeMode()).toBe("api");
-  });
-});
 
 describe("sendToBloomOS", () => {
   test("delivered: posts to {base}/{kind} with the key and a submission_id, logs it without the payload", async () => {

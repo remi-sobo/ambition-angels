@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { userMessage } from "@/lib/admin/errors";
-import { TYPE } from "@/lib/admin/typeScale";
-import Button from "@/app/admin/_components/ui/Button";
-import Notice from "@/app/admin/_components/ui/Notice";
-import Figure, { SummaryStrip } from "@/app/admin/_components/ui/Figure";
-import DataTable, { type DataTableColumn } from "@/app/admin/_components/ui/DataTable";
-import { SkeletonGroup, SkeletonStrip, SkeletonTable } from "@/app/admin/_components/ui/Skeleton";
+import { userMessage } from "@/lib/site/ui/errors";
+import { TYPE } from "@/lib/site/ui/typeScale";
+import Button from "@/app/site-admin/_ui/ui/Button";
+import Notice from "@/app/site-admin/_ui/ui/Notice";
+import Figure, { SummaryStrip } from "@/app/site-admin/_ui/ui/Figure";
+import DataTable, { type DataTableColumn } from "@/app/site-admin/_ui/ui/DataTable";
+import { SkeletonGroup, SkeletonStrip, SkeletonTable } from "@/app/site-admin/_ui/ui/Skeleton";
 
 // ── Types ────────────────────────────────────────────────────────────────
 

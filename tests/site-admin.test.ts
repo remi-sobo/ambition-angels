@@ -1,14 +1,11 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 // Repo split §6d: the Ambition Angels website admin at ambitionangels.org/admin.
 
 vi.mock("server-only", () => ({}));
-vi.mock("@/lib/supabase/middleware", () => ({
-  updateSession: vi.fn(async () => ({ response: NextResponse.next(), hasUser: false, userId: null, supabase: null, twoStep: "ok" })),
-}));
 vi.mock("@supabase/ssr", () => ({
   createServerClient: () => ({ auth: { getUser: async () => ({ data: { user: null } }) } }),
 }));
@@ -25,7 +22,6 @@ const rewriteOf = (res: Response) => {
 };
 
 beforeEach(() => {
-  vi.stubEnv("APP_ORIGIN", "https://app.bloomos.org");
   vi.stubEnv("SITE_ADMIN_EMAILS", " Remi@AmbitionAngels.org, shannon@ambitionangels.org ,, nope ");
 });
 afterEach(() => vi.unstubAllEnvs());
@@ -58,12 +54,6 @@ describe("on ambitionangels.org", () => {
     expect(res.headers.get("location")).toBe("https://app.bloomos.org/admin/fundraising/pipeline?x=1");
   });
 
-  test("still 308s to app.bloomos.org without APP_ORIGIN, like the redirect it replaced", async () => {
-    vi.stubEnv("APP_ORIGIN", "");
-    const res = await at("www.ambitionangels.org", "/admin/today");
-    expect(res.headers.get("location")).toBe("https://app.bloomos.org/admin/today");
-  });
-
   test("/site-admin is not a public address there: it redirects to /admin", async () => {
     const res = await at("www.ambitionangels.org", "/site-admin/careers");
     expect(res.status).toBe(308);
@@ -71,13 +61,11 @@ describe("on ambitionangels.org", () => {
   });
 });
 
-describe("on app.bloomos.org", () => {
-  test("the website admin does not exist", async () => {
-    expect((await at("app.bloomos.org", "/site-admin")).status).toBe(404);
-    expect((await at("app.bloomos.org", "/api/site-admin/forms/retry")).status).toBe(404);
-  });
-  test("/admin is still BloomOS (no rewrite)", async () => {
-    expect(rewriteOf(await at("app.bloomos.org", "/admin/careers"))).toBeNull();
+describe("on a preview address", () => {
+  test("the website admin works the same way, so it can be tested before the domain moves", async () => {
+    expect(rewriteOf(await at("ambition-angels-site.vercel.app", "/admin/careers"))).toBe("/site-admin/careers");
+    const res = await at("ambition-angels-site.vercel.app", "/admin/today");
+    expect(res.headers.get("location")).toBe("https://app.bloomos.org/admin/today");
   });
 });
 

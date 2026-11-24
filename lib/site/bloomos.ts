@@ -5,10 +5,8 @@ import { getSiteSupabase, isSiteDbConfigured } from "./supabase";
 /**
  * The website's client for the BloomOS intake API (specs/bloomos-repo-split.md §6a).
  *
- * INTAKE_MODE decides where a public form goes:
- *   "db"  (default)  the old path: the route writes to the database itself.
- *   "api"            the route calls sendToBloomOS() instead.
- * Rollback is one env change.
+ * Every public form calls sendToBloomOS(). The website holds no BloomOS
+ * database key; the intake key is its only way in.
  *
  * The promise to the visitor: a form is never lost. Outcomes:
  *   delivered   BloomOS saved it. Logged in intake_outbox as delivered, with
@@ -41,10 +39,6 @@ export type SendResult =
   | { outcome: "failed" };
 
 const TIMEOUT_MS = 8000;
-
-export function intakeMode(): "api" | "db" {
-  return process.env.INTAKE_MODE === "api" ? "api" : "db";
-}
 
 type Deps = {
   fetch: typeof fetch;

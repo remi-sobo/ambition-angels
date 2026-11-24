@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getSiteAdmin } from "@/lib/site/adminAuth";
-import PageHeader from "@/app/admin/_components/PageHeader";
-import StatCard from "@/app/admin/_components/StatCard";
+import PageHeader from "@/app/site-admin/_ui/PageHeader";
+import StatCard from "@/app/site-admin/_ui/StatCard";
 import { addDays, pacificToday, siteDailyStats, sumDays } from "@/lib/site/stats";
 
 // Website admin home: the website's numbers at a glance. The same figures

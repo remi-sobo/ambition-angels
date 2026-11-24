@@ -1,6 +1,7 @@
 # Public site v2 (Nov 2026)
 
-Source: the "Ambition Angels Website Redesign" canvas export (`ambition-site-v2.zip`, Nov 19). This is the as-built record.
+Source: the approved Ambition Angels Website Redesign package from Nov 19.
+This is the as-built record.
 
 ## The story the site tells
 
@@ -32,9 +33,23 @@ Untouched: `/coach`, `/teens/*`, `/curriculum/[slug]`, `/founder`, `/meet`, `/up
 - Headline numbers: `lib/stats.ts`.
 - The design's forms opened an email draft. The live forms were kept instead.
 
+## Anti-template rules
+
+- Do not add stock photos, fake testimonials, placeholder quotes, invented
+  partner logos, or made-up student stories.
+- Do not add generic SaaS sections just because they are common: centered
+  hero plus vague CTA, three feature cards, logo wall, broad testimonial row,
+  or decorative metric cards without source data.
+- Keep page structure audience-specific. Schools need intake and program
+  clarity. Students need career exploration. Supporters need donation
+  confidence. Companies need partnership options.
+- Use the real brand system: bold display headlines, orange/ink/cream,
+  Ambition illustrations, product screens, and concrete language.
+- Comments should explain constraints, not narrate how code was produced.
+
 ## How it is built
 
-- Pages were converted from the canvas export and keep its inline styles. Colors, fonts, radii are CSS variables; `app/site.css` adds the few tokens globals.css did not have (`--paper`, `--muted`, `--rule`, `--surface-tint`).
+- Pages follow the approved redesign and keep page-specific layout values inline where that preserves the reviewed composition. Colors, fonts, and radii are CSS variables; `app/site.css` adds the few tokens globals.css did not have (`--paper`, `--muted`, `--rule`, `--surface-tint`).
 - `components/site/`: `SiteHeader`, `SiteFooter`, `PillCTA`, `NumberedBlock`, `StatBar`, `Fit`, and `screens/` (the six product mockups, drawn in HTML and scaled in CSS, so they stay sharp at any size).
 - Responsive values the canvas computed in script are CSS variables on `.aa-home` and classes in `app/site.css`. No layout depends on JavaScript.
 - Hover states from the canvas are the `.hv-*` classes in `app/site.css`.

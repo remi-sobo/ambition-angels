@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getSiteAdmin } from "@/lib/site/adminAuth";
 import EmptyState from "@/app/admin/_components/EmptyState";
 import { websiteDb } from "@/lib/site/websiteDb";
 import PageHeader from "@/app/admin/_components/PageHeader";
@@ -12,6 +13,10 @@ import { CareersControls, type CardView, type OccupationView } from "./_componen
 export const dynamic = "force-dynamic";
 
 export default async function CareersPage() {
+  // Every page checks sign-in itself. The layout's sign-in screen is not
+  // enough: Next renders the page alongside it, so an unguarded page would
+  // ship its data to a signed-out visitor.
+  if (!(await getSiteAdmin())) return null;
   const supabase = websiteDb();
   const [{ data: occData }, { data: cardData }] = await Promise.all([
     supabase

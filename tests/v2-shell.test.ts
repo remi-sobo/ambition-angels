@@ -219,10 +219,10 @@ describe("B3 shell invariants", () => {
     }
   });
 
-  test("Impact lands on Outcomes — four tabs for AA, three without aa.site_analytics (I4, DoD 1)", () => {
+  test("Impact lands on Outcomes with three tabs for every org (website Analytics moved to the website admin)", () => {
     const aa = resolveShellNav(AA).destinations.find((d) => d.key === "impact")!;
     expect(aa.href).toBe("/admin/impact/outcomes");
-    expect(aa.tabs.map((t) => t.key)).toEqual(["outcomes", "kpis", "analytics", "reports"]);
+    expect(aa.tabs.map((t) => t.key)).toEqual(["outcomes", "kpis", "reports"]);
     for (const features of [YGB, NINE_KEY]) {
       const imp = resolveShellNav(features).destinations.find((d) => d.key === "impact")!;
       expect(imp.href).toBe("/admin/impact/outcomes");
@@ -230,14 +230,12 @@ describe("B3 shell invariants", () => {
     }
   });
 
-  test("Programs lands on Overview — seven tabs for AA, six without modules.content (P4, DoD 1)", () => {
+  test("Programs lands on Overview with six tabs (Careers moved to the website admin)", () => {
     const aa = resolveShellNav(AA).destinations.find((d) => d.key === "programs")!;
     expect(aa.href).toBe("/admin/programs/overview");
     expect(aa.tabs.map((t) => t.key)).toEqual([
-      "overview", "people", "intake", "cohorts", "attendance", "partners", "content",
+      "overview", "people", "intake", "cohorts", "attendance", "partners",
     ]);
-    // YGB and the 9-key orgs lack modules.content: the Content tab vanishes
-    // by the entitlement rule, everything else identical.
     for (const features of [YGB, NINE_KEY]) {
       const prog = resolveShellNav(features).destinations.find((d) => d.key === "programs")!;
       expect(prog.href).toBe("/admin/programs/overview");

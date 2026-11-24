@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import AnalyticsView from "../AnalyticsView";
 import { TYPE } from "@/lib/admin/typeScale";
 import { StaticTable, DataTableSkeleton } from "../_components/ui/DataTable";
 import Drawer from "../_components/ui/Drawer";
@@ -585,7 +584,17 @@ export default function AdminPage() {
           ))}
         </div>
 
-        {mainView === "analytics" && <AnalyticsView />}
+        {mainView === "analytics" && (
+          // Website analytics moved to the Ambition Angels website admin
+          // (repo split §6d), next to the site and games it measures.
+          <p className="text-sm text-ink-2">
+            Website analytics now live in the{" "}
+            <a href="https://www.ambitionangels.org/admin/analytics" className="underline underline-offset-2">
+              website admin
+            </a>
+            .
+          </p>
+        )}
 
         <div className={`space-y-10 ${mainView !== "overview" ? "hidden" : ""}`}>
 

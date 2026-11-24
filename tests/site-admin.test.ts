@@ -105,6 +105,28 @@ describe("access", () => {
     for (const f of guarded) expect(readFileSync(f, "utf8"), f).toMatch(/await requireSiteAdmin\(\)/);
   });
 
+  test("every website admin page checks sign-in itself, before loading anything", () => {
+    // The layout's sign-in screen does not stop Next from rendering the page
+    // into the same response, so a page without its own check leaks its data.
+    const root = join(__dirname, "..", "app", "site-admin");
+    const pages: string[] = [];
+    const walk = (d: string) => {
+      for (const n of readdirSync(d)) {
+        const p = join(d, n);
+        if (statSync(p).isDirectory()) walk(p);
+        else if (n === "page.tsx") pages.push(p);
+      }
+    };
+    walk(root);
+    expect(pages.length).toBeGreaterThanOrEqual(7);
+    for (const f of pages) {
+      const src = readFileSync(f, "utf8");
+      const body = src.slice(src.indexOf("export default async function"));
+      const firstStatement = body.split("\n").slice(1).find((l) => l.trim() && !l.trim().startsWith("//"));
+      expect(firstStatement?.trim(), f).toBe("if (!(await getSiteAdmin())) return null;");
+    }
+  });
+
   test("the website admin never touches a BloomOS table or the BloomOS client", () => {
     const dirs = [join(__dirname, "..", "app", "site-admin"), join(__dirname, "..", "app", "api", "site-admin")];
     const files: string[] = [];

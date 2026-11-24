@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getSiteAdmin } from "@/lib/site/adminAuth";
 import PageHeader from "@/app/admin/_components/PageHeader";
 import StatCard from "@/app/admin/_components/StatCard";
 import { addDays, pacificToday, siteDailyStats, sumDays } from "@/lib/site/stats";
@@ -10,6 +11,10 @@ import { addDays, pacificToday, siteDailyStats, sumDays } from "@/lib/site/stats
 export const dynamic = "force-dynamic";
 
 export default async function SiteAdminHome() {
+  // Every page checks sign-in itself. The layout's sign-in screen is not
+  // enough: Next renders the page alongside it, so an unguarded page would
+  // ship its data to a signed-out visitor.
+  if (!(await getSiteAdmin())) return null;
   const today = pacificToday();
   const days = await siteDailyStats(addDays(today, -27), today).catch(() => null);
 

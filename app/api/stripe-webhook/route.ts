@@ -12,10 +12,6 @@ type InvoiceWebhook = Stripe.Invoice & {
   payment_intent?: string | Stripe.PaymentIntent | null;
 };
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2026-03-25.dahlia",
-});
-
 const getResend = () => new Resend(process.env.RESEND_API_KEY);
 
 const getSupabase = () => createClient(
@@ -41,7 +37,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.text();
-    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+    // Signature check only: no API calls, so no secret key. BloomOS holds
+    // just STRIPE_WEBHOOK_SECRET; the key lives on the website (repo split §6b).
+    event = Stripe.webhooks.constructEvent(body, sig, webhookSecret);
   } catch (err) {
     console.error("Webhook signature verification failed:", err);
     return NextResponse.json(

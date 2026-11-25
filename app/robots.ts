@@ -1,12 +1,6 @@
 import type { MetadataRoute } from "next";
 
+// BloomOS is a signed-in app. Nothing on it belongs in search results.
 export default function robots(): MetadataRoute.Robots {
-  return {
-    rules: {
-      userAgent: "*",
-      allow: "/",
-      disallow: ["/admin", "/api", "/auth", "/demo", "/coach/me"],
-    },
-    sitemap: "https://www.ambitionangels.org/sitemap.xml",
-  };
+  return { rules: { userAgent: "*", disallow: "/" } };
 }

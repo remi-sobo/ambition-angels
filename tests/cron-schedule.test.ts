@@ -42,22 +42,15 @@ describe("cron routes are scheduled or deliberately not", () => {
   });
 
   test("every vercel.json entry points at an existing cron route", () => {
-    // The Ambition Angels website's own crons live under /api/site/cron (repo
-    // split §6a) so they leave with the website; they're checked below.
-    for (const c of crons.filter((c) => !c.path.startsWith("/api/site/cron/"))) {
+    for (const c of crons) {
       expect(c.path).toMatch(/^\/api\/cron\/[a-z0-9-]+$/);
       expect(routes, c.path).toContain(c.path.replace("/api/cron/", ""));
       expect(c.schedule.trim().split(/\s+/)).toHaveLength(5);
     }
   });
 
-  test("website crons point at an existing /api/site/cron route", () => {
-    const site = crons.filter((c) => c.path.startsWith("/api/site/cron/"));
-    expect(site.map((c) => c.path)).toContain("/api/site/cron/intake-outbox");
-    for (const c of site) {
-      expect(existsSync(join(ROOT, "app", ...c.path.split("/").filter(Boolean), "route.ts")), c.path).toBe(true);
-      expect(c.schedule.trim().split(/\s+/)).toHaveLength(5);
-    }
+  test("the website's outbox cron left with the website (repo split §6a)", () => {
+    expect(crons.some((c) => c.path.startsWith("/api/site/"))).toBe(false);
   });
 
   test("the four restored jobs run at the agreed UTC times (Remi is in Pacific)", () => {

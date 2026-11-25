@@ -43,10 +43,6 @@
     {
       "path": "/api/cron/hubspot-sync",
       "schedule": "*/10 22 * * *"
-    },
-    {
-      "path": "/api/site/cron/intake-outbox",
-      "schedule": "*/15 * * * *"
     }
   ]
 }

@@ -17,6 +17,8 @@ for (const rule of ALL) {
 }
 
 module.exports = {
+  // Standalone repo: never merge configs from a parent folder.
+  root: true,
   extends: ["next/core-web-vitals", "next/typescript"],
   overrides: [
     {

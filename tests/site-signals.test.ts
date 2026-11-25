@@ -7,7 +7,7 @@ import { mockSupabase } from "./support/supabaseMock";
 
 // Repo split §6e item 5: the website's daily numbers flow into Ambition
 // Angels' BloomOS metrics. The site serves daily totals behind a bearer key;
-// BloomOS keeps that key encrypted on a connections row and a daily cron
+// The feed itself lives in the Ambition Angels repo. BloomOS keeps that key encrypted on a connections row and a daily cron
 // upserts site.* metric snapshots, backfilling the whole history once.
 
 vi.mock("server-only", () => ({}));
@@ -18,9 +18,6 @@ const withUpsert = (m: ReturnType<typeof mockSupabase>) => {
   return m;
 };
 vi.mock("@/lib/supabase/admin", () => ({ getSupabaseAdmin: () => db.client }));
-const siteDailyStats = vi.fn();
-vi.mock("@/lib/site/supabase", () => ({ getSiteSupabase: () => ({}), isSiteDbConfigured: () => true }));
-vi.mock("@/lib/site/stats", async (orig) => ({ ...(await orig<object>()), siteDailyStats: (...a: unknown[]) => siteDailyStats(...a) }));
 
 import {
   BACKFILL_MAX_DAYS,
@@ -152,31 +149,6 @@ describe("the sync", () => {
   test("an org with no saved feed gets nothing", async () => {
     db = withUpsert(mockSupabase([{ data: null }]));
     expect(await syncSiteSignals("org-2")).toEqual({ ok: false, orgId: "org-2", error: "No website stats feed saved" });
-  });
-});
-
-describe("the website's stats feed", () => {
-  test("refuses a missing or wrong key; answers daily totals for the right one", async () => {
-    vi.stubEnv("SITE_STATS_KEY", "s".repeat(40));
-    const { GET } = await import("@/app/api/site-admin/stats/route");
-    const at = (q: string, auth?: string) =>
-      GET(new NextRequest(`https://www.ambitionangels.org/api/site-admin/stats${q}`, auth ? { headers: { authorization: auth } } : undefined));
-
-    expect((await at("?from=2026-11-01&to=2026-11-02")).status).toBe(401);
-    expect((await at("?from=2026-11-01&to=2026-11-02", "Bearer nope")).status).toBe(401);
-    expect((await at("?from=2026-11-02&to=2026-11-01", `Bearer ${"s".repeat(40)}`)).status).toBe(400);
-
-    siteDailyStats.mockResolvedValueOnce([day("2026-11-01", { page_views: 9 })]);
-    const ok = await at("?from=2026-11-01&to=2026-11-01", `Bearer ${"s".repeat(40)}`);
-    expect(ok.status).toBe(200);
-    expect(await ok.json()).toEqual({ from: "2026-11-01", to: "2026-11-01", days: [day("2026-11-01", { page_views: 9 })] });
-  });
-
-  test("with no SITE_STATS_KEY set, nothing gets in", async () => {
-    vi.stubEnv("SITE_STATS_KEY", "");
-    const { GET } = await import("@/app/api/site-admin/stats/route");
-    const res = await GET(new NextRequest("https://www.ambitionangels.org/api/site-admin/stats?from=2026-11-01&to=2026-11-01", { headers: { authorization: "Bearer " } }));
-    expect(res.status).toBe(401);
   });
 });
 

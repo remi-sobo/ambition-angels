@@ -4,6 +4,7 @@ import { changeTags, countTags, hasTag, isSystemTag, normalizeTag, normalizeTags
 import { resolveRecipients, parseSegmentDefinition, storableDefinition } from "@/lib/fundraising/segments";
 import { hubspotSuppressions } from "@/lib/hubspot/upserts";
 import { emailsIn } from "@/lib/admin/tags-server";
+import { lifecycleTag, withLifecycleTag, syncLifecycleTags } from "@/lib/hubspot/lifecycle-tags";
 
 /**
  * Tags on people, and HubSpot's bounces. These pin: one spelling per tag,
@@ -147,5 +148,62 @@ describe("system tags", () => {
 describe("pasted addresses", () => {
   test("found wherever they sit, lowercased, once each", () => {
     expect(emailsIn('Ana <Ana@Example.org>, ben@example.org;\n"ana@example.org"\tnot-an-email')).toEqual(["ana@example.org", "ben@example.org"]);
+  });
+});
+
+describe("HubSpot lifecycle stages as tags", () => {
+  test("named as HubSpot names them, with a prefix", () => {
+    expect(lifecycleTag("salesqualifiedlead")).toBe("HubSpot: Sales Qualified Lead");
+    expect(lifecycleTag("customer")).toBe("HubSpot: Customer");
+    expect(lifecycleTag("My Custom Stage")).toBe("HubSpot: My Custom Stage");
+    expect(lifecycleTag("")).toBeNull();
+    expect(lifecycleTag(null)).toBeNull();
+  });
+
+  test("one stage tag per person: the old one comes off, other tags stay put", () => {
+    expect(withLifecycleTag(["Board", "HubSpot: Lead", "Gala"], "customer")).toEqual(["Board", "Gala", "HubSpot: Customer"]);
+    expect(withLifecycleTag(null, "lead")).toEqual(["HubSpot: Lead"]);
+    expect(withLifecycleTag(["Board", "HubSpot: Lead"], null)).toEqual(["Board"]);
+  });
+
+  test("already right means untouched, so a second sync writes nothing", () => {
+    const tags = ["HubSpot: Lead", "Board"];
+    expect(withLifecycleTag(tags, "lead")).toEqual(tags);
+  });
+
+  test("stage tags are system tags", () => {
+    expect(isSystemTag("HubSpot: Lead")).toBe(true);
+    expect(isSystemTag("hubspot: anything")).toBe(true);
+    expect(isSystemTag("HubSpot fans")).toBe(false);
+  });
+
+  test("the sync tags only people linked to a HubSpot contact, in this org", async () => {
+    const OTHER = "00000000-0000-0000-0000-00000000000b";
+    db = fakeDb({
+      hs_contacts: [
+        { org_id: ORG, hubspot_id: "101", lifecycle_stage: "lead" },
+        { org_id: ORG, hubspot_id: "102", lifecycle_stage: "customer" },
+        { org_id: OTHER, hubspot_id: "999", lifecycle_stage: "customer" },
+      ],
+      constituents: [
+        { id: uid(1), org_id: ORG, archived_at: null, tags: ["Board"], external_ids: { hubspot: "101" } },
+        { id: uid(2), org_id: ORG, archived_at: null, tags: ["HubSpot: Lead"], external_ids: { hubspot: "102" } },
+        { id: uid(3), org_id: ORG, archived_at: null, tags: ["Gala"], external_ids: {} },
+        { id: uid(4), org_id: ORG, archived_at: null, tags: [], external_ids: { hubspot: "999" } },
+        { id: uid(5), org_id: OTHER, archived_at: null, tags: [], external_ids: { hubspot: "999" } },
+      ],
+    });
+    const r = await syncLifecycleTags(ORG);
+    expect(r.error).toBeNull();
+    const updates = db.writes.filter((w) => w.table === "constituents" && w.op === "update");
+    const written = updates.map((w) => ({ tags: (w.values as { tags: string[] }).tags, ids: (w.filters.find((f) => f[0] === "in")?.[2] as string[]).slice().sort() }));
+    expect(written).toEqual(
+      expect.arrayContaining([
+        { tags: ["Board", "HubSpot: Lead"], ids: [uid(1)] },
+        { tags: ["HubSpot: Customer"], ids: [uid(2)] },
+      ])
+    );
+    expect(written).toHaveLength(2);
+    for (const w of updates) expect(w.filters).toEqual(expect.arrayContaining([["eq", "org_id", ORG]]));
   });
 });

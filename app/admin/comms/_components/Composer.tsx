@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Button from "../../_components/ui/Button";
 import Card from "../../_components/ui/Card";
@@ -274,6 +273,26 @@ export default function Composer({
     }
   };
 
+  // Off to the list builder and back. The draft is saved first, and the
+  // builder is told which email to return to with the list attached.
+  const goToLists = async (listId: string | null) => {
+    const typed = !!(subject.trim() || body.trim());
+    const draftId = (await saveNow()) ?? idRef.current;
+    const persisted = !!draftId && subject.trim() === saved.current.subject.trim() && body === saved.current.body;
+    if (typed && !persisted) {
+      // A draft needs both a subject and a message to be saved. Leaving now
+      // would throw away what is on screen.
+      toast.error(
+        subject.trim() && body.trim()
+          ? "Your email didn't save, so nothing was opened. Try again in a moment."
+          : "Add a subject and a message first, so your email is saved while you build the list."
+      );
+      return;
+    }
+    const back = draftId ?? "new";
+    router.push(listId ? `/admin/comms/lists/${listId}?email=${back}` : `/admin/comms/lists/new?email=${back}`);
+  };
+
   const blockers = preview?.blockers ?? [];
   const ready = !!preview && blockers.length === 0;
   const pool = preview?.pool ?? 0;
@@ -295,31 +314,39 @@ export default function Composer({
           <h2 className={`${TYPE.cardTitle} mb-3`}>1. Who it goes to</h2>
           {lists.length === 0 ? (
             <Notice tone="info" title="You don't have a list yet.">
-              A list is who this email goes to.{" "}
-              <Link href="/admin/comms/lists/new" className="font-semibold text-orange">Build your first list</Link>, then come back. Your draft is kept.
+              A list is who this email goes to: all your donors, everyone, or a few people you pick. Build one now and you come straight back here.
+              <div className="mt-2">
+                <Button onClick={() => void goToLists(null)}>Build your first list</Button>
+              </div>
             </Notice>
           ) : (
             <>
-              <SelectField
-                label="List"
-                placeholder="Choose a list"
-                options={lists.map((l) => ({ value: l.id, label: l.name }))}
-                value={segmentId}
-                onChange={(e) => {
-                  setSegmentId(e.target.value);
-                  setIndex(0);
-                  setOnly("all");
-                }}
-              />
+              <div className="flex flex-wrap items-end gap-2">
+                <SelectField
+                  label="List"
+                  className="flex-1 min-w-[14rem]"
+                  placeholder="Choose a list"
+                  options={lists.map((l) => ({ value: l.id, label: l.name }))}
+                  value={segmentId}
+                  onChange={(e) => {
+                    setSegmentId(e.target.value);
+                    setIndex(0);
+                    setOnly("all");
+                  }}
+                />
+                <Button size="lg" variant="secondary" onClick={() => void goToLists(null)}>
+                  New list
+                </Button>
+              </div>
               <p className={`${TYPE.metadata} mt-2`}>
                 {segmentId && preview?.list.name
                   ? `${listCount.toLocaleString("en-US")} ${listCount === 1 ? "person" : "people"} would get this. `
-                  : ""}
+                  : "A list is who this email goes to. Pick one, or make a new one and come straight back. "}
                 {segmentId ? (
-                  <Link href={`/admin/comms/lists/${segmentId}`} className="font-semibold text-orange">See or change who is on it</Link>
+                  <button type="button" onClick={() => void goToLists(segmentId)} className="font-semibold text-orange">
+                    See or change who is on it
+                  </button>
                 ) : null}
-                {segmentId ? " · " : ""}
-                <Link href="/admin/comms/lists/new" className="font-semibold text-orange">Build a new list</Link>
               </p>
             </>
           )}

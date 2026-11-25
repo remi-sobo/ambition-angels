@@ -18,6 +18,8 @@ export type ListDefinition = {
   picked_only?: string;
   include_ids?: string[];
   exclude_ids?: string[];
+  /** Carries any of these tags. */
+  tags?: string[];
 };
 
 /** Where a list starts. "picked" is a hand-picked list with no rules. */
@@ -48,7 +50,7 @@ export function withStart(def: ListDefinition, start: StartValue): ListDefinitio
   delete next.picked_only;
   if (start === "picked") {
     // A hand-picked list has no rules to narrow.
-    return { include_ids: next.include_ids, exclude_ids: next.exclude_ids, picked_only: "1" };
+    return tidy({ include_ids: next.include_ids, exclude_ids: next.exclude_ids, picked_only: "1" });
   }
   if (start === "never") next.never_gave = "1";
   else if (start !== "all") next.view = start;
@@ -84,6 +86,7 @@ export function describeList(raw: unknown): string {
   if (def.since) parts.push(`last gift on or after ${day(def.since)}`);
   if (def.before) parts.push(`last gift before ${day(def.before)}`);
   if (def.tag) parts.push(`tagged "${def.tag}"`);
+  if (Array.isArray(def.tags) && def.tags.length) parts.push(`tagged ${def.tags.join(" or ")}`);
   if (def.q) parts.push(`name has "${def.q}"`);
   if (added) parts.push(`plus ${added} added by hand`);
   if (removed) parts.push(`${removed} taken off by hand`);

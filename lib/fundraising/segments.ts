@@ -1,6 +1,7 @@
 import type { createServerSupabase } from "@/lib/supabase/server";
 import { constituentName } from "@/lib/fundraising/display";
 import { fullNameOf, type MergeData } from "@/lib/comms/merge";
+import { normalizeTags, hasTag } from "@/lib/comms/tags";
 import {
   applyRollupFilters,
   BUILT_IN_VIEWS,
@@ -51,6 +52,9 @@ export type ResolvedRecipients = {
   error?: string;
   /** People the list's rules matched who were taken off by hand. */
   handRemoved?: number;
+  /** Everyone on the list, including people who can't be emailed (no
+   *  address, do not contact, unsubscribed). What "tag this list" tags. */
+  memberIds?: string[];
 };
 
 type SupabaseLike = ReturnType<typeof createServerSupabase>;
@@ -96,6 +100,9 @@ const KNOWN_KEYS = new Set([
   // Comms lists (specs/comms-v3-composer.md): two more giving rules, and
   // people added or taken off by hand.
   "before", "never_gave", "include_ids", "exclude_ids", "picked_only",
+  // Any of these tags (the list builder's tag picker). "tag" above is the
+  // older single, exact tag and still works.
+  "tags",
 ]);
 /** Most people one list may carry by hand, each way. */
 export const MAX_HAND_PICKED = 5000;
@@ -120,6 +127,8 @@ export type ParsedSegment = ViewDefinition & {
   exclude_ids?: string[];
   /** A hand-picked list: only include_ids, no rules. */
   picked_only?: boolean;
+  /** Carries at least one of these tags (case-insensitive). */
+  tags?: string[];
 };
 
 /** A definition's hand-picked ids, validated. Anything that is not a list of
@@ -151,6 +160,16 @@ export function parseSegmentDefinition(
       const list = parseIdList(key, value);
       if (!list.ok) return list;
       if (list.ids.length) def[key] = list.ids;
+      continue;
+    }
+    if (key === "tags") {
+      if (!Array.isArray(value) || value.some((v) => typeof v !== "string")) return { ok: false, error: `This list's tags are not readable.` };
+      const tags = normalizeTags(value);
+      // Every tag must survive cleaning: a tag that vanished would widen the list.
+      if (tags.length !== new Set((value as string[]).map((v) => v.trim().toLowerCase()).filter(Boolean)).size) {
+        return { ok: false, error: `This list's tags are not readable.` };
+      }
+      if (tags.length) def.tags = tags;
       continue;
     }
     if (key === "picked_only" || key === "never_gave") {
@@ -226,6 +245,10 @@ export function storableDefinition(
   for (const k of ["picked_only", "never_gave"]) {
     if (src[k] === true || src[k] === "1" || src[k] === "true") out[k] = "1";
   }
+  if (Array.isArray(src.tags)) {
+    const tags = normalizeTags(src.tags);
+    if (tags.length) out.tags = tags;
+  }
   return { ok: true, definition: out };
 }
 
@@ -233,9 +256,10 @@ type RollupRow = {
   id: string; type: string; first_name: string | null; last_name: string | null;
   org_name: string | null; emails: string[] | null; do_not_contact: boolean;
   lifetime_total: number | null; gift_count: number | null; last_gift: string | null;
+  tags: string[] | null;
 };
 const ROLLUP_COLUMNS =
-  "id, type, first_name, last_name, org_name, emails, do_not_contact, lifetime_total, gift_count, last_gift";
+  "id, type, first_name, last_name, org_name, emails, do_not_contact, lifetime_total, gift_count, last_gift, tags";
 
 function serverTodayISO(): string {
   // Server-local YYYY-MM-DD, the same clock the Donors & Funders page uses
@@ -299,6 +323,8 @@ export async function resolveRecipients(
     });
     if (members.error) return fail("Couldn't read the segment. Nothing was sent.");
     ruleRows = members.rows.filter((c) => !idSets.some((s) => !s.has(c.id)));
+    // Any-of tags, matched here so "Board" and "board" are the same tag.
+    if (def.tags?.length) ruleRows = ruleRows.filter((c) => def.tags!.some((t) => hasTag(c.tags, t)));
   }
 
   // People added by hand: on the list whatever the rules say, but still
@@ -334,9 +360,11 @@ export async function resolveRecipients(
   const suppressed = new Set(sup.rows.map((s) => s.email.toLowerCase()));
 
   const recipients: Recipient[] = [];
+  const memberIds: string[] = [];
   for (const c of Array.from(byId.values())) {
     // Exclusion counts are relative to the segment, not the whole list.
     if (removed.has(c.id)) { handRemoved += 1; continue; }
+    memberIds.push(c.id);
     const email = (c.emails ?? [])[0];
     if (c.do_not_contact) { excluded.doNotContact += 1; continue; }
     if (!email) { excluded.noEmail += 1; continue; }
@@ -354,7 +382,7 @@ export async function resolveRecipients(
       ...(addedIds.has(c.id) ? { added: true } : {}),
     });
   }
-  return { recipients, excluded, handRemoved };
+  return { recipients, excluded, handRemoved, memberIds };
 }
 
 /** A recipient as merge-field data (lib/comms/merge.ts). */

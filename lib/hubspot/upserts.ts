@@ -106,7 +106,44 @@ export async function upsertContacts(orgId: string, records: HubSpotRecord[]): P
     .from("hs_contacts")
     .upsert(rows, { onConflict: "hubspot_id" });
   if (error) throw new Error(`hs_contacts upsert failed: ${error.message}`);
+  await suppressFromHubSpot(orgId, records);
   return rows.length;
+}
+
+/** HubSpot hard-bounce reasons that say the ADDRESS is dead. The others
+ *  (POLICY, SPAM, CONTENT, MAILBOX_FULL, OTHER...) describe how one HubSpot
+ *  email was received, often because of HubSpot's own sending servers, and
+ *  say nothing about mail sent from the org's Gmail. Blocking on those would
+ *  drop reachable donors, and a block can't be lifted in the app yet. */
+const DEAD_ADDRESS_REASONS = new Set(["UNKNOWN_USER"]);
+
+/**
+ * Addresses HubSpot already knows must not be emailed: the mailbox does not
+ * exist, or the person opted out of all email. PURE, so it is unit-tested.
+ */
+export function hubspotSuppressions(records: HubSpotRecord[]): Array<{ email: string; reason: "hard_bounce" | "unsubscribed" }> {
+  const out = new Map<string, "hard_bounce" | "unsubscribed">();
+  for (const r of records) {
+    const email = (str(r.properties, "email") ?? "").trim().toLowerCase();
+    if (!email || !email.includes("@")) continue;
+    if (str(r.properties, "hs_email_optout") === "true") out.set(email, "unsubscribed");
+    else if (DEAD_ADDRESS_REASONS.has((str(r.properties, "hs_email_hard_bounce_reason_enum") ?? "").toUpperCase())) out.set(email, "hard_bounce");
+  }
+  return Array.from(out, ([email, reason]) => ({ email, reason }));
+}
+
+/** Add them to the org's blocked list. Existing rows are left as they are (an
+ *  unsubscribe recorded in BloomOS keeps its own reason and campaign). Best
+ *  effort: a failure here is logged and never fails the contact sync. Nothing
+ *  is ever removed: someone un-bounced in HubSpot is unblocked by hand. */
+async function suppressFromHubSpot(orgId: string, records: HubSpotRecord[]): Promise<void> {
+  const rows = hubspotSuppressions(records).map((s) => ({ org_id: orgId, email: s.email, reason: s.reason }));
+  if (rows.length === 0) return;
+  const { error } = await getSupabaseAdmin()
+    .from("email_suppressions")
+    .upsert(rows, { onConflict: "org_id,email", ignoreDuplicates: true });
+  if (error) console.error("[hubspot] email_suppressions upsert failed:", error.message);
+  else console.log(`[hubspot] ${rows.length} bounced or opted-out address(es) kept on the blocked list for org ${orgId}`);
 }
 
 // ── Companies ──────────────────────────────────────────────────────────────

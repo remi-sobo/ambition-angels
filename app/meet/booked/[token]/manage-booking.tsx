@@ -6,7 +6,6 @@ import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
 
 import type { Booking, MeetingType } from "@/lib/database.types";
-import { trackEvent } from "@/lib/analytics";
 import { MEET_ICON_MAP, type MeetIconName } from "../../icons";
 
 type Mode = "idle" | "reschedule" | "cancel" | "done-rescheduled" | "done-cancelled";
@@ -104,7 +103,6 @@ export default function ManageBooking({
               onBack={() => setMode("idle")}
               onDone={(updated) => {
                 setCurrent(updated);
-                trackEvent("meet_rescheduled", { slug: meetingType.slug });
                 setMode("done-rescheduled");
               }}
             />
@@ -115,7 +113,6 @@ export default function ManageBooking({
               token={token}
               onBack={() => setMode("idle")}
               onDone={() => {
-                trackEvent("meet_cancelled", { slug: meetingType.slug });
                 setMode("done-cancelled");
               }}
             />

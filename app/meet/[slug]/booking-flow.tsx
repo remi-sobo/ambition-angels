@@ -9,7 +9,6 @@ import { z } from "zod";
 import "react-day-picker/style.css";
 
 import type { LocationType, MeetingType } from "@/lib/database.types";
-import { trackEvent } from "@/lib/analytics";
 import { MEET_ICON_MAP, type MeetIconName } from "../icons";
 
 type Step = "datetime" | "details" | "booked";
@@ -67,11 +66,6 @@ export default function BookingFlow({ meetingType }: { meetingType: MeetingType 
     meetingType.icon_name && meetingType.icon_name in MEET_ICON_MAP
       ? MEET_ICON_MAP[meetingType.icon_name as MeetIconName]
       : MEET_ICON_MAP.Sparkles;
-
-  // Page-visited event
-  useEffect(() => {
-    trackEvent("meet_type_viewed", { slug: meetingType.slug });
-  }, [meetingType.slug]);
 
   // Fetch slots whenever a date is selected
   useEffect(() => {
@@ -155,7 +149,6 @@ export default function BookingFlow({ meetingType }: { meetingType: MeetingType 
         return;
       }
       setBookingResult(data as BookingResult);
-      trackEvent("meet_booked", { slug: meetingType.slug });
       setStep("booked");
     } catch {
       setSubmitError("Network hiccup. Try again.");
@@ -376,13 +369,7 @@ export default function BookingFlow({ meetingType }: { meetingType: MeetingType 
                             <button
                               key={s.start}
                               type="button"
-                              onClick={() => {
-                                setSelectedSlot(s);
-                                trackEvent("meet_slot_picked", {
-                                  slug: meetingType.slug,
-                                  start: s.start,
-                                });
-                              }}
+                              onClick={() => setSelectedSlot(s)}
                               className={[
                                 "border font-semibold px-3 py-3 rounded-xl transition-colors min-h-[48px] text-sm",
                                 selected

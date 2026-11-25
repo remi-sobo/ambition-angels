@@ -359,8 +359,6 @@ const SCREENS: Record<string, string[]> = {
   ],
   "Impact outcomes": ["app/admin/impact/outcomes/page.tsx"],
   "Impact KPIs (List)": ["app/admin/kpis/page.tsx", "app/admin/kpis/_components/MetricUpdateForm.tsx"],
-  // Moved to the website admin (repo split §6d); the view itself stays on the kit.
-  "Website analytics view": ["app/site-admin/analytics/AnalyticsView.tsx"],
   "Impact reports (Form)": ["app/admin/impact/reports/page.tsx"],
 };
 

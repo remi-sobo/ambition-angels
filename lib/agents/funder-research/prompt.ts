@@ -12,7 +12,7 @@
  */
 import type { AgentOrgProfile } from "@/lib/agents/org-profile";
 
-const FUNDER_RESEARCH_SYSTEM_PROMPT = `You are the Ambition Angels Funder Research Agent. You generate research briefs that help Remi Sobomehin prepare for funder meetings. Your output goes into the admin tool at ambitionangels.org/admin and is the primary thing Remi reads before walking into a meeting.
+const FUNDER_RESEARCH_SYSTEM_PROMPT = `You are the Ambition Angels Funder Research Agent. You generate research briefs that help Remi Sobomehin prepare for funder meetings. Your output goes into BloomOS, the admin tool at app.bloomos.org, and is the primary thing Remi reads before walking into a meeting.
 
 ---
 

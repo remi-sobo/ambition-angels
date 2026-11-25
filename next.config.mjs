@@ -1,30 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    // The My Ambition partner demo (demo-assets/ambition-demo.html) lives
-    // outside public/ on purpose — public/ is served with no auth — and is
-    // read from disk by the gated /demo/app route handler. Files outside the
-    // normal build graph are not in the serverless bundle unless traced
-    // here; without this line the route 500s in production and works on
-    // localhost. Verify after the first deploy.
-    outputFileTracingIncludes: { "/demo/app": ["./demo-assets/**"] },
-  },
   async redirects() {
-    // Cutover (migration runbook step 14): the admin now lives at
-    // app.bloomos.org. Old links, bookmarks, and installed PWAs on the AA
-    // host land there via a permanent (308) redirect — method-preserving, so
-    // in-flight POSTs from a stale PWA shell survive the hop. Host-matched:
-    // the app host itself, previews, and localhost are untouched. This stays
-    // forever (links in sent email never die).
-    // The old host-wide /admin/* → app.bloomos.org redirect moved into
-    // middleware.ts (repo split §6d): the website admin now owns a few
-    // /admin paths on the AA host, and next.config redirects run before
-    // middleware and can't express those exceptions. Every other /admin/*
-    // path on the AA host still 308s to app.bloomos.org, from middleware.
     return [
       // Repo split §6d: Careers and Analytics moved from BloomOS to the
       // Ambition Angels website admin. Old BloomOS bookmarks land there.
-      // App host only: on ambitionangels.org these paths ARE the website admin.
       ...[
         ["/admin/careers", "/admin/careers"],
         ["/admin/careers/:path*", "/admin/careers/:path*"],
@@ -33,26 +12,9 @@ const nextConfig = {
         ["/admin/impact/analytics", "/admin/analytics"],
       ].map(([source, path]) => ({
         source,
-        has: [{ type: "host", value: "app.bloomos.org" }],
         destination: `https://www.ambitionangels.org${path}`,
         permanent: true,
       })),
-      // /ms → /teens (specs/c1d2c9e2-teengamesv1): the middle-school game
-      // moved under the /teens games hub. Permanent (308) so every card,
-      // flyer, and deck email already in circulation keeps working — the
-      // bare route lands on the hub, deep links (deck codes, live room
-      // screens, mid-session results) land on the same page at its new
-      // path. Query strings (?room=, ?host=) survive the hop automatically.
-      { source: "/ms", destination: "/teens", permanent: true },
-      { source: "/ms/:path*", destination: "/teens/built-for/:path*", permanent: true },
-      // /for-adults folded into /schools (website build plan v3 follow-up):
-      // parent/mentor content is now a section there, so old Guide links
-      // land on the page that replaced it.
-      // Site v2 (specs/site-redesign-v2.md): old URLs keep working.
-      { source: "/for-adults", destination: "/guides", permanent: true },
-      { source: "/the-app", destination: "/how-it-works", permanent: true },
-      { source: "/careers", destination: "/curriculum", permanent: true },
-      { source: "/careers/:slug", destination: "/curriculum/:slug", permanent: true },
       // ── BloomOS V2 redirect map (Spec B, stage B2) ────────────────────
       // Permanent (308) V1 → V2 moves for the 1:1 rows of the Stage 0 map
       // (docs/v2-recon.md §F.1). Every destination is a live host page
@@ -157,19 +119,6 @@ const nextConfig = {
       { source: "/admin/meetings/booking-page", destination: "/admin/settings/organization/booking-page", permanent: true },
       { source: "/admin/strategic-plan/setup", destination: "/admin/settings/organization/strategy-setup", permanent: true },
       { source: "/admin/howto", destination: "/admin/settings/help", permanent: true },
-    ];
-  },
-  async rewrites() {
-    return [
-      // Serve the self-contained Fast Forward demo-day lookbook (a static
-      // file in public/demoday/) at the clean URL /demoday in both `next dev`
-      // and on Vercel.
-      { source: "/demoday", destination: "/demoday/index.html" },
-      // Donor signup form for Demo Day (static file in public/demoday/signup/).
-      // Served at the clean URL /demoday/signup. Intentionally NOT added to the
-      // middleware matcher, so it stays publicly reachable (donors shouldn't
-      // need the lookbook password to sign up).
-      { source: "/demoday/signup", destination: "/demoday/signup/index.html" },
     ];
   },
 };

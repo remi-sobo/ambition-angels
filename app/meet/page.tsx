@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import PageVisitedEvent from "@/components/PageVisitedEvent";
 import { getSupabasePublic } from "@/lib/supabase/public";
 import type { MeetingType } from "@/lib/database.types";
 import { MEET_ICON_MAP, type MeetIconName } from "./icons";
@@ -33,7 +32,6 @@ export default async function MeetPage() {
 
   return (
     <>
-      <PageVisitedEvent name="meet_landing_viewed" />
       {/* ── HERO ─────────────────────────────────────────────────────── */}
       <section className="bg-cream pt-20 lg:pt-24 pb-10 lg:pb-14">
         <div className="container-site">

@@ -10,7 +10,6 @@ import { CampaignActions } from "./_components/CommsControls";
 import { ButtonLink } from "../../_components/ui/Button";
 import { SettingsCard, type CommsSettings } from "./_components/SettingsCard";
 import { TYPE } from "@/lib/admin/typeScale";
-import DraftAudience from "@/app/admin/comms/_components/DraftAudience";
 import Notice from "../../_components/ui/Notice";
 import type { SegmentOption } from "@/app/admin/comms/_components/AudienceBuilder";
 import { requirePagePermission } from "@/app/admin/_components/PermissionGate";
@@ -140,13 +139,14 @@ export default async function CommsPage({
   return (
     <div className="min-h-screen bg-ink">
       <div className="max-w-[1400px] px-4 lg:px-8 py-6 lg:py-8 space-y-6">
-        <PageHeader title="Emails" subtitle="Email your donor segments" />
+        <PageHeader title="Emails" subtitle="Write to a list of your people, one email each" />
 
         {highlighted && highlighted.status === "draft" && (
           <Notice tone="info" title={`"${highlighted.name}" is ready for review.`}>
             {highlighted.segment_id
-              ? "Send yourself a test, then Send or Schedule. The confirm shows exactly how many people it reaches."
-              : "Choose who it goes to (the count updates as you build it), send yourself a test, then send."}
+              ? "Open it to look through the preview and send yourself a test, then send."
+              : "Open it and choose the list it goes to. You can build a new list right there."}{" "}
+            <Link href={`/admin/comms/emails/${highlighted.id}/edit`} className="font-semibold underline">Open the draft</Link>
           </Notice>
         )}
 
@@ -205,12 +205,14 @@ export default async function CommsPage({
                     <div className="text-xs text-ink-3 truncate">
                       {fromEdition.has(c.id) ? `From the edition "${fromEdition.get(c.id)}" · ` : ""}
                       {c.subject}
-                      {c.segment?.name ? ` · ${c.segment.name}` : " · no audience yet"}
+                      {c.segment?.name ? ` · to ${c.segment.name}` : " · no list chosen yet"}
                     </div>
                   </div>
                   <CampaignStatus c={c} />
                   {c.status === "draft" && (
-                    <DraftAudience campaignId={c.id} segments={segments} segmentId={c.segment_id} autoOpen={c.id === draftParam && !c.segment_id} />
+                    <ButtonLink href={`/admin/comms/emails/${c.id}/edit`} size="sm">
+                      {c.segment_id ? "Open" : "Choose a list"}
+                    </ButtonLink>
                   )}
                   <CampaignActions id={c.id} status={c.status} hasSegment={!!c.segment_id} />
                 </li>

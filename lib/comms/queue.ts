@@ -35,7 +35,7 @@ export async function startCampaign(
     .maybeSingle();
   if (!campaign) return { ok: false, status: 404, error: "Not found" };
   if (campaign.status !== "draft") return { ok: false, status: 409, error: "Only a draft can be sent or scheduled." };
-  if (!campaign.segment_id) return { ok: false, status: 400, error: "Attach a segment first" };
+  if (!campaign.segment_id) return { ok: false, status: 400, error: "Choose a list first." };
 
   // V4 Stage D: an edition's email carries story text frozen at compile. A
   // consent revoked or expired since then stops it here (and again per copy
@@ -54,12 +54,12 @@ export async function startCampaign(
   const seg = await resolveCampaignSegment(supabase, orgId, campaign.segment_id);
   if (!seg.ok) return seg;
   const { recipients, excluded } = seg;
-  if (recipients.length === 0) return { ok: false, status: 400, error: "Segment has no emailable recipients" };
+  if (recipients.length === 0) return { ok: false, status: 400, error: "No one on this list can be emailed." };
   if (recipients.length > MAX_RECIPIENTS) {
     return {
       ok: false,
       status: 400,
-      error: `Segment resolves to ${recipients.length} recipients (cap ${MAX_RECIPIENTS}). Narrow it first.`,
+      error: `This list has ${recipients.length} people. One email can go to ${MAX_RECIPIENTS} at most. Narrow it first.`,
     };
   }
 
@@ -130,7 +130,7 @@ async function resolveCampaignSegment(
     .eq("org_id", orgId)
     .eq("id", segmentId)
     .maybeSingle();
-  if (!seg) return { ok: false, status: 400, error: "Segment not found" };
+  if (!seg) return { ok: false, status: 400, error: "That list wasn't found." };
   const resolved = await resolveRecipients(supabase, seg.definition, orgId);
   if (resolved.error) return { ok: false, status: 400, error: resolved.error };
   return { ok: true, ...resolved };
@@ -154,7 +154,7 @@ export async function previewCampaign(
     .eq("id", campaignId)
     .maybeSingle();
   if (!campaign) return { ok: false, status: 404, error: "Not found" };
-  if (!campaign.segment_id) return { ok: false, status: 400, error: "Attach a segment first" };
+  if (!campaign.segment_id) return { ok: false, status: 400, error: "Choose a list first." };
   const storyBlock = await campaignStoryBlockForOrg(orgId, campaignId);
   if (storyBlock) return { ok: false, status: 409, error: storyBlock };
   const seg = await resolveCampaignSegment(supabase, orgId, campaign.segment_id);

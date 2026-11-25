@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Button from "../../_components/ui/Button";
 import Card from "../../_components/ui/Card";
@@ -9,8 +10,10 @@ import Notice from "../../_components/ui/Notice";
 import { SelectField, TextField, DateField, TextareaField } from "../../_components/ui/Field";
 import { useSaveAction } from "../../_lib/useSaveAction";
 import { useConfirm } from "../../_components/feedback/ConfirmProvider";
+import { useToast } from "../../_components/feedback/ToastProvider";
 import { TYPE } from "@/lib/admin/typeScale";
 import { STARTS, startOf, withStart, tidy, type ListDefinition, type StartValue } from "@/lib/comms/lists";
+import { normalizeTag } from "@/lib/comms/tags";
 
 /**
  * Build a list and watch who is on it (specs/comms-v3-composer.md). Three
@@ -50,14 +53,19 @@ export default function ListBuilder({
   id,
   initialName,
   initialDefinition,
+  forEmail = null,
 }: {
   id?: string;
   initialName: string;
   initialDefinition: ListDefinition;
+  /** Set when the builder was opened from an email: a draft's id, or "new"
+   *  for an email not saved yet. Saving goes back there with the list chosen. */
+  forEmail?: string | null;
 }) {
   const router = useRouter();
   const save = useSaveAction();
   const confirm = useConfirm();
+  const toast = useToast();
   const [name, setName] = useState(initialName);
   const [def, setDef] = useState<ListDefinition>(tidy(initialDefinition));
   const [preview, setPreview] = useState<Preview | null>(null);
@@ -73,6 +81,23 @@ export default function ListBuilder({
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteBusy, setPasteBusy] = useState(false);
   const [pasteResult, setPasteResult] = useState<{ added: number; unmatched: string[] } | null>(null);
+
+  // Tags: the library to pick from, and tagging everyone on this list.
+  const [library, setLibrary] = useState<Array<{ tag: string; count: number }>>([]);
+  const [tagAll, setTagAll] = useState("");
+  const [tagBusy, setTagBusy] = useState(false);
+  const loadLibrary = async () => {
+    try {
+      const res = await fetch("/api/admin/tags");
+      const j = (await res.json()) as { tags?: Array<{ tag: string; count: number }> };
+      if (res.ok) setLibrary(j.tags ?? []);
+    } catch {
+      /* the picker just stays empty */
+    }
+  };
+  useEffect(() => {
+    void loadLibrary();
+  }, []);
 
   const start = startOf(def);
   const current = tidy(def);
@@ -156,6 +181,39 @@ export default function ListBuilder({
     });
   const putBack = (pid: string) => change((prev) => ({ ...prev, exclude_ids: (prev.exclude_ids ?? []).filter((x) => x !== pid) }));
 
+  const picked = def.tags ?? [];
+  const toggleTag = (t: string) =>
+    change((prev) => {
+      const cur = prev.tags ?? [];
+      const on = cur.some((x) => x.toLowerCase() === t.toLowerCase());
+      return { ...prev, tags: on ? cur.filter((x) => x.toLowerCase() !== t.toLowerCase()) : [...cur, t] };
+    });
+  // A list's own tags stay pickable even if nobody carries them any more.
+  const tagChoices = [...library.map((l) => l.tag), ...picked.filter((t) => !library.some((l) => l.tag.toLowerCase() === t.toLowerCase()))];
+
+  const tagEveryone = async () => {
+    const name = normalizeTag(tagAll);
+    // Only ever tag the list that is on screen, never one still being counted.
+    if (!name || !preview || loading || preview.error) return;
+    const leftOutCount = preview.excluded.noEmail + preview.excluded.suppressed + preview.excluded.doNotContact;
+    const total = preview.recipients + leftOutCount;
+    const ok = await confirm({
+      title: `Tag ${count(total, "person", "people")} "${name}"?`,
+      body: `That is the ${count(preview.recipients, "person", "people")} shown${leftOutCount ? `, plus ${leftOutCount} on this list who can't be emailed` : ""}. You can take the tag off again from Tags.`,
+      confirmLabel: "Tag them",
+    });
+    if (!ok) return;
+    setTagBusy(true);
+    const r = await save<{ people: number; changed: number }>({
+      request: { url: "/api/admin/tags", method: "POST", body: { add: [name], definition: current } },
+    });
+    setTagBusy(false);
+    if (!r.ok) return;
+    toast.success(`${r.data.people.toLocaleString("en-US")} ${r.data.people === 1 ? "person is" : "people are"} now tagged "${name}".`);
+    setTagAll("");
+    void loadLibrary();
+  };
+
   const matchPasted = async () => {
     setPasteBusy(true);
     setPasteResult(null);
@@ -183,7 +241,17 @@ export default function ListBuilder({
       return;
     }
     const listId = id ?? r.data.id;
-    router.push(then === "write" && listId ? `/admin/comms/emails/compose?list=${listId}` : "/admin/comms/lists");
+    if (then === "write" && listId && forEmail && forEmail !== "new") {
+      // Attach it to the draft this was opened from, then go back to it.
+      const a = await save({ request: { url: `/api/admin/comms/${forEmail}`, method: "PATCH", body: { segment_id: listId } } });
+      if (!a.ok) {
+        setBusy("");
+        return;
+      }
+      router.push(`/admin/comms/emails/${forEmail}/edit`);
+    } else {
+      router.push(then === "write" && listId ? `/admin/comms/emails/compose?list=${listId}` : "/admin/comms/lists");
+    }
     router.refresh();
   };
 
@@ -252,7 +320,43 @@ export default function ListBuilder({
               <SelectField label="Kind" options={TYPE_OPTIONS} value={def.type ?? ""} onChange={(e) => set("type", e.target.value)} />
               <DateField label="Last gift on or after" value={def.since ?? ""} onChange={(e) => set("since", e.target.value)} />
               <DateField label="Last gift before" value={def.before ?? ""} onChange={(e) => set("before", e.target.value)} />
-              <TextField label="Tag" hint="Exactly as it is written on the record" value={def.tag ?? ""} onChange={(e) => set("tag", e.target.value)} />
+            </div>
+            <div className="mt-3">
+              <p className={`${TYPE.fieldLabel} mb-1.5`}>Has any of these tags</p>
+              {tagChoices.length === 0 ? (
+                <p className={TYPE.metadata}>
+                  No tags yet. <Link href="/admin/comms/tags" target="_blank" className="font-semibold text-orange">Tag some people</Link> (opens in a new tab) and they show up here.
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5" role="group" aria-label="Has any of these tags">
+                  {tagChoices.map((t) => {
+                    const on = picked.some((x) => x.toLowerCase() === t.toLowerCase());
+                    const n = library.find((l) => l.tag.toLowerCase() === t.toLowerCase())?.count;
+                    return (
+                      <button
+                        key={t}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() => toggleTag(t)}
+                        className={`min-h-[36px] rounded-full border px-3 text-xs font-semibold transition-colors ${
+                          on ? "border-orange bg-orange/10 text-ink-1" : "border-hairline bg-surface text-ink-2 hover:bg-tile"
+                        }`}
+                      >
+                        {t}
+                        {n !== undefined ? <span className="ml-1.5 font-normal text-ink-3">{n.toLocaleString("en-US")}</span> : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {def.tag ? (
+                <p className={`${TYPE.metadata} mt-2`}>
+                  Also narrowed to the tag &ldquo;{def.tag}&rdquo;.{" "}
+                  <button type="button" className="font-semibold text-orange" onClick={() => set("tag", "")}>
+                    Remove
+                  </button>
+                </p>
+              ) : null}
             </div>
           </Card>
         )}
@@ -337,7 +441,7 @@ export default function ListBuilder({
           <TextField label="List name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Gave in 2025, not yet this year" maxLength={120} />
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <Button size="lg" loading={busy === "write"} disabled={!name.trim() || !sendable || busy !== ""} onClick={() => void persist("write")}>
-              Save and write an email
+              {forEmail ? "Save and use for this email" : "Save and write an email"}
             </Button>
             <Button size="lg" variant="secondary" loading={busy === "save"} disabled={!name.trim() || !!preview?.error || busy !== "" || (!!id && !dirty)} onClick={() => void persist("list")}>
               {id ? "Save changes" : "Save list"}
@@ -430,6 +534,23 @@ export default function ListBuilder({
               </div>
             )}
           </>
+        )}
+
+        {preview && !preview.error && preview.recipients > 0 && (
+          <div className="px-4 py-3 border-t border-hairline flex flex-wrap items-end gap-2">
+            <TextField
+              label="Tag everyone on this list"
+              controlSize="md"
+              className="flex-1 min-w-[12rem]"
+              value={tagAll}
+              onChange={(e) => setTagAll(e.target.value)}
+              placeholder="e.g. Fall appeal 2026"
+              maxLength={40}
+            />
+            <Button variant="secondary" loading={tagBusy} disabled={!normalizeTag(tagAll) || loading} onClick={() => void tagEveryone()}>
+              Tag them
+            </Button>
+          </div>
         )}
 
         {preview && preview.removed.length > 0 && (

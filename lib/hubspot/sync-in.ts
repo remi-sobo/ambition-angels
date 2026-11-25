@@ -18,6 +18,7 @@ import type { HubSpotRecord } from "./fetchers";
 const CONTACT_PROPS = [
   "email", "firstname", "lastname", "phone", "company",
   "lifecyclestage", "hs_lead_status", "hubspot_owner_id", "notes_last_updated", "createdate",
+  "hs_email_hard_bounce_reason_enum", "hs_email_optout",
 ].join(",");
 const COMPANY_PROPS = ["name", "domain", "industry", "hubspot_owner_id", "hs_last_activity_date", "createdate"].join(",");
 

@@ -31,7 +31,7 @@ No BloomOS Supabase key of any kind. Keep it that way: the website's trimmed cod
 
 ## Before the day
 
-1. **Let the forms run a week through BloomOS.** Earliest split day: Monday 2026-11-30. Each day, check that the outbox in the website admin (Forms) is empty and that new submissions show in BloomOS.
+1. **Let the forms run a week through BloomOS.** Split day: **Sunday 2026-11-29, evening Pacific** (Remi chose it 2026-11-25). Each day, check that the outbox in the website admin (Forms) is empty and that new submissions show in BloomOS.
 2. **Optional, with Remi's yes:** send one test submission of each form kind (application, schools inquiry, partner signup, partner waitlist, coach signup, YGB, Demo Day, quiz) and delete the rows after. Each one emails Remi, so warn first.
 3. **Prepare the Ambition Angels trim on a branch** (spec phase 3 step 3), opened as a draft PR against `main`. Vercel builds it on the `ambition-angels-site` project at a `*.vercel.app` preview address, so the whole website can be tested there before the day:
    - every public page, with no console errors

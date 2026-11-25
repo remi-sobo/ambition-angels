@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/admin/requirePermission";
-import { resolveRecipients, parseSegmentDefinition } from "@/lib/fundraising/segments";
+import { resolveRecipients, parseSegmentDefinition, ID_CHUNK } from "@/lib/fundraising/segments";
 import { constituentName } from "@/lib/fundraising/display";
 import { MAX_RECIPIENTS } from "@/lib/comms/queue-plan";
 
@@ -37,14 +37,16 @@ export async function POST(req: NextRequest) {
   const parsed = parseSegmentDefinition(definition);
   const removedIds = parsed.ok ? (parsed.def.exclude_ids ?? []).slice(0, 200) : [];
   let removed: Array<{ id: string; name: string }> = [];
-  if (removedIds.length) {
+  for (let i = 0; i < removedIds.length; i += ID_CHUNK) {
     const { data } = await supabase
       .from("v_fr_rollups")
       .select("id, type, first_name, last_name, org_name")
       .eq("org_id", orgId)
-      .in("id", removedIds);
-    removed = ((data ?? []) as Array<{ id: string; type: string; first_name: string | null; last_name: string | null; org_name: string | null }>).map(
-      (c) => ({ id: c.id, name: constituentName(c) })
+      .in("id", removedIds.slice(i, i + ID_CHUNK));
+    removed = removed.concat(
+      ((data ?? []) as Array<{ id: string; type: string; first_name: string | null; last_name: string | null; org_name: string | null }>).map(
+        (c) => ({ id: c.id, name: constituentName(c) })
+      )
     );
   }
 

@@ -38,8 +38,9 @@ export async function GET(req: NextRequest) {
     // "Ana Lopez" should find first name Ana, last name Lopez.
     const [first, ...rest] = q.split(" ");
     const last = rest.join(" ");
+    // ...and "Acme Foundation" should still find the organization.
     query = last
-      ? query.ilike("first_name", `%${first}%`).ilike("last_name", `%${last}%`)
+      ? query.or(`and(first_name.ilike.%${first}%,last_name.ilike.%${last}%),org_name.ilike.%${q}%`)
       : query.or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%,org_name.ilike.%${q}%`);
   }
   const { data, error } = await query.order("last_name").limit(8);

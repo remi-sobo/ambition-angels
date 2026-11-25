@@ -1,6 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { buildCampaignEmail } from "@/lib/fundraising/comms-email";
-import { mergeText, EMPTY_MERGE, type MergeData } from "./merge";
+import { mergeText, fullNameOf, EMPTY_MERGE, type MergeData } from "./merge";
 import { loadOrgCommsSettings, sendBlocker, type OrgCommsSettings } from "./settings";
 import { transportFor, TransportError, type Transport } from "./transport";
 import { outcomeFor, PACE, WORKER_BUDGET_MS } from "./queue-plan";
@@ -123,6 +123,13 @@ async function drainOrg(
 
     const suppressed = await suppressedEmails(admin, orgId, rows);
     const mergeData = await mergeDataFor(admin, orgId, rows);
+    // Without merge data a field would send blank or skip people for good.
+    // Hand the batch back untouched and try again next tick.
+    if (!mergeData) {
+      await requeue(admin, orgId, rows.map((r) => r.id));
+      result.requeued += rows.length;
+      return;
+    }
     let stop = false;
 
     for (let i = 0; i < rows.length; i += pace.concurrency) {
@@ -258,7 +265,7 @@ async function suppressedEmails(admin: Admin, orgId: string, rows: ClaimedRow[])
 }
 
 /** Merge-field data for a claimed batch, read live from the rollup view. */
-async function mergeDataFor(admin: Admin, orgId: string, rows: ClaimedRow[]): Promise<Map<string, MergeData>> {
+async function mergeDataFor(admin: Admin, orgId: string, rows: ClaimedRow[]): Promise<Map<string, MergeData> | null> {
   const out = new Map<string, MergeData>();
   const ids = Array.from(new Set(rows.map((r) => r.constituent_id).filter((id): id is string => !!id)));
   if (ids.length === 0) return out;
@@ -269,15 +276,14 @@ async function mergeDataFor(admin: Admin, orgId: string, rows: ClaimedRow[]): Pr
     .in("id", ids);
   if (error) {
     console.error(`[comms-queue] merge data read failed for org ${orgId}:`, error.message);
-    return out;
+    return null;
   }
   type R = { id: string; first_name: string | null; last_name: string | null; org_name: string | null; lifetime_total: number | null; gift_count: number | null; last_gift: string | null };
   for (const c of (data ?? []) as R[]) {
-    const full = [c.first_name, c.last_name].filter(Boolean).join(" ").trim() || c.org_name || null;
     out.set(c.id, {
       first_name: c.first_name,
       last_name: c.last_name,
-      full_name: full,
+      full_name: fullNameOf(c),
       last_gift: c.last_gift,
       lifetime_total: c.lifetime_total === null ? null : Number(c.lifetime_total),
       gift_count: c.gift_count === null ? null : Number(c.gift_count),

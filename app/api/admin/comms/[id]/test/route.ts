@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
-import { resolveRecipients, recipientMergeData } from "@/lib/fundraising/segments";
+import { resolveRecipients, recipientMergeData, previewPool, type RecipientFilter } from "@/lib/fundraising/segments";
 import { buildCampaignEmail } from "@/lib/fundraising/comms-email";
 import { mergeText, EMPTY_MERGE, type MergeData } from "@/lib/comms/merge";
 import { loadOrgCommsSettings, sendBlocker } from "@/lib/comms/settings";
@@ -47,14 +47,15 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   // same name order the preview uses.
   let sample: MergeData = { ...EMPTY_MERGE, first_name: "there" };
   const index = Math.max(0, Number(body?.index) || 0);
+  const only: RecipientFilter = body?.only === "no_first_name" || body?.only === "never_gave" ? body.only : "all";
   if (c.segment_id) {
     const { data: seg } = await supabase.from("segments").select("definition").eq("org_id", ctx.orgId).eq("id", c.segment_id).maybeSingle();
     if (seg) {
       // A definition the resolver can't apply resolves to nobody, so the
       // generic greeting stands in. The real send refuses it.
       const { recipients } = await resolveRecipients(supabase, seg.definition, ctx.orgId);
-      const sorted = [...recipients].sort((a, b) => a.name.localeCompare(b.name));
-      const pick = sorted[Math.min(index, sorted.length - 1)];
+      const pool = previewPool(recipients, only);
+      const pick = pool[Math.min(index, pool.length - 1)];
       if (pick) sample = recipientMergeData(pick);
     }
   }

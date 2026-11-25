@@ -46,8 +46,17 @@ const LABEL = new Map<string, string>(MERGE_FIELDS.map((f) => [f.key, f.label]))
  *  V1 campaigns rely on it). Every other field has no built-in fallback. */
 const BUILT_IN_FALLBACK: Partial<Record<MergeFieldKey, string>> = { first_name: "friend" };
 
-// {{ key }} or {{ key | fallback words }}
-const TOKEN = /\{\{\s*([^{}|]*?)\s*(?:\|([^{}]*))?\}\}/g;
+// {{ key }} or {{ key | fallback words }}. No optional-whitespace groups:
+// the name is trimmed in code, which keeps the match linear on long input.
+const TOKEN = /\{\{([^{}|]*)(?:\|([^{}]*))?\}\}/g;
+
+/** A person's or organization's name for {{full_name}}, or null when the
+ *  record has none. ONE definition, used by the pre-send check, the preview
+ *  and the worker, so all three agree on who has a name. */
+export function fullNameOf(c: { first_name?: string | null; last_name?: string | null; org_name?: string | null }): string | null {
+  const person = [c.first_name, c.last_name].map((p) => (p ?? "").trim()).filter(Boolean).join(" ");
+  return person || (c.org_name ?? "").trim() || null;
+}
 
 export const EMPTY_MERGE: MergeData = {
   first_name: null, last_name: null, full_name: null, last_gift: null, lifetime_total: null, gift_count: null,
@@ -92,7 +101,7 @@ export function mergeText(text: string, data: MergeData): MergeResult {
   const missing = new Set<MergeFieldKey>();
   const fellBack = new Set<MergeFieldKey>();
   const out = text.replace(TOKEN, (raw, name: string, fallback: string | undefined) => {
-    const key = name.toLowerCase();
+    const key = name.trim().toLowerCase();
     if (!KNOWN.has(key)) return raw;
     const k = key as MergeFieldKey;
     const value = fieldValue(k, data);
@@ -115,7 +124,7 @@ export function scanFields(text: string): { used: FieldUse[]; unknown: string[] 
   const used = new Map<string, FieldUse>();
   const unknown = new Set<string>();
   for (const m of Array.from(text.matchAll(TOKEN))) {
-    const key = m[1].toLowerCase();
+    const key = m[1].trim().toLowerCase();
     if (!KNOWN.has(key)) {
       unknown.add(m[0]);
       continue;
@@ -170,6 +179,11 @@ export function checkMerge(subject: string, body: string, recipients: MergeData[
     );
   }
   for (const f of fields) {
+    // Links are numbered from the message as written, so a link that only
+    // exists for some people would send everyone after it to the wrong page.
+    if (f.fallback && /:\/\/|www\./i.test(f.fallback)) {
+      blockers.push(`The words to use instead of ${f.label.toLowerCase()} can't contain a link. Put the link in the message itself.`);
+    }
     if (f.missingCount > 0) {
       blockers.push(
         `${people(f.missingCount)} on this list ${f.missingCount === 1 ? "has" : "have"} no ${f.label.toLowerCase()}. Add words to use instead, like {{${f.key}|your words}}, or pick a list where everyone has one.`

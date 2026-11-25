@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/admin/requirePermission";
-import { resolveRecipients, recipientMergeData, type Recipient } from "@/lib/fundraising/segments";
+import { resolveRecipients, recipientMergeData, previewPool, type Recipient, type RecipientFilter } from "@/lib/fundraising/segments";
 import { campaignHtml } from "@/lib/fundraising/comms-email";
 import { loadOrgCommsSettings, sendBlocker } from "@/lib/comms/settings";
 import { getGmailConnectionStatus } from "@/lib/comms/gmail-connection";
@@ -19,13 +19,7 @@ import { MAX_RECIPIENTS, spreadMessage } from "@/lib/comms/queue-plan";
 
 const isUuid = (v: unknown): v is string => typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v);
 
-type Only = "all" | "no_first_name" | "never_gave";
-
-function narrow(recipients: Recipient[], only: Only): Recipient[] {
-  if (only === "no_first_name") return recipients.filter((r) => !r.firstName.trim());
-  if (only === "never_gave") return recipients.filter((r) => r.giftCount === 0);
-  return recipients;
-}
+type Only = RecipientFilter;
 
 export async function POST(req: NextRequest) {
   const gate = await requirePermission("fundraising.read", { entitlement: "modules.comms" });
@@ -56,8 +50,7 @@ export async function POST(req: NextRequest) {
       listError = r.error ?? null;
     }
   }
-  const sorted = [...recipients].sort((a, b) => a.name.localeCompare(b.name));
-  const pool = narrow(sorted, only);
+  const pool = previewPool(recipients, only);
   const index = pool.length ? Math.min(Math.max(0, Number(body.index) || 0), pool.length - 1) : 0;
   const person = pool[index] ?? null;
 

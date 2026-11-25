@@ -197,7 +197,7 @@ export default function Composer({
       const res = await fetch(`/api/admin/comms/${draftId}/test`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, index: only === "all" ? index : 0 }),
+        body: JSON.stringify({ email, index: preview?.index ?? index, only }),
       });
       const j = await res.json().catch(() => ({}));
       if (res.ok) {
@@ -216,10 +216,19 @@ export default function Composer({
   };
 
   const send = async (when: Date | null) => {
+    // What goes out is the saved draft, so it must be what is on screen.
+    if (!subject.trim() || !body.trim()) {
+      toast.error("Add a subject and a message first.");
+      return;
+    }
     setBusy("send");
     try {
       const draftId = await saveNow();
       if (!draftId) return;
+      if (subject.trim() !== saved.current.subject.trim() || body !== saved.current.body || segmentId !== saved.current.segmentId) {
+        toast.error("Your latest changes didn't save. Nothing was sent. Try again in a moment.");
+        return;
+      }
       const pre = await fetch(`/api/admin/comms/${draftId}/send`, { method: "GET" });
       const pj = (await pre.json().catch(() => ({}))) as { recipients?: number; error?: string };
       if (!pre.ok) {
@@ -274,8 +283,9 @@ export default function Composer({
     { value: "no_first_name", label: `No first name (${(preview?.list.no_first_name ?? 0).toLocaleString("en-US")})` },
     { value: "never_gave", label: `Never gave (${(preview?.list.never_gave ?? 0).toLocaleString("en-US")})` },
   ];
+  const unsavable = !subject.trim() || !body.trim();
   const saveLabel =
-    saveState === "saving" ? "Saving" : saveState === "saved" ? "Draft saved" : saveState === "error" ? "Not saved. It will try again." : "Not saved yet";
+    unsavable ? "Not saved: needs a subject and a message" : saveState === "saving" ? "Saving" : saveState === "saved" ? "Draft saved" : saveState === "error" ? "Not saved. It will try again." : "Not saved yet";
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-6 items-start">

@@ -155,6 +155,7 @@ export const V2_DESTINATIONS: V2Destination[] = [
       { key: "stories", label: "Stories", href: "/admin/comms/stories", feature: "modules.comms" },
       { key: "editions", label: "Editions", href: "/admin/comms/editions", feature: "modules.comms" },
       { key: "emails", label: "Emails", href: "/admin/comms/emails", feature: "modules.comms" },
+      { key: "lists", label: "Lists", href: "/admin/comms/lists", feature: "modules.comms" },
       { key: "automations", label: "Automations", href: "/admin/comms/automations", feature: "modules.comms" },
       { key: "settings", label: "Settings", href: "/admin/comms/settings", feature: "modules.comms" },
     ],

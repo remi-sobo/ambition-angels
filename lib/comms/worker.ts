@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { personalize, buildCampaignEmail } from "@/lib/fundraising/comms-email";
+import { buildCampaignEmail } from "@/lib/fundraising/comms-email";
+import { mergeText, fullNameOf, EMPTY_MERGE, type MergeData } from "./merge";
 import { loadOrgCommsSettings, sendBlocker, type OrgCommsSettings } from "./settings";
 import { transportFor, TransportError, type Transport } from "./transport";
 import { outcomeFor, PACE, WORKER_BUDGET_MS } from "./queue-plan";
@@ -121,6 +122,14 @@ async function drainOrg(
     if (rows.length === 0) return;
 
     const suppressed = await suppressedEmails(admin, orgId, rows);
+    const mergeData = await mergeDataFor(admin, orgId, rows);
+    // Without merge data a field would send blank or skip people for good.
+    // Hand the batch back untouched and try again next tick.
+    if (!mergeData) {
+      await requeue(admin, orgId, rows.map((r) => r.id));
+      result.requeued += rows.length;
+      return;
+    }
     let stop = false;
 
     for (let i = 0; i < rows.length; i += pace.concurrency) {
@@ -132,7 +141,7 @@ async function drainOrg(
         continue;
       }
       const outcomes = await Promise.all(
-        slice.map((row) => sendOne(admin, settings, transport, row, suppressed, campaigns))
+        slice.map((row) => sendOne(admin, settings, transport, row, suppressed, campaigns, mergeData))
       );
       for (const o of outcomes) {
         result[o.counter] += 1;
@@ -152,7 +161,8 @@ async function sendOne(
   transport: Transport,
   row: ClaimedRow,
   suppressed: Set<string>,
-  campaigns: Map<string, CampaignContent | null>
+  campaigns: Map<string, CampaignContent | null>,
+  mergeData: Map<string, MergeData>
 ): Promise<Outcome> {
   const finish = (patch: Record<string, unknown>) =>
     admin.from("email_sends").update(patch).eq("org_id", row.org_id).eq("id", row.id);
@@ -183,12 +193,24 @@ async function sendOne(
     await admin.from("email_sends").update({ tracking_token: trackingToken }).eq("org_id", row.org_id).eq("id", row.id);
   }
 
+  // Merge fields, from the person's record as it is now. A record that has
+  // gone (archived since queueing) still has the first name saved at queue
+  // time. A field with no value and no fallback never goes out blank.
+  const data = (row.constituent_id && mergeData.get(row.constituent_id)) || { ...EMPTY_MERGE, first_name: row.first_name };
+  const subject = mergeText(content.subject, data);
+  const body = mergeText(content.body, data);
+  const missing = [...subject.missing, ...body.missing];
+  if (missing.length) {
+    await finish({ status: "skipped", error: `Left out: no ${missing[0].replace(/_/g, " ")} on their record, and the email has no words to use instead.` });
+    return { counter: "suppressed", stopOrg: false };
+  }
+
   try {
     const email = buildCampaignEmail({
       settings,
       to: row.email,
-      subject: content.subject,
-      bodyText: personalize(content.body, row.first_name ?? ""),
+      subject: subject.text,
+      bodyText: body.text,
       constituentId: row.constituent_id,
       campaignId: row.campaign_id,
       trackingToken,
@@ -238,6 +260,34 @@ async function suppressedEmails(admin: Admin, orgId: string, rows: ClaimedRow[])
       .eq("do_not_contact", true);
     const dncIds = new Set(((dnc ?? []) as Array<{ id: string }>).map((c) => c.id));
     for (const r of rows) if (r.constituent_id && dncIds.has(r.constituent_id)) out.add(r.email.toLowerCase());
+  }
+  return out;
+}
+
+/** Merge-field data for a claimed batch, read live from the rollup view. */
+async function mergeDataFor(admin: Admin, orgId: string, rows: ClaimedRow[]): Promise<Map<string, MergeData> | null> {
+  const out = new Map<string, MergeData>();
+  const ids = Array.from(new Set(rows.map((r) => r.constituent_id).filter((id): id is string => !!id)));
+  if (ids.length === 0) return out;
+  const { data, error } = await admin
+    .from("v_fr_rollups")
+    .select("id, first_name, last_name, org_name, lifetime_total, gift_count, last_gift")
+    .eq("org_id", orgId)
+    .in("id", ids);
+  if (error) {
+    console.error(`[comms-queue] merge data read failed for org ${orgId}:`, error.message);
+    return null;
+  }
+  type R = { id: string; first_name: string | null; last_name: string | null; org_name: string | null; lifetime_total: number | null; gift_count: number | null; last_gift: string | null };
+  for (const c of (data ?? []) as R[]) {
+    out.set(c.id, {
+      first_name: c.first_name,
+      last_name: c.last_name,
+      full_name: fullNameOf(c),
+      last_gift: c.last_gift,
+      lifetime_total: c.lifetime_total === null ? null : Number(c.lifetime_total),
+      gift_count: c.gift_count === null ? null : Number(c.gift_count),
+    });
   }
   return out;
 }

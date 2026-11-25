@@ -54,7 +54,7 @@ export function CampaignActions({ id, status, hasSegment }: { id: string; status
       return;
     } finally { setBusy(false); }
     if (preview.recipients === 0) {
-      toast.error("This segment has no one to email.");
+      toast.error("No one on this list can be emailed.");
       return;
     }
     const people = `${preview.recipients.toLocaleString("en-US")} ${preview.recipients === 1 ? "person" : "people"}`;
@@ -64,9 +64,9 @@ export function CampaignActions({ id, status, hasSegment }: { id: string; status
       suppressed ? `${suppressed} unsubscribed or bounced` : "",
       noEmail ? `${noEmail} with no email` : "",
     ].filter(Boolean);
-    const leftOutLine = leftOut.length ? ` Left out: ${leftOut.join(", ")}.` : " No one in the segment is left out.";
+    const leftOutLine = leftOut.length ? ` Left out: ${leftOut.join(", ")}.` : " No one on the list is left out.";
     const capLine = preview.recipients > preview.maxRecipients
-      ? ` That is over the ${preview.maxRecipients.toLocaleString("en-US")} limit, so it will be refused. Narrow the segment first.`
+      ? ` That is over the ${preview.maxRecipients.toLocaleString("en-US")} limit, so it will be refused. Narrow the list first.`
       : "";
     const ok = await confirm({
       title: when
@@ -170,7 +170,7 @@ export function CampaignActions({ id, status, hasSegment }: { id: string; status
       {status === "draft" && (
         <button
           disabled={busy || !hasSegment}
-          title={hasSegment ? undefined : "Attach a segment first"}
+          title={hasSegment ? undefined : "Open the draft and choose a list first"}
           onClick={() => send(null)}
           className="text-xs font-semibold text-revenue hover:text-revenue transition-colors disabled:opacity-40"
         >
@@ -180,7 +180,7 @@ export function CampaignActions({ id, status, hasSegment }: { id: string; status
       {status === "draft" && (
         <button
           disabled={busy || !hasSegment}
-          title={hasSegment ? undefined : "Attach a segment first"}
+          title={hasSegment ? undefined : "Open the draft and choose a list first"}
           onClick={() => setScheduleAt("")}
           className="text-xs font-semibold text-ink-2 hover:text-ink-1 transition-colors disabled:opacity-40"
         >

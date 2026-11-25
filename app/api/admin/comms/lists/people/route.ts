@@ -3,6 +3,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/admin/requirePermission";
 import { constituentName } from "@/lib/fundraising/display";
 import { sanitizeQuery } from "@/lib/fundraising/views";
+import { emailsIn, matchEmails } from "@/lib/admin/tags-server";
 
 /**
  * Finding people to put on a list by hand (specs/comms-v3-composer.md).
@@ -53,38 +54,12 @@ export async function POST(req: NextRequest) {
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   const text = typeof body?.emails === "string" ? body.emails : "";
-  // Anything that looks like an address, wherever it sits in what was pasted
-  // (a column from a spreadsheet, "Ana <ana@x.org>", a comma list).
-  const found = Array.from(new Set((text.match(/[^\s@,;<>()"']+@[^\s@,;<>()"']+\.[^\s@,;<>()"']+/g) ?? []).map((e) => e.toLowerCase())));
+  const found = emailsIn(text);
   if (found.length === 0) return NextResponse.json({ error: "No email addresses found in what you pasted." }, { status: 400 });
   if (found.length > MAX_PASTED) {
     return NextResponse.json({ error: `That is ${found.length.toLocaleString("en-US")} addresses. Paste up to ${MAX_PASTED.toLocaleString("en-US")} at a time.` }, { status: 400 });
   }
-
-  // Read the org's people once and match in memory: addresses live in an
-  // array column, and a few thousand rows is cheaper than a query per address.
-  const supabase = createServerSupabase();
-  const byEmail = new Map<string, Row>();
-  for (let from = 0; from < 50_000; from += 1000) {
-    const { data, error } = await supabase
-      .from("v_fr_rollups")
-      .select(COLUMNS)
-      .eq("org_id", gate.ctx.orgId)
-      .is("archived_at", null)
-      .order("id")
-      .range(from, from + 999);
-    if (error) return NextResponse.json({ error: "Couldn't read your people just now." }, { status: 500 });
-    const page = (data ?? []) as Row[];
-    for (const c of page) for (const e of c.emails ?? []) if (e && !byEmail.has(e.toLowerCase())) byEmail.set(e.toLowerCase(), c);
-    if (page.length < 1000) break;
-  }
-
-  const matched = new Map<string, { id: string; name: string; email: string | null }>();
-  const unmatched: string[] = [];
-  for (const e of found) {
-    const c = byEmail.get(e);
-    if (c) matched.set(c.id, shape(c));
-    else unmatched.push(e);
-  }
-  return NextResponse.json({ matched: Array.from(matched.values()), unmatched });
+  const r = await matchEmails(createServerSupabase(), gate.ctx.orgId, found);
+  if (r.error) return NextResponse.json({ error: "Couldn't read your people just now." }, { status: 500 });
+  return NextResponse.json({ matched: r.matched, unmatched: r.unmatched });
 }

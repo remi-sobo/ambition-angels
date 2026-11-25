@@ -50,6 +50,7 @@ export default async function ListsPage() {
         title="Lists"
         subtitle="Who your emails go to"
         primaryAction={<ButtonLink href="/admin/comms/lists/new" variant="primary">New list</ButtonLink>}
+        secondaryActions={<ButtonLink href="/admin/comms/tags">Tags</ButtonLink>}
       />
 
       <Card padded={false}>

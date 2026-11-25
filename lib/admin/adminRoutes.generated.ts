@@ -24,6 +24,7 @@ export const ADMIN_ROUTES: readonly string[] = [
   "/admin/comms/stories",
   "/admin/comms/stories/[id]",
   "/admin/comms/stories/new",
+  "/admin/comms/tags",
   "/admin/compliance",
   "/admin/compliance/[id]",
   "/admin/demoday",

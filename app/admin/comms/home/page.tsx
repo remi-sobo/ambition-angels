@@ -163,7 +163,7 @@ export default async function CommsHomePage() {
                   <p className={TYPE.metadata}>Scheduled · {e.scheduled_at ? fmtWhen(e.scheduled_at) : ""}</p>
                   <p className={TYPE.cardTitle}>{e.name}</p>
                   <p className={`${TYPE.bodyMuted} mt-0.5`}>
-                    To {e.segment?.name ?? "an audience"} · {e.recipient_count.toLocaleString("en-US")} people
+                    To {e.segment?.name ?? "a list"} · {e.recipient_count.toLocaleString("en-US")} people
                   </p>
                 </li>
               ))}

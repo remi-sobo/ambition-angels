@@ -9,7 +9,7 @@ import type { ListDefinition } from "@/lib/comms/lists";
 // Comms → Lists → one list (specs/comms-v3-composer.md).
 export const dynamic = "force-dynamic";
 
-export default async function ListPage({ params }: { params: { id: string } }) {
+export default async function ListPage({ params, searchParams = {} }: { params: { id: string }; searchParams?: Record<string, string | string[] | undefined> }) {
   const gate = await requirePagePermission("fundraising.read", "Comms", { entitlement: "modules.comms" });
   if (!gate.ok) return gate.page;
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();
@@ -20,6 +20,8 @@ export default async function ListPage({ params }: { params: { id: string } }) {
     .eq("id", params.id)
     .maybeSingle();
   if (!list) notFound();
+  const from = typeof searchParams.email === "string" ? searchParams.email : "";
+  const forEmail = from === "new" || /^[0-9a-f-]{36}$/i.test(from) ? from : null;
 
   return (
     <PageShell>
@@ -28,7 +30,7 @@ export default async function ListPage({ params }: { params: { id: string } }) {
         subtitle="Change who is on it. Emails already sent are not affected."
         breadcrumb={[{ label: "Lists", href: "/admin/comms/lists" }, { label: list.name as string }]}
       />
-      <ListBuilder id={list.id as string} initialName={list.name as string} initialDefinition={(list.definition ?? {}) as ListDefinition} />
+      <ListBuilder id={list.id as string} initialName={list.name as string} initialDefinition={(list.definition ?? {}) as ListDefinition} forEmail={forEmail} />
     </PageShell>
   );
 }

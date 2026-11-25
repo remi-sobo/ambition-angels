@@ -18,6 +18,7 @@
  * step (the long tail) is still running or the browser tab is closed early.
  */
 
+import { syncLifecycleTags } from "./lifecycle-tags";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { type AdminUser } from "@/lib/admin/auth";
 import { HubSpotError } from "@/lib/hubspot/client";
@@ -338,6 +339,10 @@ async function runSpineProjection(job: JobRow, step: Step): Promise<void> {
     // the refreshed mirror — never overwrites a name stored in BloomOS.
     const { error: nameErr } = await supabase().rpc("fr_backfill_constituent_names_from_hubspot");
     if (nameErr) throw new Error(nameErr.message);
+    // Lifecycle stages as tags ("HubSpot: Lead"), after the projection so
+    // newly created people are linked first.
+    const stages = await syncLifecycleTags(job.org_id);
+    if (stages.error) throw new Error(`lifecycle tags: ${stages.error}`);
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
     job.errors = [

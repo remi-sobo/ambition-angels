@@ -3,7 +3,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/admin/requirePermission";
 import { audit } from "@/lib/audit";
 import { resolveRecipients } from "@/lib/fundraising/segments";
-import { normalizeTags, TAGS_PER_CHANGE } from "@/lib/comms/tags";
+import { normalizeTags, HUBSPOT_STAGE_PREFIX, TAGS_PER_CHANGE } from "@/lib/comms/tags";
 import { applyTags, emailsIn, loadTagOverview, matchEmails } from "@/lib/admin/tags-server";
 
 /**
@@ -45,6 +45,12 @@ export async function POST(req: NextRequest) {
   if (add.length === 0 && remove.length === 0) return NextResponse.json({ error: "Name the tag to add or remove." }, { status: 400 });
   if ((Array.isArray(body.add) && body.add.length > TAGS_PER_CHANGE) || (Array.isArray(body.remove) && body.remove.length > TAGS_PER_CHANGE)) {
     return NextResponse.json({ error: `Up to ${TAGS_PER_CHANGE} tags at a time.` }, { status: 400 });
+  }
+
+  // Stage tags belong to the HubSpot sync: one per person, replaced at every
+  // sync. One added or removed by hand would be undone the next morning.
+  if ([...add, ...remove].some((t) => t.toLowerCase().startsWith(HUBSPOT_STAGE_PREFIX.toLowerCase()))) {
+    return NextResponse.json({ error: `Tags starting with "${HUBSPOT_STAGE_PREFIX.trim()}" are set by the HubSpot sync. Change the stage in HubSpot instead.` }, { status: 409 });
   }
 
   const supabase = createServerSupabase();

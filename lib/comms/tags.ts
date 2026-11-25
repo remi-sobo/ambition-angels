@@ -68,11 +68,11 @@ export type TagRow = { id: string; tags: string[] | null };
  * share a result (untagged people all become ["Board"]), so a change to
  * thousands of records is a handful of writes, not thousands.
  */
-export function planTagWrites(rows: TagRow[], next: (tags: string[]) => string[]): Array<{ tags: string[]; ids: string[] }> {
+export function planTagWrites<R extends TagRow>(rows: R[], next: (tags: string[], row: R) => string[]): Array<{ tags: string[]; ids: string[] }> {
   const groups = new Map<string, { tags: string[]; ids: string[] }>();
   for (const r of rows) {
     const before = r.tags ?? [];
-    const after = next(before);
+    const after = next(before, r);
     if (after.length === before.length && after.every((t, i) => t === before[i])) continue;
     const k = JSON.stringify(after);
     const g = groups.get(k) ?? { tags: after, ids: [] };
@@ -106,7 +106,14 @@ export function countTags(rows: TagRow[]): Array<{ tag: string; count: number }>
  *  here would be undone at the next sync, so the Tags page leaves them be.
  *  AIG: fr_sync_hubspot_to_spine re-adds it on every HubSpot sync. */
 export const SYSTEM_TAGS: readonly string[] = ["AIG"];
-export const isSystemTag = (tag: string) => SYSTEM_TAGS.some((t) => t.toLowerCase() === tag.trim().toLowerCase());
+/** HubSpot lifecycle stages arrive as tags with this prefix
+ *  (lib/hubspot/lifecycle-tags.ts), one per linked person, kept current by
+ *  every sync. */
+export const HUBSPOT_STAGE_PREFIX = "HubSpot: ";
+export const isSystemTag = (tag: string) => {
+  const t = tag.trim().toLowerCase();
+  return SYSTEM_TAGS.some((s) => s.toLowerCase() === t) || t.startsWith(HUBSPOT_STAGE_PREFIX.toLowerCase());
+};
 
 /** What BloomOS works out from gifts on record. Never stored. `start` is the
  *  list builder's starting point for the same people. */

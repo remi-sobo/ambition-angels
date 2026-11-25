@@ -83,7 +83,7 @@ describe("How-To", () => {
     expect(aa.map((d) => d.label)).toEqual([
       "Home", "Work", "Programs", "Fundraising", "Comms", "Finance", "Impact", "Organization", "Inbox",
     ]);
-    expect(aa.find((d) => d.key === "comms")!.tabs.map((t) => t.label)).toEqual(["Home", "Stories", "Editions", "Emails", "Settings"]);
+    expect(aa.find((d) => d.key === "comms")!.tabs.map((t) => t.label)).toEqual(["Home", "Stories", "Editions", "Emails", "Lists", "Settings"]);
     const nine = navHelp(resolveShellNav(NINE_KEY));
     expect(nine.map((d) => d.key)).not.toContain("comms");
     expect(nine.find((d) => d.key === "organization")!.tabs.map((t) => t.label)).toEqual(["Board", "Compliance"]);

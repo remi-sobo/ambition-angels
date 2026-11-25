@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { isAuthed, getOrgContext, getAdminUser } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
+import { storableDefinition } from "@/lib/fundraising/segments";
 
 // Saved donor segments: a named filter definition interpreted by
 // /api/admin/donors/export and the donors UI.
@@ -22,9 +23,8 @@ export async function GET() {
   return NextResponse.json({ segments: data ?? [] });
 }
 
-// "view" is the Donors & Funders built-in view key (Spec Fundraising F1,
-// saved views per R11) — V1 consumers of a definition simply ignore it.
-const FILTER_KEYS = ["q", "type", "source", "tag", "min_total", "since", "view"] as const;
+// The definition vocabulary (the Donors & Funders filters, "view", and the
+// Comms list keys) lives in storableDefinition (lib/fundraising/segments.ts).
 
 export async function POST(req: NextRequest) {
   const ctx = await getOrgContext();
@@ -35,12 +35,9 @@ export async function POST(req: NextRequest) {
   const name = body && typeof body.name === "string" ? body.name.trim().slice(0, 120) : "";
   if (!name) return NextResponse.json({ error: "Name is required" }, { status: 400 });
 
-  const definition: Record<string, string> = {};
-  const raw = (body?.definition ?? {}) as Record<string, unknown>;
-  for (const k of FILTER_KEYS) {
-    const v = raw[k];
-    if (typeof v === "string" && v.trim() !== "") definition[k] = v.trim().slice(0, 200);
-  }
+  const cleaned = storableDefinition(body?.definition);
+  if (!cleaned.ok) return NextResponse.json({ error: cleaned.error }, { status: 400 });
+  const definition = cleaned.definition;
 
   const { data, error } = await createServerSupabase()
     .from("segments")

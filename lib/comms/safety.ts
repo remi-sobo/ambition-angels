@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications/notify";
-import { personalize, buildCampaignEmail } from "@/lib/fundraising/comms-email";
+import { buildCampaignEmail } from "@/lib/fundraising/comms-email";
+import { mergeText, EMPTY_MERGE } from "./merge";
 import { loadOrgCommsSettings, sendBlocker, type OrgCommsSettings } from "./settings";
 import { transportFor } from "./transport";
 
@@ -18,6 +19,10 @@ import { transportFor } from "./transport";
 type Admin = ReturnType<typeof getSupabaseAdmin>;
 
 export const STUCK_AFTER_MS = 24 * 60 * 60 * 1000;
+/** A send that has started, has people waiting and has sent nothing for this
+ *  long is not slow, it is stopped (the Team Esface lesson: theirs sat six
+ *  days under a page that said "Sending"). */
+export const NOT_STARTED_AFTER_MS = 15 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 export const MAX_LEADERSHIP_EMAILS = 10;
 
@@ -46,7 +51,7 @@ export function leadershipCopyBody(body: string, sent: number, finishedAt: strin
     ? new Date(finishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
     : "today";
   const note = `This is a copy of a campaign that went to ${sent} ${sent === 1 ? "person" : "people"}, finished ${when}.`;
-  return `${note}\n\n${personalize(body, "")}`;
+  return `${note}\n\n${mergeText(body, EMPTY_MERGE).text}`;
 }
 
 /** Org members whose role can manage the org: the people an alarm is for. */
@@ -75,18 +80,58 @@ export async function raiseAlarms(
   const cutoff = new Date(now - STUCK_AFTER_MS).toISOString();
   const { data: stuck } = await admin
     .from("email_campaigns")
-    .select("id, org_id, name, started_at, sent_count, recipient_count")
+    .select("id, org_id, name, started_at, sent_count, recipient_count, stuck_alerted_at")
     .eq("status", "sending")
     .lt("started_at", cutoff)
-    .is("stuck_alerted_at", null)
-    .limit(50);
-  for (const c of (stuck ?? []) as Array<{ id: string; org_id: string; name: string; started_at: string; sent_count: number; recipient_count: number }>) {
+    .limit(200);
+  for (const c of (stuck ?? []) as Array<{ id: string; org_id: string; name: string; started_at: string; sent_count: number; recipient_count: number; stuck_alerted_at: string | null }>) {
     if (!isStuck(c.started_at, now)) continue;
+    // At most once a day. An earlier "has not started" alarm (1b) on the
+    // same campaign does not silence this one for good.
+    if (c.stuck_alerted_at && now - Date.parse(c.stuck_alerted_at) < DAY_MS) continue;
     await alertManagers(
       admin,
       c.org_id,
       `"${c.name}" is still sending after a day`,
       `${c.sent_count} of ${c.recipient_count} have gone out. A big list can take a few days at your daily cap; if the count isn't moving, check the Gmail connection on the Comms page.`,
+      `/admin/comms/emails/${c.id}`
+    );
+    await admin.from("email_campaigns").update({ stuck_alerted_at: new Date(now).toISOString() }).eq("org_id", c.org_id).eq("id", c.id);
+    raised += 1;
+  }
+
+  // 1b. Campaigns that started 15 minutes ago and have sent nothing while
+  // people wait. Not raised when the org is simply at its daily cap.
+  const fastCutoff = new Date(now - NOT_STARTED_AFTER_MS).toISOString();
+  const { data: idle } = await admin
+    .from("email_campaigns")
+    .select("id, org_id, name, started_at, sent_count")
+    .eq("status", "sending")
+    .eq("sent_count", 0)
+    .lt("started_at", fastCutoff)
+    .is("stuck_alerted_at", null)
+    .limit(50);
+  // An org whose sender is broken gets alarm 2 below for the same cause.
+  const blockedOrgs = new Set(blocked.map((b) => b.orgId));
+  for (const c of (idle ?? []) as Array<{ id: string; org_id: string; name: string }>) {
+    if (blockedOrgs.has(c.org_id)) continue;
+    const { count: waiting } = await admin
+      .from("email_sends")
+      .select("id", { count: "exact", head: true })
+      .eq("org_id", c.org_id)
+      .eq("campaign_id", c.id)
+      .eq("status", "pending");
+    if (!waiting) continue;
+    // The queue is first in, first out across an org's campaigns, so one
+    // waiting behind another is normal. Stopped means the ORG has sent
+    // nothing lately, and is not simply at its daily cap.
+    if (await orgSentSince(admin, c.org_id, fastCutoff)) continue;
+    if (await atDailyCap(admin, c.org_id, now)) continue;
+    await alertManagers(
+      admin,
+      c.org_id,
+      `"${c.name}" has not started sending`,
+      `It was queued over 15 minutes ago and none of the ${waiting} emails have gone out. Nothing is lost: they are still waiting. Check the Gmail connection in Comms settings.`,
       `/admin/comms/emails/${c.id}`
     );
     await admin.from("email_campaigns").update({ stuck_alerted_at: new Date(now).toISOString() }).eq("org_id", c.org_id).eq("id", c.id);
@@ -103,6 +148,32 @@ export async function raiseAlarms(
     raised += 1;
   }
   return raised;
+}
+
+/** Whether the org has used its 24-hour send allowance, so waiting is expected. */
+async function atDailyCap(admin: Admin, orgId: string, now: number): Promise<boolean> {
+  const settings = await loadOrgCommsSettings(admin, orgId);
+  if (!settings) return false;
+  const since = new Date(now - DAY_MS).toISOString();
+  const { count } = await admin
+    .from("email_sends")
+    .select("id", { count: "exact", head: true })
+    .eq("org_id", orgId)
+    .in("status", ["sent", "sending", "unknown"])
+    .or(`sent_at.gte.${since},claimed_at.gte.${since}`);
+  // A little slack: rows age out of the 24 hours between the claim and this check.
+  return (count ?? 0) >= settings.daily_send_cap - 5;
+}
+
+/** Whether the org has sent anything at all since `sinceISO`. */
+async function orgSentSince(admin: Admin, orgId: string, sinceISO: string): Promise<boolean> {
+  const { count } = await admin
+    .from("email_sends")
+    .select("id", { count: "exact", head: true })
+    .eq("org_id", orgId)
+    .eq("status", "sent")
+    .gte("sent_at", sinceISO);
+  return (count ?? 0) > 0;
 }
 
 export async function sendLeadershipCopies(): Promise<number> {

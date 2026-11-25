@@ -1,5 +1,6 @@
 import type { createServerSupabase } from "@/lib/supabase/server";
-import { resolveRecipients, type ResolvedRecipients } from "@/lib/fundraising/segments";
+import { resolveRecipients, recipientMergeData, type ResolvedRecipients } from "@/lib/fundraising/segments";
+import { checkMerge } from "./merge";
 import { loadOrgCommsSettings, sendBlocker } from "./settings";
 import { transportFor } from "./transport";
 import { MAX_RECIPIENTS, spreadMessage } from "./queue-plan";
@@ -28,7 +29,7 @@ export async function startCampaign(
 ): Promise<StartResult> {
   const { data: campaign } = await supabase
     .from("email_campaigns")
-    .select("id, segment_id, status")
+    .select("id, segment_id, status, subject, body")
     .eq("org_id", orgId)
     .eq("id", campaignId)
     .maybeSingle();
@@ -61,6 +62,12 @@ export async function startCampaign(
       error: `Segment resolves to ${recipients.length} recipients (cap ${MAX_RECIPIENTS}). Narrow it first.`,
     };
   }
+
+  // Merge fields are checked against everyone who would get it. A typo or a
+  // field someone has no value for refuses the whole send, here, before
+  // anything is queued.
+  const merge = checkMerge(String(campaign.subject ?? ""), String(campaign.body ?? ""), recipients.map(recipientMergeData));
+  if (merge.blockers.length) return { ok: false, status: 400, error: `Nothing was sent. ${merge.blockers[0]}` };
 
   // Claim the draft first so a double-submit can't queue twice.
   const { data: claimed } = await supabase

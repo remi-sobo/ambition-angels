@@ -5,6 +5,10 @@ import { drainQueue } from "@/lib/comms/worker";
 // (vercel.json): opens due scheduled campaigns, reaps stuck rows, and sends
 // what each org's daily cap allows, paced per transport.
 export const dynamic = "force-dynamic";
+// Team Esface lost six days of mail to Next caching the queue claim (an RPC
+// inside a GET route). The service client already sends no-store; this is
+// the second lock.
+export const fetchCache = "force-no-store";
 export const maxDuration = 60;
 
 function isAuthed(req: NextRequest): boolean {

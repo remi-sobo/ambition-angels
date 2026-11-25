@@ -2,8 +2,8 @@ import type { createServerSupabase } from "@/lib/supabase/server";
 
 /**
  * One campaign's results (specs/comms-v2-gmail-amendment.md G3), read on the
- * session client and pinned to the org. Campaigns are capped at 2,000
- * recipients, so the sends are read whole and counted here.
+ * session client and pinned to the org. Campaigns are capped at 5,000
+ * recipients, so the sends are read whole (in pages) and counted here.
  */
 
 type Supabase = ReturnType<typeof createServerSupabase>;
@@ -54,14 +54,27 @@ export async function loadCampaignResults(
     .maybeSingle();
   if (!campaign) return null;
 
+  // PostgREST returns at most 1,000 rows a request, so the sends are paged.
+  const readSends = async (): Promise<{ data: SendRow[]; error: { message: string } | null }> => {
+    const all: SendRow[] = [];
+    for (let from = 0; from < 10_000; from += 1000) {
+      const { data, error } = await supabase
+        .from("email_sends")
+        .select("id, email, first_name, status, error, sent_at, open_count, click_count")
+        .eq("org_id", orgId)
+        .eq("campaign_id", campaignId)
+        .order("created_at", { ascending: true })
+        .order("id", { ascending: true })
+        .range(from, from + 999);
+      if (error) return { data: [], error };
+      const page = (data ?? []) as SendRow[];
+      all.push(...page);
+      if (page.length < 1000) break;
+    }
+    return { data: all, error: null };
+  };
   const [sendsRes, unsubRes, clicksRes] = await Promise.all([
-    supabase
-      .from("email_sends")
-      .select("id, email, first_name, status, error, sent_at, open_count, click_count")
-      .eq("org_id", orgId)
-      .eq("campaign_id", campaignId)
-      .order("created_at", { ascending: true })
-      .limit(5000),
+    readSends(),
     supabase
       .from("email_suppressions")
       .select("id", { count: "exact", head: true })

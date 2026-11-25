@@ -15,7 +15,9 @@ export const PACE = {
 /** The worker stops starting new sends after this, inside a 60 s function. */
 export const WORKER_BUDGET_MS = 50_000;
 
-export const MAX_RECIPIENTS = 2000;
+/** The daily cap spreads a big send over days; this is the most one email
+ *  may be queued for at all. */
+export const MAX_RECIPIENTS = 5000;
 
 /** What a failed send becomes in email_sends, and whether the org's run stops. */
 export function outcomeFor(failure: TransportFailure): {

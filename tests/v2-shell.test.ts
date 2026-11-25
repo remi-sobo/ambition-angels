@@ -291,7 +291,7 @@ describe("B3 shell invariants", () => {
       ]);
       const comms = nav.destinations.find((d) => d.key === "comms")!;
       expect(comms.href).toBe("/admin/comms/home");
-      expect(comms.tabs.map((t) => t.label)).toEqual(["Home", "Stories", "Editions", "Emails", "Settings"]);
+      expect(comms.tabs.map((t) => t.label)).toEqual(["Home", "Stories", "Editions", "Emails", "Lists", "Settings"]);
     }
     // No modules.comms → no Comms destination at all (the 9-key orgs).
     expect(resolveShellNav(NINE_KEY).destinations.map((d) => d.key)).not.toContain("comms");

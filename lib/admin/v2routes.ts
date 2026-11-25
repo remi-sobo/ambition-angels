@@ -293,6 +293,8 @@ export const KEPT_IN_PLACE: readonly string[] = [
   "/admin/comms/stories",
   "/admin/comms/editions",
   "/admin/comms/settings",
+  // Comms v3 (specs/comms-v3-composer.md): the list builder.
+  "/admin/comms/lists",
 ];
 
 /** The live screen for a canonical V2 path today, or null when none exists

@@ -1,6 +1,6 @@
 "use client";
 
-// Client controls for donor comms (Epic I): compose a campaign, send a test,
+// Client controls for a campaign row (Epic I): send a test,
 // send now or schedule (G2: both only queue; the worker sends), cancel, delete. Sending real email is gated behind an explicit
 // confirm with the resolved recipient context.
 
@@ -9,90 +9,6 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/app/admin/_components/feedback/ToastProvider";
 import { useConfirm } from "@/app/admin/_components/feedback/ConfirmProvider";
 import { userMessage, networkMessage } from "@/lib/admin/errors";
-
-type Option = { id: string; name: string };
-
-const inputCls =
-  "bg-tile border-hairline rounded-control px-3 py-2 text-ink-1 text-sm placeholder-ink-3 focus:outline-none focus:border-orange/40";
-const labelCls = "flex flex-col gap-1 text-xs uppercase tracking-wider text-ink-3 font-semibold";
-
-export function NewCampaignForm({ segments }: { segments: Option[] }) {
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const [name, setName] = useState("");
-  const [subject, setSubject] = useState("");
-  const [body, setBody] = useState("");
-  const [segmentId, setSegmentId] = useState("");
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setBusy(true);
-    setError("");
-    try {
-      const res = await fetch("/api/admin/comms", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, subject, body, segment_id: segmentId || undefined }),
-      });
-      const j = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setError(userMessage(res, j));
-        return;
-      }
-      setName(""); setSubject(""); setBody(""); setSegmentId("");
-      setOpen(false);
-      router.refresh();
-    } catch {
-      setError(networkMessage());
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  if (!open) {
-    return (
-      <button onClick={() => setOpen(true)} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors">
-        + New campaign
-      </button>
-    );
-  }
-  return (
-    <form onSubmit={submit} className="bg-tile border-hairline rounded-panel-lg p-4 space-y-3 w-full">
-      <div className="flex flex-wrap gap-3">
-        <label className={labelCls + " flex-1 min-w-[12rem]"}>
-          Campaign name *
-          <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="FY26 lapsed re-engagement" className={inputCls + " w-full"} />
-        </label>
-        <label className={labelCls}>
-          Segment
-          <select value={segmentId} onChange={(e) => setSegmentId(e.target.value)} className={inputCls + " w-52"}>
-            <option value="" className="bg-tile">(pick to enable send)</option>
-            {segments.map((s) => (<option key={s.id} value={s.id} className="bg-tile">{s.name}</option>))}
-          </select>
-        </label>
-      </div>
-      <label className={labelCls + " block"}>
-        Subject *
-        <input required value={subject} onChange={(e) => setSubject(e.target.value)} className={inputCls + " w-full"} />
-      </label>
-      <label className={labelCls + " block"}>
-        Body: plain text, blank line = new paragraph, {"{{first_name}}"} personalizes
-        <textarea required value={body} onChange={(e) => setBody(e.target.value)} rows={8} className={inputCls + " w-full resize-y font-body"} placeholder={"Hi {{first_name}},\n\nThank you for believing in our teens…"} />
-      </label>
-      <div className="flex items-center gap-2">
-        <button type="submit" disabled={busy} className="text-xs font-semibold text-white bg-orange hover:bg-orange-dark px-4 py-2 rounded-full transition-colors disabled:opacity-50">
-          {busy ? "Saving…" : "Save draft"}
-        </button>
-        <button type="button" onClick={() => { setOpen(false); setError(""); }} className="text-xs font-semibold text-ink-2 hover:text-ink-1 px-2 py-2 transition-colors">
-          Cancel
-        </button>
-      </div>
-      {error && <p className="text-expense text-xs">{error}</p>}
-    </form>
-  );
-}
 
 export function CampaignActions({ id, status, hasSegment }: { id: string; status: string; hasSegment: boolean }) {
   const router = useRouter();

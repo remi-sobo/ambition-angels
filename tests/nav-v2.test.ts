@@ -61,10 +61,10 @@ describe("V2 nav: the locked map", () => {
     ]);
   });
 
-  test("V4 §4: Comms carries the approved six tabs, every one gated on modules.comms", () => {
+  test("V4 §4: Comms carries the approved six tabs plus Lists (comms v3), every one gated on modules.comms", () => {
     const comms = dest("comms");
     expect(comms.tabs.map((t) => t.label)).toEqual([
-      "Home", "Stories", "Editions", "Emails", "Automations", "Settings",
+      "Home", "Stories", "Editions", "Emails", "Lists", "Automations", "Settings",
     ]);
     for (const t of comms.tabs) expect(t.feature, t.key).toBe("modules.comms");
     // Fundraising no longer carries Comms; Thank-yous is its sixth tab.

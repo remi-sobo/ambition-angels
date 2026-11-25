@@ -20,7 +20,10 @@ describe("stripe webhook without STRIPE_SECRET_KEY", () => {
 
     expect((await post("t=1,v1=nope")).status).toBe(400);
 
-    const good = Stripe.webhooks.generateTestHeaderString({ payload: body, secret: "whsec_test_only" });
+    // The types mark every option required; Stripe fills timestamp, scheme
+    // and signature itself when they're left out.
+    const opts = { payload: body, secret: "whsec_test_only" } as Parameters<typeof Stripe.webhooks.generateTestHeaderString>[0];
+    const good = Stripe.webhooks.generateTestHeaderString(opts);
     expect((await post(good)).status).not.toBe(400);
     vi.unstubAllEnvs();
   });

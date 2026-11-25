@@ -1,16 +1,14 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-// Repo split phase 2a: with INTAKE_MODE=api every public form route sends to
-// BloomOS and never opens a database client of its own. With INTAKE_MODE
-// unset, nothing about the old path changes (covered by not calling BloomOS).
+// Every public form route sends to BloomOS through the intake API and never
+// opens a database client of its own (specs/bloomos-repo-split.md §6a).
 
 const sent: { kind: string; fields: Record<string, unknown> }[] = [];
 let outcome: Record<string, unknown> = { outcome: "delivered", body: { ok: true, id: "row-1" } };
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/site/bloomos", () => ({
-  intakeMode: () => (process.env.INTAKE_MODE === "api" ? "api" : "db"),
   sendToBloomOS: vi.fn(async (kind: string, fields: Record<string, unknown>) => {
     sent.push({ kind, fields });
     return outcome;
@@ -20,17 +18,9 @@ const dbTouched = vi.fn();
 vi.mock("@supabase/supabase-js", () => ({
   createClient: () => {
     dbTouched();
-    throw new Error("database must not be used in api mode");
+    throw new Error("form routes must not open a database client");
   },
 }));
-vi.mock("@/lib/supabase/admin", () => ({
-  getSupabaseAdmin: () => {
-    dbTouched();
-    throw new Error("database must not be used in api mode");
-  },
-}));
-vi.mock("@/lib/admin/orgs", () => ({ getResidentOrgId: async () => "org-aa" }));
-vi.mock("@/lib/coach/server", () => ({ privateUrl: (t: string) => `https://app.test/coach/me/${t}` }));
 const emails: { to: string; subject: string }[] = [];
 vi.mock("resend", () => ({
   Resend: class {
@@ -46,7 +36,6 @@ const post = (body: unknown) =>
   });
 
 beforeEach(() => {
-  vi.stubEnv("INTAKE_MODE", "api");
   vi.stubEnv("RESEND_API_KEY", "re_test");
   sent.length = 0;
   emails.length = 0;
@@ -55,7 +44,7 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllEnvs());
 
-describe("INTAKE_MODE=api", () => {
+describe("public forms", () => {
   test("schools inquiry → partner_inquiry, submitter still gets the website's confirmation", async () => {
     const { POST } = await import("@/app/api/schools-inquiry/route");
     const res = await POST(

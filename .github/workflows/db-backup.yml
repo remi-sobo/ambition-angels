@@ -1,25 +1,22 @@
-# Nightly off-platform Postgres backup (BloomOS Ring 0).
-#
-# Why: Supabase Pro keeps 7 days of daily backups on-platform only. This job
-# keeps an independent, encrypted copy outside Supabase so we survive
-# account-level failure and get >7-day retention.
+# Nightly off-platform Postgres backup of the website database (games, career
+# library, site analytics, form outbox). Supabase keeps 7 days on-platform;
+# this keeps an independent, encrypted copy outside Supabase.
 #
 # Required repository secrets:
-#   SUPABASE_DB_URL    — Postgres connection string (Session pooler URI from
-#                        Supabase dashboard → Project Settings → Database).
+#   SITE_DB_URL        — the website database's Postgres connection string
+#                        (Supabase dashboard → Project Settings → Database →
+#                        Session pooler URI). Deliberately not SUPABASE_DB_URL:
+#                        that secret held the BloomOS database before the repo
+#                        split, and this job must never back that up here.
 #   BACKUP_PASSPHRASE  — strong passphrase used to encrypt dumps (store a copy
-#                        in the org password manager; a lost passphrase means
+#                        in the password manager; a lost passphrase means
 #                        unrecoverable backups).
-#
-# Restore test: .github/workflows/db-restore-test.yml restores the newest
-# artifact into a throwaway Postgres 17 and compares row counts with production.
 #
 # Restore (locally):
 #   gpg --batch --passphrase "$BACKUP_PASSPHRASE" -d backup.sql.gz.gpg | gunzip | psql "$TARGET_DB_URL"
 #
 # Encrypted dumps are stored as GitHub Actions artifacts (private to this
-# repo) with 30-day retention. When BloomOS reaches Ring 4/5, move the
-# destination to R2/S3 with object lock per docs/bloomos/03-architecture.md §8.
+# repo) with 30-day retention.
 
 name: Nightly DB backup
 
@@ -44,15 +41,15 @@ jobs:
 
       - name: Dump database
         env:
-          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SITE_DB_URL: ${{ secrets.SITE_DB_URL }}
         run: |
           # pipefail: without it a failed pg_dump still exits 0 through gzip
           # and the run goes green with an empty backup.
           set -euo pipefail
-          if [ -z "$SUPABASE_DB_URL" ]; then
-            echo "::error::SUPABASE_DB_URL secret is not set"; exit 1
+          if [ -z "$SITE_DB_URL" ]; then
+            echo "::error::SITE_DB_URL secret is not set"; exit 1
           fi
-          pg_dump "$SUPABASE_DB_URL" \
+          pg_dump "$SITE_DB_URL" \
             --no-owner --no-privileges \
             --exclude-schema=storage \
             --exclude-schema=auth \
@@ -61,8 +58,8 @@ jobs:
             | gzip > backup.sql.gz
           ls -lh backup.sql.gz
           size=$(stat -c %s backup.sql.gz)
-          if [ "$size" -lt 1000000 ]; then
-            echo "::error::backup is only $size bytes; expected tens of MB"; exit 1
+          if [ "$size" -lt 100000 ]; then
+            echo "::error::backup is only $size bytes; expected a few MB"; exit 1
           fi
 
       - name: Encrypt dump

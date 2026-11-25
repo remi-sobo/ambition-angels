@@ -1,8 +1,7 @@
-import PageHeader from "@/app/admin/_components/PageHeader";
+import PageHeader from "@/app/site-admin/_ui/PageHeader";
 import { getSiteAdmin } from "@/lib/site/adminAuth";
-import StatCard from "@/app/admin/_components/StatCard";
+import StatCard from "@/app/site-admin/_ui/StatCard";
 import { getSiteSupabase } from "@/lib/site/supabase";
-import { intakeMode } from "@/lib/site/bloomos";
 import RetryButton from "./RetryButton";
 
 // Form delivery health: what the website sent to BloomOS in the last 30
@@ -53,11 +52,6 @@ export default async function FormsPage() {
   return (
     <div className="px-4 lg:px-8 py-6 lg:py-8">
       <PageHeader title="Forms" subtitle="Website forms sent to BloomOS, last 30 days." />
-      {intakeMode() !== "api" && (
-        <p className="mb-6 text-sm text-gray-warm">
-          Forms still save the old way (INTAKE_MODE is not “api”), so nothing goes through the outbox yet.
-        </p>
-      )}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <StatCard label="Sent" value={rows.length} />
         <StatCard label="Delivered" value={rows.filter((r) => r.status === "delivered").length} />

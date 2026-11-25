@@ -6,7 +6,7 @@
 // refusal, verbatim.
 
 import { useState } from "react";
-import { userMessage } from "@/lib/admin/errors";
+import { userMessage } from "@/lib/site/ui/errors";
 import { useRouter } from "next/navigation";
 
 export type DailyCandidate = { soc_code: string; title: string; job_zone: number };

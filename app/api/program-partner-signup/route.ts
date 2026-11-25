@@ -1,14 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
-import { getResidentOrgId } from "@/lib/admin/orgs";
-import { intakeMode, sendToBloomOS } from "@/lib/site/bloomos";
-
-const getSupabase = () =>
-  createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+import { sendToBloomOS } from "@/lib/site/bloomos";
 
 const getResend = () => new Resend(process.env.RESEND_API_KEY);
 
@@ -68,26 +60,6 @@ function buildConfirmationHTML(firstName: string, orgName: string): string {
 </html>`;
 }
 
-function buildNotificationHTML(data: {
-  first_name: string;
-  last_name: string;
-  org_name: string;
-  email: string;
-  program_type: string;
-  teen_count: string | null;
-  referral: string | null;
-}): string {
-  return `<div style="font-family:monospace;background:#f9f9f9;padding:24px;border-radius:8px;font-size:14px;line-height:1.7;">
-  <strong>New Program Partner Signup</strong><br><br>
-  Name: ${data.first_name} ${data.last_name}<br>
-  Org: ${data.org_name}<br>
-  Email: ${data.email}<br>
-  Program Type: ${data.program_type}<br>
-  Teen Count: ${data.teen_count || "not specified"}<br>
-  How they heard: ${data.referral || "not specified"}
-</div>`;
-}
-
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   if (!body) {
@@ -100,68 +72,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  // INTAKE_MODE=api: BloomOS files the sign-up and alerts staff; the website
+  // BloomOS files the sign-up and alerts staff; the website
   // still sends the welcome email.
-  if (intakeMode() === "api") {
-    const sent = await sendToBloomOS("partner_inquiry", {
-      source: "signup_form",
-      first_name, last_name, org_name, email, program_type, teen_count: teen_count || null, referral: referral || null,
-    });
-    if (sent.outcome === "rejected") return NextResponse.json({ error: sent.error }, { status: 400 });
-    if (sent.outcome === "failed") {
-      return NextResponse.json({ error: "Failed to save. Please try again." }, { status: 500 });
-    }
-    await getResend().emails.send({
-      from: "Ambition Angels <careers@mail.ambitionangels.org>",
-      to: email,
-      subject: "Welcome to Ambition Angels — here's how to get started",
-      html: buildConfirmationHTML(first_name, org_name),
-    }).catch((err) => console.error("Resend confirmation error:", err));
-    return NextResponse.json({ success: true });
-  }
-
-  const supabase = getSupabase();
-  // Writes straight onto the BloomOS partner spine (Ring 3) — the
-  // legacy program_partners table never existed in production, so this
-  // form was silently failing before.
-  const { error: dbError } = await supabase.from("partners").insert({
-    // Public route, no session — org comes from the resident org, never the
-    // column default (survives the Phase C default drop).
-    org_id: await getResidentOrgId(),
-    name: org_name,
-    kind: "nonprofit",
-    status: "prospect",
-    champion_name: [first_name, last_name].filter(Boolean).join(" "),
-    champion_email: String(email).toLowerCase(),
-    teen_count: teen_count || null,
-    program_type,
-    referral: referral || null,
-    external_source: "signup_form",
-    last_touch_at: new Date().toISOString().slice(0, 10),
+  const sent = await sendToBloomOS("partner_inquiry", {
+    source: "signup_form",
+    first_name, last_name, org_name, email, program_type, teen_count: teen_count || null, referral: referral || null,
   });
-
-  if (dbError) {
-    console.error("Supabase error:", dbError.message);
+  if (sent.outcome === "rejected") return NextResponse.json({ error: sent.error }, { status: 400 });
+  if (sent.outcome === "failed") {
     return NextResponse.json({ error: "Failed to save. Please try again." }, { status: 500 });
   }
-
-  const resend = getResend();
-
-  // Confirmation to submitter (non-blocking)
-  resend.emails.send({
+  await getResend().emails.send({
     from: "Ambition Angels <careers@mail.ambitionangels.org>",
     to: email,
     subject: "Welcome to Ambition Angels — here's how to get started",
     html: buildConfirmationHTML(first_name, org_name),
   }).catch((err) => console.error("Resend confirmation error:", err));
-
-  // Notification to Remi (non-blocking)
-  resend.emails.send({
-    from: "Ambition Angels <careers@mail.ambitionangels.org>",
-    to: "remi@ambitionangels.org",
-    subject: `New Program Partner: ${org_name} (${first_name} ${last_name})`,
-    html: buildNotificationHTML({ first_name, last_name, org_name, email, program_type, teen_count, referral }),
-  }).catch((err) => console.error("Resend notification error:", err));
-
   return NextResponse.json({ success: true });
 }

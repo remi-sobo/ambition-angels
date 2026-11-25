@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { getSiteAdmin } from "@/lib/site/adminAuth";
-import ConfirmProvider from "@/app/admin/_components/feedback/ConfirmProvider";
-import ToastProvider from "@/app/admin/_components/feedback/ToastProvider";
+import ConfirmProvider from "@/app/site-admin/_ui/feedback/ConfirmProvider";
+import ToastProvider from "@/app/site-admin/_ui/feedback/ToastProvider";
 import SignIn from "./SignIn";
 import SignOutButton from "./SignOutButton";
 

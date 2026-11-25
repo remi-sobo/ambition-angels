@@ -22,5 +22,3 @@ public/_email-previews/
 # TypeScript incremental build info (generated)
 *.tsbuildinfo
 
-# Capture matcher test set: real donor names, never committed
-tests/fixtures/capture/private/

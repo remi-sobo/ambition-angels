@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getSiteAdmin } from "@/lib/site/adminAuth";
-import PageHeader from "@/app/admin/_components/PageHeader";
-import StatCard from "@/app/admin/_components/StatCard";
+import PageHeader from "@/app/site-admin/_ui/PageHeader";
+import StatCard from "@/app/site-admin/_ui/StatCard";
 import { getSiteSupabase } from "@/lib/site/supabase";
 import { addDays, pacificToday, siteDailyStats } from "@/lib/site/stats";
 

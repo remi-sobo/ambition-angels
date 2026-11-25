@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { getSiteAdmin } from "@/lib/site/adminAuth";
-import EmptyState from "@/app/admin/_components/EmptyState";
+import EmptyState from "@/app/site-admin/_ui/EmptyState";
 import { websiteDb } from "@/lib/site/websiteDb";
-import PageHeader from "@/app/admin/_components/PageHeader";
-import StatCard from "@/app/admin/_components/StatCard";
+import PageHeader from "@/app/site-admin/_ui/PageHeader";
+import StatCard from "@/app/site-admin/_ui/StatCard";
 import { CareersControls, type CardView, type OccupationView } from "./_components/CareersControls";
 
 // The career library pipeline (specs/ms-career-library-v2.md): import →

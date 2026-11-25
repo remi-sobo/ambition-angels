@@ -6,7 +6,8 @@ import { getGmailConnectionStatus } from "@/lib/comms/gmail-connection";
 import { GmailCard, type GmailNotice } from "./_components/GmailCard";
 import PageHeader from "../../_components/PageHeader";
 import StatCard from "../../_components/StatCard";
-import { NewCampaignForm, CampaignActions } from "./_components/CommsControls";
+import { CampaignActions } from "./_components/CommsControls";
+import { ButtonLink } from "../../_components/ui/Button";
 import { SettingsCard, type CommsSettings } from "./_components/SettingsCard";
 import { TYPE } from "@/lib/admin/typeScale";
 import DraftAudience from "@/app/admin/comms/_components/DraftAudience";
@@ -155,7 +156,10 @@ export default async function CommsPage({
             <StatCard label="Sent" value={sent.length} />
             <StatCard label="Emails delivered" value={totalSent} sub="across all sent campaigns" />
           </div>
-          <NewCampaignForm segments={segments} />
+          <div className="flex items-center gap-2">
+            <ButtonLink href="/admin/comms/lists" variant="secondary" size="lg">Lists</ButtonLink>
+            <ButtonLink href="/admin/comms/emails/compose" variant="primary" size="lg">Write an email</ButtonLink>
+          </div>
         </div>
 
         <GmailCard
@@ -172,7 +176,7 @@ export default async function CommsPage({
 
         {segments.length === 0 && (
           <div className="bg-status-watch-bg text-status-watch-text rounded-panel px-5 py-3 text-sm">
-            No saved audiences yet. Use Choose audience on a draft to build one with a live count, or save a view in Donors &amp; Funders.
+            No lists yet. A list is who an email goes to. <Link href="/admin/comms/lists/new" className="font-semibold underline">Build your first list</Link> and you will see everyone on it before you write.
           </div>
         )}
 
@@ -181,7 +185,7 @@ export default async function CommsPage({
             <div className="p-4">
               <EmptyState
                 label="campaigns"
-                hint="Create one with the button above, attach a saved segment, send a test to yourself, then send."
+                hint="Write an email, choose a list, look through the preview, send yourself a test, then send."
               />
             </div>
           ) : (
@@ -190,7 +194,9 @@ export default async function CommsPage({
                 <li key={c.id} className="px-5 py-3 flex flex-wrap items-center gap-x-4 gap-y-2">
                   <div className="flex-1 min-w-0">
                     {c.status === "draft" ? (
-                      <div className="text-sm font-medium text-ink-1 truncate">{c.name}</div>
+                      <Link href={`/admin/comms/emails/${c.id}/edit`} className="block text-sm font-medium text-ink-1 truncate hover:text-orange transition-colors">
+                        {c.name}
+                      </Link>
                     ) : (
                       <Link href={`/admin/comms/emails/${c.id}`} className="block text-sm font-medium text-ink-1 truncate hover:text-orange transition-colors">
                         {c.name}

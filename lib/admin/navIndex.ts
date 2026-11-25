@@ -57,6 +57,7 @@ export const TAB_HELP: Record<string, { what: string; keywords?: string[] }> = {
   "comms/stories": { what: "The story bank: capture a story, see who it's about and whether consent is on file.", keywords: ["story", "stories", "consent", "photo", "capture"] },
   "comms/editions": { what: "Build a newsletter from your stories and turn it into an email draft.", keywords: ["edition", "newsletter", "issue", "update"] },
   "comms/settings": { what: "Your sending identity, connected Gmail and newsletter formats.", keywords: ["gmail", "sender", "formats", "mailing address"] },
+  "comms/lists": { what: "Build a list of who an email goes to and see every person on it.", keywords: ["list", "audience", "segment", "recipients", "mail merge", "donors"] },
   "comms/emails": { what: "Write an email to a saved group of supporters, test it and send it.", keywords: ["email", "newsletter", "campaign", "gmail"] },
   "finance/snapshot": { what: "Cash on hand, runway and the month so far.", keywords: ["cash", "runway", "money"] },
   "finance/transactions": { what: "Bank transactions: categorize, reconcile and close the month.", keywords: ["expenses", "spend", "reconcile", "close"] },

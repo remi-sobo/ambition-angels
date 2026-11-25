@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getOrgContext } from "@/lib/admin/auth";
 import { audit } from "@/lib/audit";
-import { resolveRecipients } from "@/lib/fundraising/segments";
-import { personalize, buildCampaignEmail } from "@/lib/fundraising/comms-email";
+import { resolveRecipients, recipientMergeData } from "@/lib/fundraising/segments";
+import { buildCampaignEmail } from "@/lib/fundraising/comms-email";
+import { mergeText, EMPTY_MERGE, type MergeData } from "@/lib/comms/merge";
 import { loadOrgCommsSettings, sendBlocker } from "@/lib/comms/settings";
 import { transportFor } from "@/lib/comms/transport";
 import { campaignStoryBlockForOrg } from "@/lib/comms/story-gate-server";
@@ -42,14 +43,19 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   // Sample recipient: first resolved recipient of the attached segment,
   // falling back to a generic greeting when there's no segment (or no match).
-  let sampleFirstName = "there";
+  // `index` (optional) picks the person the composer is previewing, in the
+  // same name order the preview uses.
+  let sample: MergeData = { ...EMPTY_MERGE, first_name: "there" };
+  const index = Math.max(0, Number(body?.index) || 0);
   if (c.segment_id) {
     const { data: seg } = await supabase.from("segments").select("definition").eq("org_id", ctx.orgId).eq("id", c.segment_id).maybeSingle();
     if (seg) {
       // A definition the resolver can't apply resolves to nobody, so the
       // generic greeting stands in. The real send refuses it.
       const { recipients } = await resolveRecipients(supabase, seg.definition, ctx.orgId);
-      if (recipients[0]) sampleFirstName = recipients[0].firstName;
+      const sorted = [...recipients].sort((a, b) => a.name.localeCompare(b.name));
+      const pick = sorted[Math.min(index, sorted.length - 1)];
+      if (pick) sample = recipientMergeData(pick);
     }
   }
 
@@ -58,8 +64,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const payload = buildCampaignEmail({
     settings,
     to,
-    subject: `[TEST] ${c.subject as string}`,
-    bodyText: personalize(c.body as string, sampleFirstName),
+    subject: `[TEST] ${mergeText(c.subject as string, sample).text}`,
+    bodyText: mergeText(c.body as string, sample).text,
     constituentId: null,
     campaignId: params.id,
   });

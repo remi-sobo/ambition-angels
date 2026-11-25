@@ -64,6 +64,10 @@ const CONTACT_PROPS = [
   "hubspot_owner_id",
   "notes_last_updated",
   "createdate",
+  // Email health, so BloomOS never emails an address HubSpot already
+  // knows is dead or opted out (lib/hubspot/upserts.ts hubspotSuppressions).
+  "hs_email_hard_bounce_reason_enum",
+  "hs_email_optout",
 ].join(",");
 
 const COMPANY_PROPS = [

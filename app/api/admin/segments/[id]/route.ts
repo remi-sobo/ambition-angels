@@ -29,10 +29,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const supabase = createServerSupabase();
   const { data: before } = await supabase.from("segments").select("id, name, definition").eq("org_id", ctx.orgId).eq("id", params.id).maybeSingle();
   if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  const { error } = await supabase.from("segments").update(update).eq("org_id", ctx.orgId).eq("id", params.id);
+  const { data: saved, error } = await supabase.from("segments").update(update).eq("org_id", ctx.orgId).eq("id", params.id).select("id");
   if (error) {
     console.error("Update segment failed:", error.message);
     return NextResponse.json({ error: "Save failed" }, { status: 500 });
+  }
+  // RLS turns a write the role may not make into zero rows, not an error.
+  if (!saved || saved.length === 0) {
+    return NextResponse.json({ error: "Your role can't change lists." }, { status: 403 });
   }
   await audit(req, { action: "fundraising.segment.update", entityType: "segment", entityId: params.id, before, after: update });
   return NextResponse.json({ ok: true });

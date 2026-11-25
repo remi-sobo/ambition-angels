@@ -126,32 +126,35 @@ export default function ListBuilder({
     };
   }, [query]);
 
-  const change = (next: ListDefinition) => {
+  // Every edit builds on the latest definition, never one captured before an
+  // await: a slow paste must not undo a "Take off" clicked while it ran.
+  const change = (next: ListDefinition | ((prev: ListDefinition) => ListDefinition)) => {
     setDef(next);
     setPage(0);
   };
-  const set = (k: keyof ListDefinition, v: string) => change({ ...def, [k]: v });
+  const set = (k: keyof ListDefinition, v: string) => change((prev) => ({ ...prev, [k]: v }));
   const included = new Set(def.include_ids ?? []);
-  const excluded = new Set(def.exclude_ids ?? []);
 
-  const addPeople = (ids: string[]) => {
-    const inc = new Set(included);
-    const exc = new Set(excluded);
-    for (const pid of ids) {
-      // Someone taken off by hand comes back by undoing that, not by adding twice.
-      if (exc.has(pid)) exc.delete(pid);
-      else inc.add(pid);
-    }
-    change({ ...def, include_ids: Array.from(inc), exclude_ids: Array.from(exc) });
-  };
-  const removePerson = (p: Person) => {
-    const inc = new Set(included);
-    const exc = new Set(excluded);
-    if (p.added) inc.delete(p.id);
-    else exc.add(p.id);
-    change({ ...def, include_ids: Array.from(inc), exclude_ids: Array.from(exc) });
-  };
-  const putBack = (pid: string) => change({ ...def, exclude_ids: (def.exclude_ids ?? []).filter((x) => x !== pid) });
+  const addPeople = (ids: string[]) =>
+    change((prev) => {
+      const inc = new Set(prev.include_ids ?? []);
+      const exc = new Set(prev.exclude_ids ?? []);
+      for (const pid of ids) {
+        // Someone taken off by hand comes back by undoing that, not by adding twice.
+        if (exc.has(pid)) exc.delete(pid);
+        else inc.add(pid);
+      }
+      return { ...prev, include_ids: Array.from(inc), exclude_ids: Array.from(exc) };
+    });
+  const removePerson = (p: Person) =>
+    change((prev) => {
+      const inc = new Set(prev.include_ids ?? []);
+      const exc = new Set(prev.exclude_ids ?? []);
+      if (p.added) inc.delete(p.id);
+      else exc.add(p.id);
+      return { ...prev, include_ids: Array.from(inc), exclude_ids: Array.from(exc) };
+    });
+  const putBack = (pid: string) => change((prev) => ({ ...prev, exclude_ids: (prev.exclude_ids ?? []).filter((x) => x !== pid) }));
 
   const matchPasted = async () => {
     setPasteBusy(true);
@@ -227,7 +230,7 @@ export default function ListBuilder({
                   key={s.value}
                   type="button"
                   aria-pressed={on}
-                  onClick={() => change(withStart(def, s.value as StartValue))}
+                  onClick={() => change((prev) => withStart(prev, s.value as StartValue))}
                   className={`min-h-[44px] rounded-control border px-3 py-2 text-left transition-colors ${
                     on ? "border-orange bg-orange/5 ring-1 ring-orange/25" : "border-hairline bg-surface hover:bg-tile"
                   }`}

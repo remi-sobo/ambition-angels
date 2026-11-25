@@ -1,6 +1,6 @@
 import type { createServerSupabase } from "@/lib/supabase/server";
 import { constituentName } from "@/lib/fundraising/display";
-import type { MergeData } from "@/lib/comms/merge";
+import { fullNameOf, type MergeData } from "@/lib/comms/merge";
 import {
   applyRollupFilters,
   BUILT_IN_VIEWS,
@@ -31,6 +31,9 @@ export type Recipient = {
   email: string;
   /** Merge-field and list-preview data, straight from v_fr_rollups. */
   lastName: string;
+  /** The name {{full_name}} fills in, or null when the record has none.
+   *  Unlike `name`, it never falls back to the email address. */
+  fullName: string | null;
   lastGift: string | null;
   lifetimeTotal: number;
   giftCount: number;
@@ -97,7 +100,8 @@ const KNOWN_KEYS = new Set([
 /** Most people one list may carry by hand, each way. */
 export const MAX_HAND_PICKED = 5000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const ID_CHUNK = 200;
+// 100 ids keeps the request URL well under PostgREST's 8,000 character limit.
+export const ID_CHUNK = 100;
 const EMAILABLE_VIEWS = new Set<string>(
   BUILT_IN_VIEWS.map((v) => v.value).filter((v) => v !== "prospects" && v !== "mine")
 );
@@ -343,6 +347,7 @@ export async function resolveRecipients(
       name: constituentName(c),
       email,
       lastName: c.last_name ?? "",
+      fullName: fullNameOf(c),
       lastGift: c.last_gift ?? null,
       lifetimeTotal: Number(c.lifetime_total ?? 0),
       giftCount: Number(c.gift_count ?? 0),
@@ -357,9 +362,19 @@ export function recipientMergeData(r: Recipient): MergeData {
   return {
     first_name: r.firstName || null,
     last_name: r.lastName || null,
-    full_name: r.name || null,
+    full_name: r.fullName,
     last_gift: r.lastGift,
     lifetime_total: r.lifetimeTotal,
     gift_count: r.giftCount,
   };
+}
+
+/** The composer's "show me" filters, shared by the preview and the test send
+ *  so a test is written as the person on screen. Sorted by name first. */
+export type RecipientFilter = "all" | "no_first_name" | "never_gave";
+export function previewPool(recipients: Recipient[], only: RecipientFilter): Recipient[] {
+  const sorted = [...recipients].sort((a, b) => a.name.localeCompare(b.name));
+  if (only === "no_first_name") return sorted.filter((r) => !r.firstName.trim());
+  if (only === "never_gave") return sorted.filter((r) => r.giftCount === 0);
+  return sorted;
 }

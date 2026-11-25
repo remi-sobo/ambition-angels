@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from "vitest";
 import { fakeDb, type Row } from "./support/commsFakeDb";
-import { checkMerge, mergeText, scanFields, EMPTY_MERGE, type MergeData } from "@/lib/comms/merge";
-import { resolveRecipients, storableDefinition, parseSegmentDefinition, recipientMergeData } from "@/lib/fundraising/segments";
+import { checkMerge, mergeText, scanFields, fullNameOf, EMPTY_MERGE, type MergeData } from "@/lib/comms/merge";
+import { resolveRecipients, storableDefinition, parseSegmentDefinition, recipientMergeData, previewPool } from "@/lib/fundraising/segments";
 import { describeList, startOf, withStart, tidy } from "@/lib/comms/lists";
 
 /**
@@ -49,6 +49,24 @@ describe("merge fields", () => {
     expect(check.blockers).toHaveLength(2);
     expect(check.blockers[0]).toContain("{{frist_name}}");
     expect(check.blockers[1]).toContain("1 person");
+  });
+
+  test("a fallback can't carry a link (links are numbered from the message as written)", () => {
+    const check = checkMerge("Hello", "See {{first_name|https://example.org}}", [donor]);
+    expect(check.blockers.join(" ")).toContain("can't contain a link");
+  });
+
+  test("a long run of spaces inside braces is handled quickly", () => {
+    const started = Date.now();
+    const r = scanFields(`Hi {{${" ".repeat(20000)}`);
+    expect(Date.now() - started).toBeLessThan(500);
+    expect(r.unknown.length).toBeGreaterThan(0);
+  });
+
+  test("full name: person, then organization, never the email address", () => {
+    expect(fullNameOf({ first_name: "Ana", last_name: "Lopez", org_name: "Acme" })).toBe("Ana Lopez");
+    expect(fullNameOf({ first_name: null, last_name: null, org_name: "Acme Foundation" })).toBe("Acme Foundation");
+    expect(fullNameOf({ first_name: " ", last_name: null, org_name: null })).toBeNull();
   });
 
   test("the check notes who falls back, with the words they will see", () => {
@@ -127,6 +145,22 @@ describe("hand-built lists", () => {
     expect(recipientMergeData(r.recipients[0])).toEqual({
       first_name: "Ana", last_name: "Example", full_name: "Ana Example", last_gift: "2026-03-01", lifetime_total: 500, gift_count: 2,
     });
+  });
+
+  test("someone with no name at all is missing a full name in the check, as the worker will find", async () => {
+    db = fakeDb({
+      v_fr_rollups: [person(7, "", { first_name: null, last_name: null, emails: ["nameless@example.org"] })],
+      email_suppressions: [], fr_prospects: [], constituents: [],
+    });
+    const r = await resolve({});
+    expect(recipientMergeData(r.recipients[0]).full_name).toBeNull();
+    expect(checkMerge("Hi", "Dear {{full_name}},", r.recipients.map(recipientMergeData)).blockers).toHaveLength(1);
+  });
+
+  test("the preview and the test send pick the same person under a filter", async () => {
+    const r = await resolve({});
+    expect(previewPool(r.recipients, "never_gave").map((p) => p.firstName)).toEqual(["Ben"]);
+    expect(previewPool(r.recipients, "all").map((p) => p.firstName)).toEqual(["Ana", "Ben", "Dee"]);
   });
 
   test("saving keeps the list keys and drops what it doesn't know", () => {

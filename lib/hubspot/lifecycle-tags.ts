@@ -60,6 +60,14 @@ type LinkedRow = TagRow & { external_ids: Record<string, unknown> | null };
  * Best effort: returns the error text and never throws.
  */
 export async function syncLifecycleTags(orgId: string): Promise<{ changed: number; error: string | null }> {
+  try {
+    return await applyLifecycleTags(orgId);
+  } catch (e) {
+    return { changed: 0, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+async function applyLifecycleTags(orgId: string): Promise<{ changed: number; error: string | null }> {
   const admin = getSupabaseAdmin();
 
   const stageByContact = new Map<string, string | null>();

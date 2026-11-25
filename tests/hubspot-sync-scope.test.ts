@@ -22,6 +22,12 @@ vi.mock("../lib/hubspot/upserts", () => ({
   upsertEngagements: vi.fn(),
 }));
 
+// Lifecycle tagging runs after the projection and has its own tests
+// (tests/comms-tags.test.ts); this file is about the engagements step.
+vi.mock("../lib/hubspot/lifecycle-tags", () => ({
+  syncLifecycleTags: vi.fn(async () => ({ changed: 0, error: null })),
+}));
+
 import { getSupabaseAdmin } from "../lib/supabase/admin";
 import { fetchEngagements } from "../lib/hubspot/fetchers";
 import { upsertEngagements } from "../lib/hubspot/upserts";

@@ -87,7 +87,10 @@ function DonateForm({ onClose }: FormProps) {
         opts.em && fetch("/api/send-receipt", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: `${opts.fn} ${opts.ln}`.trim(), email: opts.em, amount: opts.amount, recurring: opts.isRecurring }),
+          body: JSON.stringify({
+            name: `${opts.fn} ${opts.ln}`.trim(), email: opts.em, amount: opts.amount, recurring: opts.isRecurring,
+            paymentId: opts.paymentId, subscriptionId: opts.subscriptionId,
+          }),
         }),
       ]);
       trackEvent("donation_completed", { amount: opts.amount, recurring: opts.isRecurring });

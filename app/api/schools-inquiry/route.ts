@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { sendToBloomOS } from "@/lib/site/bloomos";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
 const getResend = () => new Resend(process.env.RESEND_API_KEY);
 
@@ -67,6 +68,11 @@ function buildConfirmationHTML(name: string, orgName: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  // Public form that emails the address it is given: throttle per IP.
+  const rl = rateLimit(`schools-inquiry:${getClientIp(req)}`, { limit: 10, windowMs: 10 * 60 * 1000 });
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests. Please try again in a few minutes." }, { status: 429 });
+  }
   const body = await req.json().catch(() => null);
   if (!body) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { sendToBloomOS } from "@/lib/site/bloomos";
+import { escapeHtml } from "@/lib/security/escapeHtml";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
 const getResend = () => new Resend(process.env.RESEND_API_KEY);
 
@@ -17,10 +19,10 @@ function buildEmailHTML(
     <tr>
       <td style="padding:16px 20px;border-bottom:1px solid #f0eeea;">
         <div style="font-size:11px;font-weight:700;color:#E8500A;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">#${i + 1} Top Match</div>
-        <div style="font-size:17px;font-weight:700;color:#0E0E0E;margin-bottom:4px;">${c.title}</div>
-        <div style="font-size:13px;color:#6B6960;margin-bottom:6px;">${c.description}</div>
-        <div style="font-size:12px;font-weight:600;color:#E8500A;">${c.salary}</div>
-        <div style="font-size:12px;color:#6B6960;margin-top:4px;font-style:italic;">${c.why}</div>
+        <div style="font-size:17px;font-weight:700;color:#0E0E0E;margin-bottom:4px;">${escapeHtml(c.title)}</div>
+        <div style="font-size:13px;color:#6B6960;margin-bottom:6px;">${escapeHtml(c.description)}</div>
+        <div style="font-size:12px;font-weight:600;color:#E8500A;">${escapeHtml(c.salary)}</div>
+        <div style="font-size:12px;color:#6B6960;margin-top:4px;font-style:italic;">${escapeHtml(c.why)}</div>
       </td>
     </tr>`
     )
@@ -31,8 +33,8 @@ function buildEmailHTML(
       (c, i) => `
     <tr>
       <td style="padding:10px 20px;border-bottom:1px solid #f0eeea;">
-        <span style="font-size:12px;font-weight:600;color:#0E0E0E;">${i + 4}. ${c.title}</span>
-        <span style="font-size:12px;color:#6B6960;margin-left:8px;">${c.salary}</span>
+        <span style="font-size:12px;font-weight:600;color:#0E0E0E;">${i + 4}. ${escapeHtml(c.title)}</span>
+        <span style="font-size:12px;color:#6B6960;margin-left:8px;">${escapeHtml(c.salary)}</span>
       </td>
     </tr>`
     )
@@ -59,7 +61,7 @@ function buildEmailHTML(
         <tr>
           <td style="padding:28px 32px 8px;">
             <div style="font-size:22px;font-weight:700;color:#0E0E0E;margin-bottom:10px;">
-              ${teenname ? `Here are ${teenname}'s top career matches.` : "Here are your top career matches."}
+              ${teenname ? `Here are ${escapeHtml(teenname)}'s top career matches.` : "Here are your top career matches."}
             </div>
             <div style="font-size:14px;color:#6B6960;line-height:1.6;">
               Based on your quiz answers, here are the 10 careers that fit best — ranked by how deeply they match your strengths, interests, and goals.
@@ -130,7 +132,16 @@ function buildEmailHTML(
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
+  // Public form that emails the address it is given: throttle per IP. The
+  // limit is generous because a whole classroom can share one school IP.
+  const rl = rateLimit(`quiz-submit:${getClientIp(req)}`, { limit: 60, windowMs: 10 * 60 * 1000 });
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests. Please try again in a few minutes." }, { status: 429 });
+  }
+  const body = await req.json().catch(() => null);
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
   const { answers, audienceMode, careers } = body;
 
   if (!answers || !audienceMode || !careers) {

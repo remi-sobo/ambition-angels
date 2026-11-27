@@ -13,6 +13,10 @@ on:
   push:
     branches: [main]
 
+# Least privilege for the workflow token (security/baseline-2026-11).
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { sendToBloomOS } from "@/lib/site/bloomos";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { escapeHtml } from "@/lib/security/escapeHtml";
 
 const getResend = () => new Resend(process.env.RESEND_API_KEY);
 
@@ -21,10 +23,10 @@ function buildConfirmationHTML(firstName: string, orgName: string): string {
         <tr>
           <td style="padding:40px;">
             <div style="font-size:22px;font-weight:700;color:#ffffff;margin-bottom:16px;">
-              You're in, ${firstName}.
+              You're in, ${escapeHtml(firstName)}.
             </div>
             <div style="font-size:15px;color:rgba(255,255,255,0.65);line-height:1.8;margin-bottom:24px;">
-              We received your application to bring Ambition Angels to <strong style="color:#ffffff;">${orgName}</strong>. We're reviewing it now and will send your program code and Guide dashboard login within 24 hours — usually same day.
+              We received your application to bring Ambition Angels to <strong style="color:#ffffff;">${escapeHtml(orgName)}</strong>. We're reviewing it now and will send your program code and Guide dashboard login within 24 hours — usually same day.
             </div>
             <div style="font-size:15px;color:rgba(255,255,255,0.65);line-height:1.8;margin-bottom:32px;">
               In the meantime, if you have any questions or want to talk through the best way to set this up for your program, reply to this email or reach Remi directly at <a href="mailto:remi@ambitionangels.org" style="color:#E8500A;text-decoration:none;">remi@ambitionangels.org</a>.
@@ -61,6 +63,11 @@ function buildConfirmationHTML(firstName: string, orgName: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  // Public form that emails the address it is given: throttle per IP.
+  const rl = rateLimit(`program-partner-signup:${getClientIp(req)}`, { limit: 10, windowMs: 10 * 60 * 1000 });
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests. Please try again in a few minutes." }, { status: 429 });
+  }
   const body = await req.json().catch(() => null);
   if (!body) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });

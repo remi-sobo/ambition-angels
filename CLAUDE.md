@@ -99,3 +99,7 @@ style={{
 - `RESEND_API_KEY` — confirmation and receipt emails
 - `DEMODAY_PASSWORD`, `DEMO_PASSWORD`, `DEMO_COOKIE_SECRET` — the Demo Day lookbook and partner demo gates
 - `NEXT_PUBLIC_SITE_URL`, `MARKETING_ORIGIN` — the site's own origin for absolute links
+
+## Security rules
+
+For any change that touches sign-in, data access, database schema, secrets, dependencies or AI features, follow @SECURITY_RULES.md.

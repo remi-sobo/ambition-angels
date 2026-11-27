@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { sendToBloomOS } from "@/lib/site/bloomos";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { escapeHtml } from "@/lib/security/escapeHtml";
 
 const getResend = () => new Resend(process.env.RESEND_API_KEY);
 
@@ -26,13 +28,13 @@ function buildConfirmationHTML(firstName: string, role: string): string {
         <tr>
           <td style="padding:40px;">
             <div style="font-size:22px;font-weight:700;color:#ffffff;margin-bottom:16px;">
-              Welcome, ${firstName}.
+              Welcome, ${escapeHtml(firstName)}.
             </div>
             <div style="font-size:15px;color:rgba(255,255,255,0.65);line-height:1.8;margin-bottom:24px;">
               You&apos;re on the waitlist for Ambition Angels Guide access. We&apos;re currently in a pilot phase, and we&apos;re hand-selecting the first cohort of Guides who will have access to the platform.
             </div>
             <div style="font-size:15px;color:rgba(255,255,255,0.65);line-height:1.8;margin-bottom:32px;">
-              We&apos;ll reach out to you personally when it&apos;s your turn. As a ${role}, you&apos;re exactly who we built this for.
+              We&apos;ll reach out to you personally when it&apos;s your turn. As a ${escapeHtml(role)}, you&apos;re exactly who we built this for.
             </div>
 
             <!-- What to expect box -->
@@ -95,6 +97,11 @@ function optionalText(v: unknown): string | null {
 }
 
 export async function POST(req: NextRequest) {
+  // Public form that emails the address it is given: throttle per IP.
+  const rl = rateLimit(`partner-waitlist:${getClientIp(req)}`, { limit: 30, windowMs: 10 * 60 * 1000 });
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests. Please try again in a few minutes." }, { status: 429 });
+  }
   const body = await req.json().catch(() => null);
   if (!body) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });

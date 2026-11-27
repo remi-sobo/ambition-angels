@@ -97,5 +97,5 @@ style={{
 - `GAMES_TOKEN_SECRET` — signs Higher Wage pair tokens
 - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY` — donations
 - `RESEND_API_KEY` — confirmation and receipt emails
-- `DEMODAY_PASSWORD`, `DEMO_PASSWORD`, `DEMO_COOKIE_SECRET` — the Demo Day lookbook and partner demo gates
+- `DEMO_PASSWORD`, `DEMO_COOKIE_SECRET` — the partner demo gate
 - `NEXT_PUBLIC_SITE_URL`, `MARKETING_ORIGIN` — the site's own origin for absolute links

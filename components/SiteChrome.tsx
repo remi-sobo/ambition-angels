@@ -32,17 +32,13 @@ export default function SiteChrome({
     false;
   const standalone =
     (pathname?.startsWith("/admin") ||
-      // The board portal carries its own header and footer end to end, and a
-      // fixed marketing nav over a governance surface would be wrong twice:
-      // visually, and because /board is private and never advertises the site.
-      pathname?.startsWith("/board") ||
+      // The website admin's internal path (previews and local dev).
+      pathname?.startsWith("/site-admin") ||
       teensGameScreen ||
       // The My Ambition partner demo: a password door, then the demo in a
       // full-viewport iframe. Neither wants a fixed marketing nav over it.
       pathname?.startsWith("/demo") ||
       pathname?.startsWith("/ygb") ||
-      pathname?.startsWith("/shannon") ||
-      pathname?.startsWith("/strategy") ||
       pathname?.startsWith("/update/koshland")) ??
     false;
 
@@ -53,7 +49,9 @@ export default function SiteChrome({
       )}
       {!standalone && nav}
       {!standalone && <ScrollAnimations />}
-      <main>{children}</main>
+      {/* The website admin renders its own <main>; a second one around it
+          would nest two main landmarks. */}
+      {pathname?.startsWith("/admin") || pathname?.startsWith("/site-admin") ? children : <main>{children}</main>}
       {!standalone && footer}
     </>
   );

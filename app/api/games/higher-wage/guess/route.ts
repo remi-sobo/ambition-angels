@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { websiteDb } from "@/lib/site/websiteDb";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { verifyPairToken } from "@/lib/games/token";
 
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "That round expired — deal again" }, { status: 410 });
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = websiteDb();
   const { data: occs, error } = await supabase
     .from("ms_occupations")
     .select("soc_code, pay_median, pay_as_of, education_typical")

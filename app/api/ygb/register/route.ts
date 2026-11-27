@@ -1,16 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { getResidentOrgId } from "@/lib/admin/orgs";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
-import { buildYgbRegistrationEmail } from "@/lib/email/templates/ygb-registration";
+import { sendToBloomOS } from "@/lib/site/bloomos";
 
-// At/over this many confirmed campers, new sign-ups are waitlisted. Decided
-// server-side so the client can't grant itself a confirmed seat.
-const CAPACITY = 20;
 const MAX_CAMPERS = 4;
-const NOTIFY_TO = process.env.YGB_NOTIFY_EMAIL || "remi@ambitionangels.org";
-
 const GRADES = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th"];
 const TSHIRT_SIZES = [
   "Youth XS (2–4)", "Youth S (6–8)", "Youth M (10–12)", "Youth L (14–16)",
@@ -121,83 +113,18 @@ export async function POST(req: NextRequest) {
     campers.push({ ...camper, camper_age });
   }
 
-  const supabase = getSupabaseAdmin();
-
-  // Authoritative capacity check, then hand out the remaining confirmed seats
-  // to this family's campers in order; the rest waitlist.
-  const { count, error: countErr } = await supabase
-    .from("ygb_registrations")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "confirmed");
-  if (countErr) {
-    console.error("YGB register count error:", countErr);
+  // BloomOS decides seats, stores the campers and sends the
+  // roster email. If it can't be reached, the family sees "received" and the
+  // outbox delivers the registration shortly.
+  const sent = await sendToBloomOS("ygb_registration", { ...shared, campers });
+  if (sent.outcome === "rejected") return NextResponse.json({ error: sent.error }, { status: 400 });
+  if (sent.outcome === "failed") {
     return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
-  let remaining = Math.max(0, CAPACITY - (count ?? 0));
-
-  // Public form on the resident org's website — org resolved explicitly
-  // (lib/admin/orgs.ts), never a column default.
-  const orgId = await getResidentOrgId();
-  const rows = campers.map((c) => {
-    const status = remaining > 0 ? "confirmed" : "waitlisted";
-    if (remaining > 0) remaining--;
-    return { ...shared, ...c, status, org_id: orgId };
-  });
-
-  const { data: inserted, error } = await supabase
-    .from("ygb_registrations")
-    .insert(rows)
-    .select("camper_first_name,camper_last_name,camper_grade,camper_age,status,allergies_medical,parent_first_name,parent_last_name,parent_email,parent_phone");
-  if (error || !inserted) {
-    console.error("YGB register insert error:", error);
-    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
-  }
-
-  // Notify the team with the running roster. Awaited so the serverless
-  // function doesn't freeze before the email sends; wrapped so an email
-  // failure never fails the registration itself.
-  try {
-    await sendNotification(supabase);
-  } catch (e) {
-    console.error("YGB notify error:", e);
-  }
-
-  return NextResponse.json({
-    ok: true,
-    results: inserted.map((r) => ({
-      name: `${r.camper_first_name} ${r.camper_last_name}`,
-      status: r.status,
-    })),
-  });
+  const results =
+    sent.outcome === "delivered" && Array.isArray(sent.body.results)
+      ? sent.body.results
+      : campers.map((c) => ({ name: `${c.camper_first_name} ${c.camper_last_name}`, status: "received" }));
+  return NextResponse.json({ ok: true, results });
 }
 
-async function sendNotification(supabase: ReturnType<typeof getSupabaseAdmin>) {
-  if (!process.env.RESEND_API_KEY) return;
-
-  const { data: roster, error } = await supabase
-    .from("ygb_registrations")
-    .select(
-      "camper_first_name,camper_last_name,camper_grade,camper_age,status,allergies_medical,parent_first_name,parent_last_name,parent_email,parent_phone,created_at"
-    )
-    .order("created_at", { ascending: true });
-  if (error || !roster || roster.length === 0) return;
-
-  // The campers from the most recent registration share the latest created_at.
-  const latest = roster[roster.length - 1].created_at;
-  const justRegistered = roster.filter((r) => r.created_at === latest);
-
-  const { subject, text, html } = buildYgbRegistrationEmail({
-    justRegistered,
-    roster,
-    capacity: CAPACITY,
-  });
-
-  await new Resend(process.env.RESEND_API_KEY).emails.send({
-    from: "Ambition Angels <careers@mail.ambitionangels.org>",
-    to: NOTIFY_TO,
-    replyTo: justRegistered[0]?.parent_email,
-    subject,
-    text,
-    html,
-  });
-}

@@ -27,10 +27,10 @@ const CARD_STYLE = {
 };
 
 const PRESETS = [
-  { amount: 25,    label: "$25",    desc: "Get a teen started exploring careers" },
-  { amount: 100,   label: "$100",   desc: "Fund 1 teen's full internship" },
-  { amount: 500,   label: "$500",   desc: "Fund 5 teens on Ambition" },
-  { amount: 1000,  label: "$1,000", desc: "Fund a full classroom cohort" },
+  { amount: 25,    label: "$25",    desc: "Start one student exploring careers" },
+  { amount: 100,   label: "$100",   desc: "Career exposure for one student" },
+  { amount: 500,   label: "$500",   desc: "Career exposure for five students" },
+  { amount: 1000,  label: "$1,000", desc: "Career exposure for a full classroom" },
 ];
 
 // Processing-fee gross-up so the org nets the donor's intended amount.
@@ -523,7 +523,7 @@ export default function DonateModal({ onClose }: Props) {
               Give <span className="text-orange">today.</span>
             </h2>
             <p className="text-gray-warm text-sm leading-relaxed mt-2 max-w-xs">
-              Every dollar funds a teen&apos;s career internship. 100% free for every student who needs it.
+              Every dollar helps a young person explore careers before they have to choose one. 100% free for every student who needs it.
             </p>
           </div>
           <button

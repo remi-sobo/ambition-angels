@@ -1,20 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/cron/gmail-sync",
-      "schedule": "45 * * * *"
-    },
-    {
-      "path": "/api/cron/calendar-sync",
+      "path": "/api/site/cron/intake-outbox",
       "schedule": "*/15 * * * *"
-    },
-    {
-      "path": "/api/cron/calendar-watch-renew",
-      "schedule": "0 8 * * *"
-    },
-    {
-      "path": "/api/cron/metric-snapshots",
-      "schedule": "0 13 * * *"
     }
   ]
 }

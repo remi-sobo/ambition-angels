@@ -1,13 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
-import { getResidentOrgId } from "@/lib/admin/orgs";
-
-const getSupabase = () =>
-  createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+import { sendToBloomOS } from "@/lib/site/bloomos";
 
 const getResend = () => new Resend(process.env.RESEND_API_KEY);
 
@@ -18,15 +11,6 @@ function escapeHTML(s: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
-}
-
-/** Map the public form's setting label onto the partners.kind check constraint. */
-function kindForSetting(setting: string): "school" | "nonprofit" | "other" {
-  if (setting.startsWith("High school") || setting.startsWith("Community college")) {
-    return "school";
-  }
-  if (setting === "Other" || setting === "Individual mentor or parent") return "other";
-  return "nonprofit";
 }
 
 function buildConfirmationHTML(name: string, orgName: string): string {
@@ -94,53 +78,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  const supabase = getSupabase();
-  // Lands on the BloomOS partner spine, same as the program-partner form —
-  // partners rows flow to the fundraising views and HubSpot from there.
-  const { error: dbError } = await supabase.from("partners").insert({
-    org_id: await getResidentOrgId(),
-    name: String(organization),
-    kind: kindForSetting(String(setting)),
-    status: "prospect",
-    champion_name: String(name),
-    champion_email: String(email).toLowerCase(),
-    champion_role: String(role),
-    teen_count: student_count || null,
-    program_type: String(setting),
-    external_source: "schools_form",
-    last_touch_at: new Date().toISOString().slice(0, 10),
+  // BloomOS files the inquiry and alerts staff; the website
+  // still sends the submitter its confirmation.
+  const sent = await sendToBloomOS("partner_inquiry", {
+    source: "schools_form",
+    name, email, role, organization, setting, student_count: student_count || null,
   });
-
-  if (dbError) {
-    console.error("Supabase error:", dbError.message);
+  if (sent.outcome === "rejected") return NextResponse.json({ error: sent.error }, { status: 400 });
+  if (sent.outcome === "failed") {
     return NextResponse.json({ error: "Failed to save. Please try again." }, { status: 500 });
   }
-
-  const resend = getResend();
-
-  // Confirmation to submitter (non-blocking)
-  resend.emails.send({
+  await getResend().emails.send({
     from: "Ambition Angels <careers@mail.ambitionangels.org>",
     to: email,
     subject: "Bringing Ambition to your students — next steps",
     html: buildConfirmationHTML(String(name), String(organization)),
   }).catch((err) => console.error("Resend confirmation error:", err));
-
-  // Notification to Remi (non-blocking)
-  resend.emails.send({
-    from: "Ambition Angels <careers@mail.ambitionangels.org>",
-    to: "remi@ambitionangels.org",
-    subject: `New /schools inquiry: ${organization} (${name})`,
-    html: `<div style="font-family:monospace;background:#f9f9f9;padding:24px;border-radius:8px;font-size:14px;line-height:1.7;">
-  <strong>New Schools &amp; Programs Inquiry</strong><br><br>
-  Name: ${escapeHTML(String(name))}<br>
-  Email: ${escapeHTML(String(email))}<br>
-  Role: ${escapeHTML(String(role))}<br>
-  Organization: ${escapeHTML(String(organization))}<br>
-  Students: ${escapeHTML(String(student_count || "not specified"))}<br>
-  Setting: ${escapeHTML(String(setting))}
-</div>`,
-  }).catch((err) => console.error("Resend notification error:", err));
-
   return NextResponse.json({ success: true });
 }

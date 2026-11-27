@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { websiteDb } from "@/lib/site/websiteDb";
 import { normalizeClaimCode, ROOM_CODE_LENGTH } from "@/lib/ms/claim";
 
 // Room state (Phase 5). Polled by the projected screen and by each
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest, { params }: { params: { code: string
     return NextResponse.json({ error: "Invalid room code" }, { status: 400 });
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = websiteDb();
   const { data: room } = await supabase
     .from("ms_rooms")
     .select("id, room_code, table_assignments, expires_at")

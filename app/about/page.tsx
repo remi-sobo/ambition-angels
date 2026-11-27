@@ -1,8 +1,10 @@
+/* eslint-disable @next/next/no-img-element */
 import type { Metadata } from "next";
 import Image from "next/image";
-
 export const metadata: Metadata = {
   title: "About",
+  description:
+    "Ambition Angels is a youth development organization building a real path to careers through career exposure, in the classroom and in their pocket.",
 };
 
 const boardMembers = [
@@ -10,7 +12,6 @@ const boardMembers = [
     name: "Remi Sobomehin",
     org: "Ambition Angels",
     title: "CEO",
-    initials: "RS",
     photo: "/images/Remi-Sobomehin_edited_edited.jpeg",
     linkedin: "https://www.linkedin.com/in/remi-sobomehin/",
   },
@@ -18,7 +19,6 @@ const boardMembers = [
     name: "Jerrel Brown",
     org: "Dapper Down Lounge",
     title: "CEO",
-    initials: "JB",
     photo: "/images/Jerrell B.jpeg",
     linkedin: "https://www.linkedin.com/in/jerrel-brown-b54410ab/",
   },
@@ -26,7 +26,6 @@ const boardMembers = [
     name: "Lara Sellers",
     org: "",
     title: "Educational Advocate",
-    initials: "LS",
     photo: "/images/Lara.jpeg",
     linkedin: "https://www.linkedin.com/in/lara-sellers-a138391a/",
   },
@@ -34,7 +33,6 @@ const boardMembers = [
     name: "Michelle Vilchez",
     org: "Innovate Public Schools",
     title: "CEO",
-    initials: "MV",
     photo: "/images/Michelle.jpg",
     linkedin: "https://www.linkedin.com/in/michelle-vilchez-152684b/",
   },
@@ -42,7 +40,6 @@ const boardMembers = [
     name: "Todd Singleton",
     org: "Microsoft",
     title: "General Manager",
-    initials: "TS",
     photo: "/images/Todd.jpeg",
     linkedin: "https://www.linkedin.com/in/todd-singleton/",
   },
@@ -70,205 +67,104 @@ const advisors = [
   { name: "Mallory Dwinal-Palisch", org: "Reach University", title: "Chancellor", photo: "/images/mallory.jpeg", linkedin: "https://www.linkedin.com/in/mallory-dwinal-palisch/" },
   { name: "Olatunde Sobomehin", org: "Streetcode Academy", title: "CEO", photo: "/images/tunde.jpg", linkedin: "https://www.linkedin.com/in/coachtunde/" },
   { name: "Dr. Bryan Brown", org: "Stanford GSE", title: "Professor", photo: "/images/bryan.jpeg", linkedin: "https://www.linkedin.com/in/bryan-brown-a0744516/" },
-  { name: "Julie Lythcott-Haims", org: "New York Times", title: "Bestselling Author of How to Raise an Adult", photo: "/images/julie.jpeg", linkedin: "https://www.linkedin.com/in/jlythcotthaims/" },
+  { name: "Julie Lythcott-Haims", org: "", title: "New York Times bestselling author of How to Raise an Adult", photo: "/images/julie.jpeg", linkedin: "https://www.linkedin.com/in/jlythcotthaims/" },
 ];
 
-function LinkedInIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className="w-4 h-4"
-      aria-hidden="true"
-    >
-      <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
-    </svg>
-  );
-}
+const board = boardMembers.map((m) => ({ ...m, role: m.title }));
+const advisorCards = advisors.map((a) => ({ ...a, line: a.org ? `${a.title}, ${a.org}` : a.title }));
 
 export default function AboutPage() {
   return (
     <>
-      {/* HERO */}
-      <section className="relative pt-32 pb-24 lg:pt-44 lg:pb-36 overflow-hidden">
-        {/* Background photo */}
-        <Image
-          src="/images/yingchou-han-IJrIeCs3D4g-unsplash.jpg"
-          alt=""
-          fill
-          priority
-          className="object-cover object-center"
-          aria-hidden="true"
-        />
-        {/* Dark overlay at 55% */}
-        <div className="absolute inset-0 bg-ink/55" />
-        {/* Original dot pattern on top */}
-        <div
-          className="absolute inset-0 opacity-20"
-          style={{
-            backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.3) 1px, transparent 1px)",
-            backgroundSize: "28px 28px",
-          }}
-        />
-        <div className="container-site relative z-10">
-          <div className="max-w-3xl">
-            <div className="inline-block text-xs font-medium text-orange bg-white border border-orange/20 px-4 py-1.5 rounded-full uppercase tracking-widest mb-6 fade-up">
-              About Us
-            </div>
-            <h1 className="font-display font-black text-6xl lg:text-8xl text-white mb-6 leading-none tracking-tight uppercase fade-up stagger-1">
-              Every teen.<br />
-              <span className="text-orange">A real path.</span>
+      <div className="aa-page" style={{ fontFamily: "var(--font-body)", color: "var(--ink)", background: "var(--paper)", overflowX: "clip" }}>
+        <section style={{ position: "relative", background: "var(--cream)", overflow: "hidden" }}>
+          <img src="/images/site/doodles/doodle-62.png" alt="" aria-hidden="true" style={{ position: "absolute", top: "56px", right: "7%", width: "120px", opacity: "0.35", pointerEvents: "none" }} />
+          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "clamp(80px,10vw,136px) clamp(20px,4vw,32px) clamp(64px,8vw,104px)" }}>
+            <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0 0 20px" }}>About Us</p>
+            <h1 style={{ fontFamily: "var(--font-display)", fontWeight: "900", textTransform: "uppercase", fontSize: "clamp(60px,9vw,132px)", lineHeight: "0.88", letterSpacing: "-0.015em", color: "var(--ink)", margin: "0 0 28px" }}>
+              <span style={{ display: "block" }}>Every young person.</span>
+              <span style={{ display: "block", color: "var(--orange)" }}>A real path.</span>
             </h1>
-            <p className="text-white/85 text-lg lg:text-xl max-w-2xl leading-relaxed fade-up stagger-2">
-              Every teen deserves a clear picture of what is possible and a real path to get there. Ambition Angels is a youth development organization building that path through real career exposure, in the classroom and in their pocket.
-            </p>
+            <p style={{ fontSize: "clamp(17px,1.6vw,20px)", lineHeight: "1.6", color: "var(--charcoal)", maxWidth: "640px", margin: "0", textWrap: "pretty" }}>Every young person deserves a clear picture of what is possible and a real path to get there. Ambition Angels is a youth development organization building that path through real career exposure, in the classroom and in their pocket.</p>
           </div>
-        </div>
-      </section>
-
-      {/* OUR STORY */}
-      <section className="section-pad">
-        <div className="container-site">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
-            <div className="lg:sticky lg:top-32 fade-up">
-              <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
-                Where We Came From
-              </p>
-              <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink leading-tight">
-                This is not theory. This is our story.
+        </section>
+        <section style={{ background: "var(--ink)", backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)", backgroundSize: "22px 22px", padding: "clamp(80px,9vw,120px) 0" }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 clamp(20px,4vw,32px)", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,420px),1fr))", gap: "clamp(48px,6vw,96px)", alignItems: "start" }}>
+            <div>
+              <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0 0 16px" }}>Where we came from</p>
+              <h2 style={{ fontFamily: "var(--font-display)", fontWeight: "900", textTransform: "uppercase", fontSize: "clamp(48px,5.6vw,88px)", lineHeight: "0.9", letterSpacing: "-0.015em", color: "var(--cream)", margin: "0 0 36px" }}>
+                {"This is not theory. "}
+                <span style={{ color: "var(--orange)" }}>This is our story.</span>
               </h2>
-            </div>
-            <div className="space-y-5 text-gray-warm leading-relaxed text-base lg:text-lg fade-up stagger-1">
-              <p>
-                Remi Sobomehin and Demetric Sanders grew up together in Portland, Oregon, both attending Remi&apos;s father&apos;s community nonprofit as kids. They grew up in low-income neighborhoods with no roadmap and decided on Stanford anyway. Youth workers and community organizations showed up for them for years. They both got in.
-              </p>
-              <p>
-                After graduating, Remi went to East Palo Alto and got to work, leading in schools and nonprofits, trying to replicate what had worked for him and Demetric. He kept running into the same wall: he could not get teens to show up.
-              </p>
-              <p>
-                Meanwhile, Demetric joined Facebook and worked on the product team focused on teens. He could see exactly what was reaching them at scale. Their phones.
-              </p>
-              <p>
-                So they built for the phone, and then kept building. Today Ambition runs on the web in classrooms and programs, on the phone everywhere else, with a dashboard for every adult in a teen&apos;s corner.
-              </p>
-              <p>
-                Stop fighting where teens are. Meet them there, and bring the adults with you.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* BOARD OF DIRECTORS */}
-      <section className="section-pad">
-        <div className="container-site">
-          <div className="max-w-2xl mb-12 fade-up">
-            <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
-              Our Board of Directors
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 fade-up stagger-1">
-            {boardMembers.map((member) => (
-              <div
-                key={member.name}
-                className="bg-white border border-gray-light rounded-card-lg p-7 shadow-sm flex flex-col"
-              >
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-orange/20 flex-shrink-0">
-                    <Image
-                      src={member.photo}
-                      alt={member.name}
-                      width={56}
-                      height={56}
-                      className="w-full h-full object-cover object-top"
-                    />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="font-heading font-semibold text-ink text-base leading-tight">
-                      {member.name}
-                    </div>
-                    {member.org && (
-                      <div className="text-gray-warm text-sm truncate">{member.org}</div>
-                    )}
-                    <div className="text-gray-mid text-xs">{member.title}</div>
-                  </div>
-                </div>
-                <div className="mt-auto pt-4 border-t border-gray-light">
-                  <a
-                    href={member.linkedin}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`${member.name} on LinkedIn`}
-                    className="inline-flex items-center gap-1.5 text-gray-warm hover:text-orange transition-colors text-xs font-medium"
-                  >
-                    <LinkedInIcon />
-                    LinkedIn
-                  </a>
-                </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: "16px", maxWidth: "440px" }}>
+                <figure style={{ margin: "0" }}>
+                  <Image src="/images/Remi-Sobomehin_edited_edited.jpg" width={2002} height={1609} sizes="(max-width: 768px) 50vw, 300px" alt="Remi Sobomehin" style={{ width: "100%", aspectRatio: "4/5", objectFit: "cover", borderRadius: "var(--radius-card)", display: "block" }} />
+                  <figcaption style={{ marginTop: "10px" }}>
+                    <span style={{ display: "block", fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "15px", color: "var(--cream)" }}>Remi Sobomehin</span>
+                    <span style={{ fontSize: "13px", color: "var(--gray-mid)" }}>Founder & CEO</span>
+                  </figcaption>
+                </figure>
+                <figure style={{ margin: "0" }}>
+                  <Image src="/images/deme_edited.jpg" width={841} height={638} sizes="(max-width: 768px) 50vw, 300px" alt="Demetric Sanders" style={{ width: "100%", aspectRatio: "4/5", objectFit: "cover", borderRadius: "var(--radius-card)", display: "block" }} />
+                  <figcaption style={{ marginTop: "10px" }}>
+                    <span style={{ display: "block", fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "15px", color: "var(--cream)" }}>Demetric Sanders</span>
+                    <span style={{ fontSize: "13px", color: "var(--gray-mid)" }}>Tech Partner</span>
+                  </figcaption>
+                </figure>
               </div>
-            ))}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px", maxWidth: "560px" }}>
+              <p style={{ fontSize: "18px", lineHeight: "1.7", color: "var(--gray-mid)", margin: "0" }}>{"Remi Sobomehin and Demetric Sanders grew up together in Portland, Oregon, both attending Remi's father's community nonprofit as kids. They grew up in low-income neighborhoods with no roadmap and decided on Stanford anyway. Youth workers and community organizations showed up for them for years. They both got in."}</p>
+              <p style={{ fontSize: "18px", lineHeight: "1.7", color: "var(--gray-mid)", margin: "0" }}>After graduating, Remi went to East Palo Alto and got to work, leading in schools and nonprofits, trying to replicate what had worked for him and Demetric. He kept running into the same wall: he could not get teens to show up.</p>
+              <p style={{ fontSize: "18px", lineHeight: "1.7", color: "var(--gray-mid)", margin: "0" }}>Meanwhile, Demetric joined Facebook and worked on the product team focused on teens. He could see exactly what was reaching them at scale. Their phones.</p>
+              <p style={{ fontSize: "18px", lineHeight: "1.7", color: "var(--gray-mid)", margin: "0" }}>{"So they built for the phone, and then kept building. Today Ambition runs on the web in classrooms and programs, on the phone everywhere else, with a dashboard for every adult in a young person's corner."}</p>
+              <p style={{ fontFamily: "var(--font-display)", fontWeight: "900", textTransform: "uppercase", letterSpacing: "-0.01em", fontSize: "clamp(30px,3vw,44px)", lineHeight: "0.95", color: "var(--cream)", margin: "16px 0 0", paddingTop: "24px", borderTop: "1px solid rgb(250 250 248 / 0.14)" }}>
+                {"Stop fighting where teens are. "}
+                <span style={{ color: "var(--orange)" }}>Meet them there, and bring the adults with you.</span>
+              </p>
+            </div>
           </div>
-        </div>
-      </section>
-
-      {/* ADVISORY BOARD */}
-      <section className="section-pad bg-gray-light">
-        <div className="container-site">
-          <div className="max-w-2xl mb-12 fade-up">
-            <p className="text-xs font-medium text-orange uppercase tracking-widest mb-4">
-              Our Advisors
-            </p>
-            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-ink mb-4">
-              22 leaders in education, tech, and social impact.
-            </h2>
-            <p className="text-gray-warm leading-relaxed">
-              Our advisory board includes founders, executives, professors, and practitioners who bring real-world expertise and a genuine commitment to building opportunity for low-income youth.
-            </p>
+        </section>
+        <section style={{ background: "var(--paper)", padding: "clamp(80px,9vw,112px) 0" }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 clamp(20px,4vw,32px)" }}>
+            <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "clamp(30px,3.6vw,40px)", letterSpacing: "-0.02em", lineHeight: "1.15", margin: "0 0 40px", color: "var(--ink)" }}>Our board of directors</h2>
+            <ul style={{ listStyle: "none", margin: "0", padding: "0", display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,200px),1fr))", gap: "20px" }}>
+              {board.map((p, i) => (
+                <li key={i} style={{ background: "var(--cream)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: "24px", display: "flex", flexDirection: "column", gap: "14px" }}>
+                  <Image src={p.photo} alt="" width={144} height={144} sizes="72px" style={{ width: "72px", height: "72px", flexShrink: "0", borderRadius: "50%", objectFit: "cover", background: "var(--gray-light)" }} />
+                  <span>
+                    <a className="hv-7ccd06" href={p.linkedin} target="_blank" rel="noopener noreferrer" style={{ display: "block", fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "17px", color: "var(--ink)" }}>{p.name}</a>
+                    <span style={{ display: "block", fontSize: "14px", lineHeight: "1.45", color: "var(--charcoal)" }}>{p.role}</span>
+                    <span style={{ display: "block", fontSize: "14px", lineHeight: "1.45", color: "var(--muted)" }}>{p.org}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 fade-up stagger-1">
-            {advisors.map((advisor) => (
-              <div
-                key={advisor.name}
-                className="bg-white border border-gray-light rounded-card p-5 flex flex-col gap-3"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full overflow-hidden border border-orange/20 flex-shrink-0">
-                    <Image
-                      src={advisor.photo}
-                      alt={advisor.name}
-                      width={40}
-                      height={40}
-                      className="w-full h-full object-cover object-top"
-                    />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="font-heading font-semibold text-ink text-sm leading-tight">
-                      {advisor.name}
-                    </div>
-                    <div className="text-gray-warm text-xs truncate">{advisor.org}</div>
-                  </div>
-                </div>
-                <div className="text-gray-mid text-xs leading-snug">{advisor.title}</div>
-                <div className="pt-2 border-t border-gray-light mt-auto">
-                  <a
-                    href={advisor.linkedin}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`${advisor.name} on LinkedIn`}
-                    className="inline-flex items-center gap-1 text-gray-warm hover:text-orange transition-colors text-xs"
-                  >
-                    <LinkedInIcon />
-                    LinkedIn
-                  </a>
-                </div>
+        </section>
+        <section style={{ background: "var(--surface-tint)", backgroundImage: "radial-gradient(circle, rgba(232,80,10,0.07) 1px, transparent 1px)", backgroundSize: "22px 22px", padding: "clamp(80px,9vw,112px) 0" }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 clamp(20px,4vw,32px)" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: "20px 48px", marginBottom: "40px" }}>
+              <div style={{ maxWidth: "640px" }}>
+                <p style={{ fontFamily: "var(--font-heading)", fontWeight: "600", fontSize: "12px", letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--orange)", margin: "0 0 16px" }}>Our advisors</p>
+                <h2 style={{ fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "clamp(30px,3.6vw,40px)", letterSpacing: "-0.02em", lineHeight: "1.15", margin: "0", color: "var(--ink)" }}>{advisorCards.length} leaders in education, tech, and social impact.</h2>
               </div>
-            ))}
+              <p style={{ fontSize: "17px", lineHeight: "1.6", color: "var(--charcoal)", margin: "0", maxWidth: "440px" }}>Our advisory board includes founders, executives, professors, and practitioners who bring real-world expertise and a genuine commitment to building opportunity for low-income youth.</p>
+            </div>
+            <ul style={{ listStyle: "none", margin: "0", padding: "0", display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,260px),1fr))", gap: "12px" }}>
+              {advisorCards.map((a, i) => (
+                <li key={i} style={{ background: "var(--paper)", border: "1px solid var(--rule)", borderRadius: "var(--radius-card)", padding: "16px 18px", display: "flex", alignItems: "center", gap: "14px" }}>
+                  <Image src={a.photo} alt="" width={88} height={88} sizes="44px" style={{ width: "44px", height: "44px", flexShrink: "0", borderRadius: "50%", objectFit: "cover", background: "var(--gray-light)" }} />
+                  <span style={{ minWidth: "0" }}>
+                    <a className="hv-7ccd06" href={a.linkedin} target="_blank" rel="noopener noreferrer" style={{ display: "block", fontFamily: "var(--font-heading)", fontWeight: "700", fontSize: "15px", color: "var(--ink)" }}>{a.name}</a>
+                    <span style={{ display: "block", fontSize: "13px", lineHeight: "1.4", color: "var(--muted)" }}>{a.line}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </>
   );
 }

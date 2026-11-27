@@ -1,37 +1,34 @@
 "use client";
 
 import { useState } from "react";
+import { trackEvent } from "@/lib/analytics";
 
-const ROLE_OPTIONS = [
-  "CSR or Foundation",
-  "Talent Acquisition or Recruiting",
-  "Executive Sponsor",
-  "Communications or Marketing",
-  "Other",
+const INTERESTS = [
+  "Introships from our careers",
+  "Sponsoring a season",
+  "Sponsoring a school or program",
+  "Coaching",
+  "Not sure yet",
 ];
 
+/** Company inquiry. Posts to /api/partner-waitlist with role "Corporate
+ *  Partner": the row saves the company, the person's role and the interest,
+ *  the team gets a notification, and the sender gets a short confirmation.
+ *  Never shows success unless the request succeeded. */
 export default function CompaniesContactForm() {
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [company, setCompany] = useState("");
-  const [email, setEmail] = useState("");
-  const [roleCategory, setRoleCategory] = useState("");
-  const [problem, setProblem] = useState("");
+  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", company: "", role: "", interest: INTERESTS[0] });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [formError, setFormError] = useState("");
+  const [error, setError] = useState("");
+
+  const set = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormError("");
-    if (
-      !firstName.trim() ||
-      !lastName.trim() ||
-      !company.trim() ||
-      !email.trim() ||
-      !roleCategory
-    ) {
-      setFormError("Please fill in the required fields.");
+    setError("");
+    if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim() || !form.company.trim()) {
+      setError("Please fill in your name, email, and company.");
       return;
     }
     setSubmitting(true);
@@ -40,23 +37,25 @@ export default function CompaniesContactForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          first_name: firstName.trim(),
-          last_name: lastName.trim(),
-          email: email.trim(),
+          first_name: form.firstName.trim(),
+          last_name: form.lastName.trim(),
+          email: form.email.trim(),
           role: "Corporate Partner",
           teen_count: "",
-          company: company.trim(),
-          role_category: roleCategory,
-          problem_to_solve: problem.trim(),
+          company: form.company.trim(),
+          role_category: form.role.trim(),
+          interest: form.interest,
+          problem_to_solve: `Interested in: ${form.interest}`,
         }),
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         throw new Error(d.error ?? "Something went wrong. Please try again.");
       }
+      trackEvent("companies_inquiry_submitted", { interest: form.interest });
       setSubmitted(true);
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Something went wrong.");
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -64,97 +63,51 @@ export default function CompaniesContactForm() {
 
   if (submitted) {
     return (
-      <div className="bg-white/20 border border-white/30 rounded-card-lg px-8 py-6 text-center max-w-xl mx-auto">
-        <p className="font-heading font-bold text-white text-lg">
-          You&apos;re on Remi&apos;s list. He&apos;ll reach out directly.
-        </p>
-      </div>
+      <p role="status" style={{ fontFamily: "var(--font-heading)", fontWeight: 600, fontSize: 18, lineHeight: 1.5, color: "var(--ink)", margin: 0 }}>
+        Got it. Remi will reach out directly.
+      </p>
     );
   }
 
-  const inputClass =
-    "w-full px-5 py-4 rounded-full text-ink text-sm font-medium bg-white border-2 border-transparent focus:outline-none focus:border-white/40 min-h-[52px] placeholder:text-gray-mid";
+  const field = (name: keyof typeof form, label: string, type = "text", required = true, autoComplete?: string) => (
+    <div>
+      <label htmlFor={`co-${name}`} className="aa-label">
+        {label}
+      </label>
+      <input id={`co-${name}`} name={name} type={type} value={form[name]} onChange={set} required={required} autoComplete={autoComplete} className="aa-field" />
+    </div>
+  );
 
   return (
-    <div className="max-w-xl mx-auto text-left">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <input
-            type="text"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            placeholder="First name"
-            required
-            autoComplete="given-name"
-            className={inputClass}
-          />
-          <input
-            type="text"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            placeholder="Last name"
-            required
-            autoComplete="family-name"
-            className={inputClass}
-          />
-        </div>
-        <input
-          type="text"
-          value={company}
-          onChange={(e) => setCompany(e.target.value)}
-          placeholder="Company"
-          required
-          autoComplete="organization"
-          className={inputClass}
-        />
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="your@company.com"
-          required
-          autoComplete="email"
-          className={inputClass}
-        />
-        <select
-          value={roleCategory}
-          onChange={(e) => setRoleCategory(e.target.value)}
-          required
-          className={`${inputClass} appearance-none bg-white pr-10`}
-          style={{
-            backgroundImage:
-              "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none' stroke='%236B6960' stroke-width='2'><path d='M2 4l4 4 4-4' stroke-linecap='round' stroke-linejoin='round'/></svg>\")",
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "right 1.25rem center",
-          }}
-        >
-          <option value="" disabled>
-            What best matches your role?
-          </option>
-          {ROLE_OPTIONS.map((r) => (
-            <option key={r} value={r}>
-              {r}
+    <form onSubmit={handleSubmit} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,200px),1fr))", gap: 16 }}>
+      {field("firstName", "First name", "text", true, "given-name")}
+      {field("lastName", "Last name", "text", true, "family-name")}
+      {field("email", "Email", "email", true, "email")}
+      {field("company", "Company", "text", true, "organization")}
+      {field("role", "Role", "text", false, "organization-title")}
+      <div>
+        <label htmlFor="co-interest" className="aa-label">
+          Interested in
+        </label>
+        <select id="co-interest" name="interest" value={form.interest} onChange={set} className="aa-field">
+          {INTERESTS.map((s) => (
+            <option key={s} value={s}>
+              {s}
             </option>
           ))}
         </select>
-        <textarea
-          value={problem}
-          onChange={(e) => setProblem(e.target.value)}
-          placeholder="What's the problem you're hoping to solve? (optional)"
-          rows={4}
-          className="w-full px-5 py-4 rounded-card text-ink text-sm font-medium bg-white border-2 border-transparent focus:outline-none focus:border-white/40 placeholder:text-gray-mid leading-relaxed resize-y"
-        />
-        <button
-          type="submit"
-          disabled={submitting}
-          className="bg-white text-orange hover:bg-orange-light font-semibold text-sm px-8 py-4 rounded-full transition-colors min-h-[52px] disabled:opacity-60 mt-2"
-        >
+      </div>
+      <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: 12, marginTop: 8 }}>
+        {error && (
+          <p role="alert" style={{ fontSize: 14, fontWeight: 600, color: "#B42318", margin: 0 }}>
+            {error}
+          </p>
+        )}
+        <button type="submit" disabled={submitting} className="aa-pill aa-pill--primary aa-pill--lg" style={{ width: "100%", opacity: submitting ? 0.6 : 1 }}>
           {submitting ? "Sending…" : "Start the conversation"}
         </button>
-      </form>
-      {formError && (
-        <p className="text-white/80 text-sm mt-3 text-center">{formError}</p>
-      )}
-    </div>
+        <p style={{ fontSize: 13, color: "var(--muted)", margin: 0, textAlign: "center" }}>Remi will reply personally within a few days.</p>
+      </div>
+    </form>
   );
 }

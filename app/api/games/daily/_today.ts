@@ -1,4 +1,4 @@
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { websiteDb } from "@/lib/site/websiteDb";
 import { laDateString } from "@/lib/games/guess";
 
 // Shared loader: today's Never Heard of It career, fully gated. A row must
@@ -21,7 +21,7 @@ export type DailyCard = {
 
 export async function loadToday(): Promise<{ day: string; card: DailyCard } | null> {
   const day = laDateString();
-  const supabase = getSupabaseAdmin();
+  const supabase = websiteDb();
 
   const { data: daily } = await supabase
     .from("game_daily")

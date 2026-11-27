@@ -1,24 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
-import { adminUrl } from "@/lib/origins";
-
-const getSupabase = () =>
-  createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+import { sendToBloomOS } from "@/lib/site/bloomos";
 
 const getResend = () => new Resend(process.env.RESEND_API_KEY);
-
-function escapeHTML(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 function buildConfirmationHTML(firstName: string, role: string): string {
   return `
@@ -88,6 +72,28 @@ function buildConfirmationHTML(firstName: string, role: string): string {
 </html>`;
 }
 
+/** Plain-text confirmation for a company inquiry from /companies. Short on
+ *  purpose: we got the note, and Remi replies personally. */
+function buildCompanyConfirmationText(firstName: string, company: string): string {
+  const about = company ? ` about ${company} and Ambition Angels` : "";
+  return `Hi ${firstName},
+
+Thank you for reaching out${about}. We got your note.
+
+I'll reply personally within a few days. If you want to talk sooner, just reply to this email.
+
+With gratitude,
+Remi
+Ambition Angels`;
+}
+
+/** Optional free-text field from a public form: trimmed, capped, or null. */
+function optionalText(v: unknown): string | null {
+  if (typeof v !== "string") return null;
+  const t = v.trim().slice(0, 300);
+  return t || null;
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   if (!body) {
@@ -103,6 +109,7 @@ export async function POST(req: NextRequest) {
     company,
     role_category,
     problem_to_solve,
+    interest,
   } = body;
 
   // The /mesa/students page reuses this submission path for a lightweight
@@ -110,29 +117,42 @@ export async function POST(req: NextRequest) {
   // Students have no last name field and must not receive the Guide-branded
   // confirmation email below.
   const isStudent = role === "MESA Student";
+  // /companies posts here with role "Corporate Partner". A company lead gets
+  // its own short confirmation, never the Guide waitlist email.
+  const isCorporate = role === "Corporate Partner";
 
   if (!first_name || !email || !role || (!isStudent && !last_name)) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  // Save to Supabase
-  const supabase = getSupabase();
-  const { error: dbError } = await supabase.from("partner_waitlist").insert({
-    first_name,
-    last_name: last_name || "",
-    email,
-    role,
-    teen_count: teen_count || null,
+  // BloomOS stores the contact and alerts staff. The confirmations to the
+  // person below are the website's.
+  const sent = await sendToBloomOS("company_contact", {
+    first_name, last_name: last_name || "", email, role, teen_count: teen_count || null,
+    company, role_category, interest, problem_to_solve,
   });
-
-  if (dbError) {
-    console.error("Supabase error:", dbError.message);
+  if (sent.outcome === "rejected") return NextResponse.json({ error: sent.error }, { status: 400 });
+  if (sent.outcome === "failed") {
     return NextResponse.json({ error: "Failed to save. Please try again." }, { status: 500 });
   }
 
-  // Send the Guide confirmation email (non-blocking). Skipped for MESA
-  // students: that email describes Guide access and would confuse a student.
-  if (!isStudent) {
+  // Confirmation to the person who wrote in (non-blocking). Companies get a
+  // short personal note. Guides get the Guide waitlist email. MESA students
+  // get neither: the Guide email describes Guide access and would confuse them.
+  if (isCorporate) {
+    try {
+      await getResend().emails.send({
+        from: "Remi Sobomehin <careers@mail.ambitionangels.org>",
+        replyTo: "remi@ambitionangels.org",
+        to: email,
+        subject: "We got your note",
+        text: buildCompanyConfirmationText(String(first_name).trim(), optionalText(company) ?? ""),
+      });
+    } catch (emailErr) {
+      console.error("Resend error:", emailErr);
+      // Don't fail. BloomOS has the contact.
+    }
+  } else if (!isStudent) {
     try {
       await getResend().emails.send({
         from: "Ambition Angels <careers@mail.ambitionangels.org>",
@@ -142,44 +162,8 @@ export async function POST(req: NextRequest) {
       });
     } catch (emailErr) {
       console.error("Resend error:", emailErr);
-      // Don't fail — DB write succeeded
+      // Don't fail. BloomOS has the contact.
     }
-  }
-
-  // Notification to Remi (non-blocking)
-  try {
-    const isCorporate = role === "Corporate Partner";
-    const subjectPrefix = isCorporate
-      ? "New company inquiry"
-      : isStudent
-        ? "New MESA student signup"
-        : "New Guide waitlist signup";
-    await getResend().emails.send({
-      from: "Ambition Angels <careers@mail.ambitionangels.org>",
-      to: "remi@ambitionangels.org",
-      subject: `${subjectPrefix}: ${first_name} ${last_name}`,
-      html: `
-        <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:28px;background:#fff;border-radius:12px;">
-          <h2 style="color:#E8500A;margin:0 0 16px;font-size:18px;">${subjectPrefix}</h2>
-          <table style="width:100%;border-collapse:collapse;font-size:14px;">
-            <tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Name</td><td style="padding:6px 0;color:#0E0E0E;">${first_name} ${last_name}</td></tr>
-            <tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Email</td><td style="padding:6px 0;color:#0E0E0E;"><a href="mailto:${email}" style="color:#E8500A;text-decoration:none;">${email}</a></td></tr>
-            ${company ? `<tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Company</td><td style="padding:6px 0;color:#0E0E0E;">${escapeHTML(String(company))}</td></tr>` : ""}
-            <tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Role</td><td style="padding:6px 0;color:#0E0E0E;">${role}</td></tr>
-            ${role_category ? `<tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Role category</td><td style="padding:6px 0;color:#0E0E0E;">${escapeHTML(String(role_category))}</td></tr>` : ""}
-            ${teen_count ? `<tr><td style="padding:6px 12px 6px 0;color:#6B7280;">Teens</td><td style="padding:6px 0;color:#0E0E0E;">${teen_count}</td></tr>` : ""}
-          </table>
-          ${problem_to_solve ? `
-          <div style="margin-top:20px;padding:16px;background:#FFF7F2;border-left:3px solid #E8500A;border-radius:6px;">
-            <div style="font-size:11px;font-weight:700;color:#E8500A;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">What they want to solve</div>
-            <div style="font-size:14px;color:#0E0E0E;line-height:1.6;white-space:pre-wrap;">${escapeHTML(String(problem_to_solve))}</div>
-          </div>` : ""}
-          <p style="color:#9CA3AF;font-size:12px;margin-top:20px;">View all in <a href="${adminUrl()}" style="color:#E8500A;">admin</a></p>
-        </div>
-      `,
-    });
-  } catch (notifyErr) {
-    console.error("Resend notify error:", notifyErr);
   }
 
   return NextResponse.json({ success: true });

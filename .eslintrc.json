@@ -1,11 +1,4 @@
 {
-  "extends": ["next/core-web-vitals", "next/typescript"],
-  "overrides": [
-    {
-      "files": ["app/admin/**/*.ts", "app/admin/**/*.tsx"],
-      "rules": {
-        "no-alert": "error"
-      }
-    }
-  ]
+  "root": true,
+  "extends": ["next/core-web-vitals", "next/typescript"]
 }

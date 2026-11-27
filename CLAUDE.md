@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+This is the Ambition Angels website: the public pages, the teen games, the career library and a small website admin. BloomOS (the operating system Ambition Angels runs on) lives in its own repo, `remi-sobo/bloomos`, at app.bloomos.org. The line between them is in `specs/bloomos-repo-split.md`: anything about the website, the games or the career library lives here; anything about people, money or programs (donors, applicants, partners, coaches, board, tasks) lives in BloomOS.
+
 ## Commands
 
 ```bash
@@ -9,47 +11,52 @@ npm run dev        # start dev server at localhost:3000
 npm run build      # production build
 npm run lint       # ESLint via next lint
 npm test           # vitest run (unit tests in tests/*.test.ts)
-npm run qa:visual  # Playwright visual QA (e2e/, auth-gated, run on a real session)
 ```
 
-Tests live in `tests/*.test.ts` (vitest) and run in CI via `.github/workflows/ci.yml` (typecheck + lint + `npm test`). A separate `.github/workflows/rls-test.yml` applies every migration to a throwaway Postgres and runs the cross-role leak assertions in `supabase/tests/rls-leak-test.sql`. `.github/workflows/migration-ledger.yml` runs on every PR and diffs production's applied-migration ledger (`supabase_migrations.schema_migrations`, read through a role scoped to that one table) against `supabase/migrations/` in both directions, so DDL applied without a committed file — and a migration committed without being applied — fails the build (`scripts/check-migration-ledger.ts`). `tests/migrations.test.ts` enforces that every `create table` / `create index` is idempotent (`if not exists`). The public site's only standalone test is `tests/availability.test.ts`; the rest cover BloomOS (finance runway, constituent resolution, briefing, stewardship, and more).
+CI (`.github/workflows/ci.yml`) runs typecheck, lint and `npm test` on every PR. `tests/migrations.test.ts` enforces that every `create table` / `create index` is idempotent (`if not exists`). `tests/split-boundary.test.ts` fails if any code reads a BloomOS database key.
 
 ## Stack
 
-Next.js 14 (App Router), TypeScript, Tailwind CSS, Supabase (Postgres + auth), Stripe (donations), Anthropic Claude API, Resend/Gmail (email), HubSpot (fundraising CRM sync). Deployed to Vercel.
+Next.js 14 (App Router), TypeScript, Tailwind CSS, Supabase (the website's own Postgres + auth for the website admin), Stripe (donations), Anthropic Claude API, Resend (email). Deployed to Vercel (project `ambition-angels-site`).
 
 ## Architecture
 
-**App Router** — all routes live under `app/`. The root layout (`app/layout.tsx`) wraps pages with `<Nav>` and `<Footer>` via `components/SiteChrome.tsx`, which skips that chrome for standalone routes (`/admin`, `/teens`, `/ygb`, `/shannon`, `/strategy`, `/update/koshland`).
+**App Router** — all routes live under `app/`. The root layout (`app/layout.tsx`) wraps pages with `<SiteHeader>` and `<SiteFooter>` (`components/site/`) via `components/SiteChrome.tsx`, which skips that chrome for standalone routes (`/admin`, `/teens/*` game screens, `/ygb`, `/update/koshland`).
 
-**Public pages:**
-- `/` — homepage (client component; `IntersectionObserver` drives `.fade-up` animations)
-- `/about` — story, board of directors, advisory board (static data inline)
-- `/the-app` — app showcase with interactive `AppDemo`
-- `/curriculum` — track grid (inline `tracks` array); detail pages at `/curriculum/[slug]` driven by `lib/internships.ts` (only tracks with a `slug` link through)
+**Public pages (site v2, specs/site-redesign-v2.md):** the ten redesigned pages were ported from a design canvas and keep its inline styles on top of the brand CSS variables. Shared pieces live in `components/site/` (`PillCTA`, `NumberedBlock`, `StatBar`, `Fit`, and the HTML product mockups in `screens/`); tokens, hover classes (`.hv-*`), breakpoints and the header/footer styles live in `app/site.css`. Each redesigned page wraps itself in `.aa-page`, which clears the fixed header.
+- `/` — homepage
+- `/how-it-works` — the platform (`/the-app` 308s here)
+- `/curriculum` — "Careers": 50 introships with a category filter (client component, data inline); the 19 with a `slug` link to `/curriculum/[slug]`, driven by `lib/internships.ts`. `/careers` 308s here.
+- `/schools` — schools and programs pitch; `#start` holds `SchoolsInquiryForm` (→ `/api/schools-inquiry`)
+- `/companies` — ways to partner; `#start` holds `app/companies/ContactForm.tsx` (→ `/api/partner-waitlist`)
+- `/guides` — for the adults (`/for-adults` 308s here); `/students` — app download pitch
 - `/impact` — impact metrics and evidence base
+- `/about` — story, board of directors, advisory board (static data inline, photos in `public/images`)
 - `/donate` — Stripe donation flow (`DonateButton` → `DonateModal`); GiveButter has been removed
-- `/for-adults` — Guide (parent/mentor) pitch + waitlist form
+- `/coach` — Ambition Coach volunteer sign-up
 - `/founder` — founder profile
-- `/companies`, `/program-partners` — outreach pages (noindex, not linked from nav)
+- `/program-partners` — outreach page (noindex, not linked from nav)
 - `/update` — investor update (not linked from nav)
-- `/meet` — meeting scheduler backed by Supabase (`meeting_types`, bookings)
-- `/teens` — the games hub (specs/c1d2c9e2-teengamesv1; indexable, standalone chrome). Lists "What Are You Built For" as the hero plus the teen games: Higher Wage is live at `/teens/higher-wage` (pair/guess APIs under `app/api/games/higher-wage/*`, gap rule + signed pair token in `lib/games/` — pay never reaches the client pre-tap, and a CI test asserts it); Never Heard of It is live at `/teens/never-heard-of-it` (daily APIs under `app/api/games/daily/*` — clue 1 + answer hashes only, title never pre-reveal; guesses hash-matched client-side via `lib/games/guess.ts`; `game_daily` calendar human-scheduled at `/admin/careers/daily` with a 3-of-7 job-zone≤3 rule, rolls midnight Pacific); The Cut is live at `/teens/the-cut` (rooms + phone voting + solo, `app/api/games/the-cut/*`, engine in `lib/games/the-cut.ts`, ephemeral `cut_*` tables; landing indexable, room/vote screens noindex). `/ms` and `/ms/*` 308-redirect here (`next.config.mjs`) — old flyer/email links never die.
+- `/teens` — the games hub (specs/c1d2c9e2-teengamesv1; indexable, standalone chrome). Lists "What Are You Built For" as the hero plus the teen games: Higher Wage is live at `/teens/higher-wage` (pair/guess APIs under `app/api/games/higher-wage/*`, gap rule + signed pair token in `lib/games/` — pay never reaches the client pre-tap, and a CI test asserts it); Never Heard of It is live at `/teens/never-heard-of-it` (daily APIs under `app/api/games/daily/*` — clue 1 + answer hashes only, title never pre-reveal; guesses hash-matched client-side via `lib/games/guess.ts`; `game_daily` calendar human-scheduled in the website admin at `/admin/careers/daily` with a 3-of-7 job-zone≤3 rule, rolls midnight Pacific); The Cut is live at `/teens/the-cut` (rooms + phone voting + solo, `app/api/games/the-cut/*`, engine in `lib/games/the-cut.ts`, ephemeral `cut_*` tables; landing indexable, room/vote screens noindex). `/ms` and `/ms/*` 308-redirect here (`next.config.mjs`) — old flyer/email links never die.
 - `/teens/built-for` — "What Are You Built For," the middle-school career game (specs/ms-career-game.md + amendments; landing indexable, session/room screens noindex). Solo: landing → 30-item tap-only wizard (`/teens/built-for/assess`) → deterministic RIASEC ranking (`…/results/[session]`) → card play (`…/card/[session]/[soc]`) → permanent no-login deck by 6-char claim code (`…/deck/[code]`). Group: `…/host` opens a room, `…/room/[room]` is the projected screen, students join by 4-char room code. APIs stay under `app/api/ms/*` (session, reveal, deliver, room), and code stays in `lib/ms/` — the move was a URL decision, not a refactor. Hard rules: no student email/name anywhere (auto handles), no LLM in the matching path, card `title`/`clue_8` only via the reveal route (which writes `clues_used`), AI live only for the results summary + facilitator prompts.
 
-**Admin** — a large internal dashboard under `/admin` (finance, fundraising, ops, KPIs, board, compliance), running as an installable PWA. Auth via `lib/admin/auth.ts`; data in Supabase; HubSpot sync for fundraising.
+**Forms go to BloomOS.** Every public form route (`apply`, `schools-inquiry`, `program-partner-signup`, `partner-waitlist`, `coach-signup`, `ygb/register`, `demoday/signup`, `quiz-submit`, `save-donation`) validates, then calls `sendToBloomOS()` in `lib/site/bloomos.ts`, which posts to the BloomOS intake API with `BLOOMOS_INTAKE_KEY`. If BloomOS is down the payload waits in `intake_outbox` and `/api/site/cron/intake-outbox` retries it every 15 minutes, so a visitor's form is never lost. The website still sends the visitor their own confirmation emails; BloomOS stores the record and alerts staff. `/apply` reads its open programs from BloomOS too. Hard rule: this site holds no BloomOS database key of any kind. The intake key is its only way in.
+
+**Website admin** (`/admin`, specs/bloomos-repo-split.md §6d) — a small admin for the website only: home (website numbers), careers curation, games health, analytics, and form delivery. Code lives in `app/site-admin/` and `app/api/site-admin/`; middleware rewrites the owned `/admin` paths (`lib/site/adminRoutes.ts`) onto it and 308s every other `/admin/*` path to app.bloomos.org. Sign-in is a Supabase magic link on the website database, limited to `SITE_ADMIN_EMAILS` (Remi and Shannon), and checked again in every page and `/api/site-admin` route. Shared UI pieces are in `app/site-admin/_ui/` and `lib/site/ui/`. Keep it small: when a request is unclear, it belongs in BloomOS.
+
+**Website numbers for BloomOS** — `GET /api/site-admin/stats` serves daily totals behind a bearer `SITE_STATS_KEY`. BloomOS pulls it every morning into Ambition Angels' metrics.
+
+**Old BloomOS links** — `/board`, `/meet`, `/strategy`, `/coach/me/*`, `/api/unsubscribe` and booking links 308 to app.bloomos.org (`next.config.mjs`). Keep them forever: links in sent email never die.
 
 **Data layer:**
-- Public-site content is static in page files or `lib/` (e.g. `lib/internships.ts`, `lib/donors.ts`). Content changes require code edits.
-- Admin + meet data lives in Supabase (`lib/supabase/*`, types in `lib/database.types.ts`).
+- Public-site content is static in page files or `lib/` (e.g. `lib/internships.ts`). Content changes require code edits.
+- Games, the career library, site analytics and the form outbox live in the website's own Supabase database, always through `websiteDb()` / `getSiteSupabase()` (`lib/site/`). Migrations are in `supabase/migrations/`, starting from `site_baseline.sql`.
 
-**Career library (`/teens/built-for` groundwork, specs/ms-career-library-v2.md):** `ms_occupations` (imported O*NET RIASEC + BLS pay, `scripts/import-onet.ts`) + `ms_cards` (Claude-drafted, machine-gated, human-approved content) behind `/admin/careers`. Core logic in `lib/ms/` (deterministic RIASEC scorer, gates, rendered pay/education clues). Only `status = 'approved'` rows reach the public `ms_catalog` view, which never exposes `title` or `clue_8`. Approval is a human click, never code. The teen games add a second, separate gate: `game_pool` (specs/teen-games-v1.md, reviewed at `/admin/careers/pool`, rules in `lib/games/pool.ts`) — an occupation is not playable in Higher Wage / Never Heard of It / The Cut until a human flips it eligible there and approves its one-line reveal.
+**Career library (`/teens/built-for` groundwork, specs/ms-career-library-v2.md):** `ms_occupations` (imported O*NET RIASEC + BLS pay, `scripts/import-onet.ts`) + `ms_cards` (Claude-drafted, machine-gated, human-approved content) behind the website admin's `/admin/careers`. Core logic in `lib/ms/` (deterministic RIASEC scorer, gates, rendered pay/education clues). Only `status = 'approved'` rows reach the public `ms_catalog` view, which never exposes `title` or `clue_8`. Approval is a human click, never code. The teen games add a second, separate gate: `game_pool` (specs/teen-games-v1.md, reviewed at `/admin/careers/pool`, rules in `lib/games/pool.ts`) — an occupation is not playable in Higher Wage / Never Heard of It / The Cut until a human flips it eligible there and approves its one-line reveal.
 
 **Key API routes (public):**
-- `app/api/career-match/route.ts` — Claude-powered career matching (model `claude-sonnet-4-6`). Requires `ANTHROPIC_API_KEY`.
-- `app/api/create-payment-intent`, `app/api/stripe-webhook`, `app/api/save-donation`, `app/api/send-receipt` — Stripe donation pipeline.
-- `app/api/partner-waitlist`, `app/api/program-partner-signup` — form intake.
-- `app/api/meet/*` — scheduler availability/booking.
+- `app/api/career-match/route.ts` — Claude-powered career matching. Requires `ANTHROPIC_API_KEY`.
+- `app/api/create-payment-intent`, `app/api/send-receipt` — the donor-facing half of the Stripe donation flow. `app/api/save-donation` hands the gift to BloomOS, which also receives Stripe's webhook.
 
 **SEO:** `app/sitemap.ts`, `app/robots.ts`, `app/opengraph-image.png` (regenerate if branding changes), and an Organization JSON-LD block in `app/layout.tsx`.
 
@@ -59,9 +66,8 @@ Next.js 14 (App Router), TypeScript, Tailwind CSS, Supabase (Postgres + auth), S
 - `orange` / `--orange`: `#E8500A` (primary CTA, accents); `orange-dark` `#B83D06`; `orange-light` `#FFF0EA`; `orange-mid` `#F47840`
 - `ink`: `#0E0E0E` (dark backgrounds); `cream`: `#FAFAF8` (page background)
 - `charcoal` `#3D3D3D`; `gray-warm` `#6B6960`; `gray-mid` `#C8C6BE`; `gray-light` `#F0EEE8`
-- `navy` `#10214B` (admin/BloomOS chrome only)
 
-**Fonts** (loaded in `app/layout.tsx` via `next/font/google`):
+**Fonts** (self-hosted via `next/font/local`, never fetched from Google at build time; woff2 files + OFL licenses in `app/fonts/<family>/`, shared definitions in `app/fonts/index.ts`):
 - `font-display` — Big Shoulders Display (large hero headlines; forced uppercase sitewide via globals.css)
 - `font-heading` — Poppins (section headings, UI labels)
 - `font-body` — DM Sans (body text)
@@ -78,11 +84,18 @@ style={{
 }}
 ```
 
-**Known duplication to be careful with:** the headline stats (3,500+ teens / 87% Title I / 14% future orientation / 1,100+ hours) are hardcoded in several pages (`/`, `/donate`, `/the-app`, `/companies`, `/update`, `/impact`) — update all of them together. The App Store / Google Play button markup is likewise copy-pasted across pages.
+**Headline stats** (3,500+ teens / 87% Title I / 14% / 1,100+ hours) come from `lib/stats.ts`. Import from there; legacy pages (`/update`, `/twilio`) may still hardcode them.
 
 ## Environment Variables
 
-- `ANTHROPIC_API_KEY` — career quiz/match routes
-- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` — Supabase
-- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` — donations
-- Plus admin-only integrations (HubSpot, Google, Resend) — see the relevant `lib/` modules.
+- `ANTHROPIC_API_KEY` — career match, card drafts, game summaries
+- `SITE_SUPABASE_URL`, `SITE_SUPABASE_ANON_KEY`, `SITE_SUPABASE_SERVICE_ROLE_KEY` — the website database
+- `BLOOMOS_INTAKE_URL`, `BLOOMOS_INTAKE_KEY` — the BloomOS intake API
+- `SITE_ADMIN_EMAILS` — who may sign in to the website admin
+- `SITE_STATS_KEY` — the bearer key BloomOS uses for the stats feed
+- `CRON_SECRET` — the outbox retry cron
+- `GAMES_TOKEN_SECRET` — signs Higher Wage pair tokens
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY` — donations
+- `RESEND_API_KEY` — confirmation and receipt emails
+- `DEMODAY_PASSWORD`, `DEMO_PASSWORD`, `DEMO_COOKIE_SECRET` — the Demo Day lookbook and partner demo gates
+- `NEXT_PUBLIC_SITE_URL`, `MARKETING_ORIGIN` — the site's own origin for absolute links

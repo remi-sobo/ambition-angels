@@ -10,6 +10,7 @@ import {
   LIGHT_WEEK_REASON_MIN,
   type CommitTask,
 } from "@/lib/admin/ops/commitments";
+import { buildCloseStats, deriveOutcome, type Outcome } from "@/lib/admin/ops/close";
 
 /**
  * Commit a weekly rhythm run — writes the rhythm_sessions artifact (Operating
@@ -65,6 +66,23 @@ export async function POST(req: NextRequest) {
       );
     }
     if (reason) stats.light_week_reason = reason;
+  }
+
+  // Friday Close against the Monday commit (Weekly Plan v2, PR 4): settle an
+  // outcome on every committed row before the session is written, so a
+  // failure leaves the week un-closed rather than closed without outcomes.
+  if (kind === "friday_close") {
+    const settled = await settleOutcomes(supabase, {
+      orgId: ctx.orgId,
+      userId: ctx.userId,
+      weekOf,
+      plannedThisWeekIds: rows.map((r) => r.id),
+    });
+    if (!settled.ok) {
+      console.error("[/api/admin/ops/rhythm POST] outcome settle failed:", settled.error);
+      return NextResponse.json({ error: "Failed to record the week's outcomes" }, { status: 500 });
+    }
+    if (settled.stats) Object.assign(stats, settled.stats);
   }
 
   const checklist =
@@ -201,4 +219,92 @@ function buildStats(
     };
   }
   return { planned, done, open: planned - done };
+}
+
+/**
+ * Give every committed row of this week's Monday Plan its outcome, derived
+ * from its task (lib/admin/ops/close.ts), and return the close stats. Rows
+ * whose stored outcome already matches are left alone, so re-closing only
+ * touches what changed. No Monday commit → nothing to settle, no stats.
+ */
+async function settleOutcomes(
+  supabase: ReturnType<typeof createServerSupabase>,
+  args: { orgId: string; userId: string; weekOf: string; plannedThisWeekIds: string[] }
+): Promise<{ ok: true; stats: ReturnType<typeof buildCloseStats> | null } | { ok: false; error: string }> {
+  const { orgId, userId, weekOf, plannedThisWeekIds } = args;
+  const { data: sess, error: sessErr } = await supabase
+    .from("rhythm_sessions")
+    .select("id")
+    .eq("org_id", orgId)
+    .eq("user_id", userId)
+    .eq("kind", "monday_plan")
+    .eq("week_of", weekOf)
+    .eq("status", "completed")
+    .maybeSingle();
+  if (sessErr) return { ok: false, error: sessErr.message };
+  if (!sess) return { ok: true, stats: null };
+
+  const { data: rowsData, error: rowsErr } = await supabase
+    .from("week_commitments")
+    .select("id, task_id, outcome")
+    .eq("org_id", orgId)
+    .eq("session_id", sess.id as string)
+    .eq("decision", "commit");
+  if (rowsErr) return { ok: false, error: rowsErr.message };
+  const rows = (rowsData ?? []) as Array<{ id: string; task_id: string | null; outcome: Outcome | null }>;
+  if (rows.length === 0) return { ok: true, stats: null };
+
+  const taskIds = rows.map((r) => r.task_id).filter((x): x is string => !!x);
+  const tasks = new Map<string, { status: string; archived_at: string | null; planned_week: string | null }>();
+  if (taskIds.length > 0) {
+    const { data: tData, error: tErr } = await supabase
+      .from("ops_tasks")
+      .select("id, status, archived_at, planned_week")
+      .eq("org_id", orgId)
+      .in("id", taskIds);
+    if (tErr) return { ok: false, error: tErr.message };
+    for (const t of (tData ?? []) as Array<{
+      id: string;
+      status: string;
+      archived_at: string | null;
+      planned_week: string | null;
+    }>) {
+      tasks.set(t.id, t);
+    }
+  }
+
+  const derived = rows.map((r) => ({
+    id: r.id,
+    stored: r.outcome,
+    outcome: deriveOutcome(r.task_id ? tasks.get(r.task_id) ?? null : null, weekOf, r.outcome),
+  }));
+
+  // One update per outcome value, only for rows that change.
+  const nowISO = new Date().toISOString();
+  const byOutcome = new Map<Outcome, string[]>();
+  for (const d of derived) {
+    if (d.stored === d.outcome) continue;
+    const list = byOutcome.get(d.outcome) ?? [];
+    list.push(d.id);
+    byOutcome.set(d.outcome, list);
+  }
+  for (const [outcome, ids] of Array.from(byOutcome.entries())) {
+    const { error } = await supabase
+      .from("week_commitments")
+      .update({ outcome, outcome_at: nowISO })
+      .eq("org_id", orgId)
+      .eq("user_id", userId)
+      .in("id", ids);
+    if (error) return { ok: false, error: error.message };
+  }
+
+  const committed = new Set(taskIds);
+  const addedMidweek = plannedThisWeekIds.filter((id) => !committed.has(id)).length;
+  return {
+    ok: true,
+    stats: buildCloseStats(
+      derived.map((d) => d.outcome),
+      addedMidweek
+    ),
+  };
 }
